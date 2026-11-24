@@ -85,6 +85,11 @@ public sealed class StyleIndex
     /// <summary>專案自己的類別（x:Class）：它 XAML 的根元素 —— 根上寫的屬性是建構時設的本地值，用它的地方沒寫就輪到它。</summary>
     public Func<XElement, XElement?>? OwnRoot { get; set; }
 
+    /// <summary>元素行為上是哪個 WPF 控制項（專案自己的類別照它的基底）。沒接的時候只認 WPF 的。</summary>
+    public Func<XElement, string?>? BaseOf { get; set; }
+
+    private string? ControlOf(XElement e) => BaseOf is { } f ? f(e) : Markup.IsWpf(e) ? e.Name.LocalName : null;
+
     /// <summary>
     /// 「Control.FontSize」「ButtonBase.Content」這種寫法的擁有者：屬性是元素自己的，前綴可以去掉。
     /// 其他擁有者都是附加屬性，一定要留著 —— HandyControl 的 <c>hc:IconElement.Height</c> 是圖示的高度，
@@ -114,7 +119,7 @@ public sealed class StyleIndex
         if (doc.Root is not { } root) return;
         if (root.Name.LocalName == "ResourceDictionary")
             foreach (var e in Flatten(root)) Index(e, file);
-        else if (root.Name.LocalName.EndsWith("Application", StringComparison.Ordinal))
+        else if (XamlFiles.IsApplication(root, file))
             foreach (var holder in root.Elements().Where(IsResources))
                 foreach (var e in EntriesOf(holder)) Index(e, file);
     }
@@ -175,6 +180,7 @@ public sealed class StyleIndex
         var name = property[(dot + 1)..].Trim(')', ' ');
         if (OwnOwners.Contains(owner)) return name;
         if (owner == "KeyboardNavigation" && name == "IsTabStop") return name;      // Control.IsTabStop 就是它
+        if (owner == "ToolTipService" && name == "ToolTip") return name;            // FrameworkElement.ToolTip 就是它（UiaOracle round3）
         var colon = owner.LastIndexOf(':');
         return (colon >= 0 ? owner[(colon + 1)..] : owner) + "." + name;
     }
@@ -349,12 +355,71 @@ public sealed class StyleIndex
                 ? Expand([RecordOf(inline)], element)
                 : [new StyleChain([], $"<{local}> has a Style this tool cannot read")];
 
+        // 清單的 ItemContainerStyle：直接寫在裡面的項目也會套，而且贏過隱含樣式（UiaOracle round3）
+        if (ItemsOwner(element) is { } list)
+        {
+            var r = Resolve(list, "ItemContainerStyle");
+            if (r.Element is { } itemStyle && itemStyle.Name.LocalName == "Style") return Expand([RecordOf(itemStyle)], element);
+            if ((r.IsValue && !r.IsNull) || (r.IsUnreadable && r.Origin is not null))
+                return [new StyleChain([], "the ItemContainerStyle of its list is something this tool cannot read")];
+        }
+
+        // ToolBar 的直接子元素：隱含樣式被 ToolBar.ButtonStyleKey 那一組取代（明寫的 Style 不會）
+        if (ToolBarStyleKey(element) is { } toolBar)
+            return _byKey.Keys.Concat(_resources.Keys).FirstOrDefault(k => k.Contains(toolBar, StringComparison.Ordinal)) is { } own && StylesByKey(element, own) is { } replaced
+                ? Expand(replaced, element)
+                : LexicalToolBar(element, toolBar) is { } lexical ? Expand([RecordOf(lexical)], element) : [StyleChain.Empty];
+
         if (element.Attribute(Markup.XClass) is not null)
             return _implicit.TryGetValue(Markup.TypeIdOf(element), out var all)
                 ? Expand(Nearest([.. all.Where(s => IsThemeStyleFile(s.File))], s => s.File, FileOf(element)), element)
                 : [StyleChain.Empty];
 
         return Expand(ImplicitStyles(element, Markup.TypeIdOf(element), null), element);
+    }
+
+    public bool HasKeyContaining(string part) => _byKey.Keys.Any(k => k.Contains(part, StringComparison.Ordinal));
+
+    private static XElement? VisualParent(XElement e) =>
+        e.Parent is { } p && Markup.IsPropertyElement(p) && p.Name.LocalName.EndsWith(".Items", StringComparison.Ordinal) ? p.Parent : e.Parent;
+
+    /// <summary>直接放在清單裡、自己就是容器的項目 → 那個清單。巢狀的 TreeViewItem 看上一層的 TreeViewItem（不會往下傳，實測）。</summary>
+    private XElement? ItemsOwner(XElement e)
+    {
+        if (VisualParent(e) is not { } p || Markup.IsPropertyElement(p) || ControlOf(p) is not { } owner) return null;
+        var item = ControlOf(e);
+        return (owner, item) switch
+        {
+            ("TabControl", "TabItem") or ("ListBox", "ListBoxItem") or ("ListView", "ListViewItem") or ("ComboBox", "ComboBoxItem")
+                or ("Menu" or "ContextMenu" or "MenuItem", "MenuItem") or ("TreeView" or "TreeViewItem", "TreeViewItem") or ("StatusBar", "StatusBarItem") => p,
+            _ => null,
+        };
+    }
+
+    /// <summary>ToolBar.PrepareContainerForItemOverride 認的型別（WPF 比的是確切的型別，子類別不算）。</summary>
+    private string? ToolBarStyleKey(XElement e)
+    {
+        if (!Markup.IsWpf(e)) return null;
+        var local = e.Name.LocalName;
+        // 工具列裡的 Menu：MenuStyleKey 的樣式自己帶了 MenuItem 的樣式
+        if (local == "MenuItem")
+        {
+            var top = e.Ancestors().FirstOrDefault(a => !Markup.IsPropertyElement(a) && a.Name.LocalName != "MenuItem");
+            return top is { Name.LocalName: "Menu" } && VisualParent(top) is { } bar && ControlOf(bar) == "ToolBar" ? "ToolBar.MenuStyleKey/MenuItem" : null;
+        }
+        return local is "Button" or "CheckBox" or "ComboBox" or "Menu" or "RadioButton" or "Separator" or "TextBox" or "ToggleButton"
+               && VisualParent(e) is { } p && !Markup.IsPropertyElement(p) && ControlOf(p) == "ToolBar" ? $"ToolBar.{local}StyleKey" : null;
+    }
+
+    /// <summary>直接放在 ToolBar 裡（XAML 看得到的）。</summary>
+    public static bool InToolBar(XElement e) => VisualParent(e) is { Name.LocalName: "ToolBar" };
+
+    private static XElement? LexicalToolBar(XElement from, string key)
+    {
+        for (XElement? cur = from; cur is not null; cur = cur.Parent)
+            foreach (var (k, entry) in ScopeOf(cur).ByKey)
+                if (k.Contains(key, StringComparison.Ordinal) && entry.Name.LocalName == "Style") return entry;
+        return null;
     }
 
     /// <summary>

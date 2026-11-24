@@ -1,0 +1,66 @@
+# 第二輪獨立審查（2026-11-24）找到的：先放進真的 WPF 才改規則
+r3 | Run bound then icon run | <Button x:Name='p' FontFamily='Segoe MDL2 Assets'><TextBlock><Run Text='{Binding X, FallbackValue=Seven, Mode=OneWay}'/><Run Text='&#xE74D;'/></TextBlock></Button>
+r3 | Hyperlink paren bound run | <TextBlock><Hyperlink x:Name='p'>(<Run Text='{Binding X, FallbackValue=Seven, Mode=OneWay}'/>)</Hyperlink></TextBlock>
+r3 | icon run plus text run other font | <Button x:Name='p' FontFamily='Segoe MDL2 Assets'><TextBlock><Run Text='&#xE74D;'/><Run FontFamily='Segoe UI' Text='Delete'/></TextBlock></Button>
+r3 | icon run with its own font plus text | <Button x:Name='p'><TextBlock><Run FontFamily='Segoe MDL2 Assets' Text='&#xE74D;'/><Run Text='Delete'/></TextBlock></Button>
+r3 | Run StaticResource text | <Button x:Name='p'><TextBlock><Run Text='{StaticResource s}'/></TextBlock></Button> | <sys:String x:Key='s'>Delete</sys:String>
+r3 | ToolBar implicit style does not name | <ToolBar><Button x:Name='p' ToolTip='Save'>[ICON]</Button></ToolBar> | <Style TargetType='Button'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+r3 | ToolBar explicit style names | <ToolBar><Button x:Name='p' Style='{StaticResource e}'>[ICON]</Button></ToolBar> | <Style x:Key='e' TargetType='Button'><Setter Property='AutomationProperties.Name' Value='Explicit'/></Style>
+r3 | ToolBar in panel implicit style names | <ToolBar><StackPanel><Button x:Name='p'>[ICON]</Button></StackPanel></ToolBar> | <Style TargetType='Button'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+r3 | ToolBar ButtonStyleKey style names | <ToolBar><Button x:Name='p'>[ICON]</Button></ToolBar> | <Style x:Key='{x:Static ToolBar.ButtonStyleKey}' TargetType='Button'><Setter Property='AutomationProperties.Name' Value='FromKey'/></Style>
+r3 | ToolBar TextBox implicit | <ToolBar><TextBox x:Name='p'/></ToolBar> | <Style TargetType='TextBox'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+r3 | ToolBar ComboBox implicit | <ToolBar><ComboBox x:Name='p'/></ToolBar> | <Style TargetType='ComboBox'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+r3 | ToolBar ToggleButton implicit | <ToolBar><ToggleButton x:Name='p'>[ICON]</ToggleButton></ToolBar> | <Style TargetType='ToggleButton'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+r3 | ToolBar CheckBox implicit | <ToolBar><CheckBox x:Name='p'>[ICON]</CheckBox></ToolBar> | <Style TargetType='CheckBox'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+r3 | ToolBar RadioButton implicit | <ToolBar><RadioButton x:Name='p'>[ICON]</RadioButton></ToolBar> | <Style TargetType='RadioButton'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+r3 | ToolBar PasswordBox implicit | <ToolBar><PasswordBox x:Name='p'/></ToolBar> | <Style TargetType='PasswordBox'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+r3 | ToolBar RepeatButton implicit | <ToolBar><RepeatButton x:Name='p'>[ICON]</RepeatButton></ToolBar> | <Style TargetType='RepeatButton'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+r3 | ToolBar Menu implicit MenuItem | <ToolBar><Menu><MenuItem x:Name='p'/></Menu></ToolBar> | <Style TargetType='MenuItem'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+r3 | ToolBar.Items element | <ToolBar><ToolBar.Items><Button x:Name='p'>[ICON]</Button></ToolBar.Items></ToolBar> | <Style TargetType='Button'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+r3 | ToolBar style null | <ToolBar><Button x:Name='p' Style='{x:Null}'>[ICON]</Button></ToolBar> | <Style TargetType='Button'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+r3 | StatusBar implicit | <StatusBar><Button x:Name='p'>[ICON]</Button></StatusBar> | <Style TargetType='Button'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+r3 | TabControl ItemContainerStyle names | <TabControl><TabControl.ItemContainerStyle><Style TargetType='TabItem'><Setter Property='AutomationProperties.Name' Value='Settings'/></Style></TabControl.ItemContainerStyle><TabItem x:Name='p'><TabItem.Header>[ICON]</TabItem.Header></TabItem></TabControl>
+r3 | TabControl ItemContainerStyle loses to own Style | <TabControl ItemContainerStyle='{StaticResource t}'><TabItem x:Name='p' Style='{StaticResource o}'><TabItem.Header>[ICON]</TabItem.Header></TabItem></TabControl> | <Style x:Key='t' TargetType='TabItem'><Setter Property='AutomationProperties.Name' Value='Settings'/></Style><Style x:Key='o' TargetType='TabItem'/>
+r3 | ItemContainerStyle beats implicit | <TabControl ItemContainerStyle='{StaticResource t}'><TabItem x:Name='p'><TabItem.Header>[ICON]</TabItem.Header></TabItem></TabControl> | <Style x:Key='t' TargetType='TabItem'/><Style TargetType='TabItem'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+r3 | ListBox ItemContainerStyle by style of list | <ListBox Style='{StaticResource l}'><ListBoxItem x:Name='p'>[ICON]</ListBoxItem></ListBox> | <Style x:Key='l' TargetType='ListBox'><Setter Property='ItemContainerStyle'><Setter.Value><Style TargetType='ListBoxItem'><Setter Property='AutomationProperties.Name' Value='FromList'/></Style></Setter.Value></Setter></Style>
+r3 | ListBox ItemContainerStyle name from Tag | <ListBox ItemContainerStyle='{StaticResource t}'><ListBoxItem x:Name='p' Tag='Home'>[ICON]</ListBoxItem></ListBox> | <Style x:Key='t' TargetType='ListBoxItem'><Setter Property='AutomationProperties.Name' Value='{Binding Tag, RelativeSource={RelativeSource Self}}'/></Style>
+r3 | Menu ItemContainerStyle | <Menu><Menu.ItemContainerStyle><Style TargetType='MenuItem'><Setter Property='AutomationProperties.Name' Value='FromMenu'/></Style></Menu.ItemContainerStyle><MenuItem x:Name='p'/></Menu>
+r3 | TreeView ItemContainerStyle first level | <TreeView><TreeView.ItemContainerStyle><Style TargetType='TreeViewItem'><Setter Property='AutomationProperties.Name' Value='FromTree'/></Style></TreeView.ItemContainerStyle><TreeViewItem x:Name='p'><TreeViewItem.Header>[ICON]</TreeViewItem.Header></TreeViewItem></TreeView>
+r3 | TreeView ItemContainerStyle nested item | <TreeView><TreeView.ItemContainerStyle><Style TargetType='TreeViewItem'><Setter Property='AutomationProperties.Name' Value='FromTree'/></Style></TreeView.ItemContainerStyle><TreeViewItem Header='a' IsExpanded='True'><TreeViewItem x:Name='p'><TreeViewItem.Header>[ICON]</TreeViewItem.Header></TreeViewItem></TreeViewItem></TreeView>
+r3 | TreeViewItem own ItemContainerStyle beats inherited | <TreeView><TreeView.ItemContainerStyle><Style TargetType='TreeViewItem'><Setter Property='AutomationProperties.Name' Value='FromTree'/></Style></TreeView.ItemContainerStyle><TreeViewItem Header='a' IsExpanded='True'><TreeViewItem.ItemContainerStyle><Style TargetType='TreeViewItem'/></TreeViewItem.ItemContainerStyle><TreeViewItem x:Name='p'><TreeViewItem.Header>[ICON]</TreeViewItem.Header></TreeViewItem></TreeViewItem></TreeView>
+r3 | TreeView ItemContainerStyle does not reach a template item's button | <TreeView><TreeView.ItemContainerStyle><Style TargetType='TreeViewItem'><Setter Property='AutomationProperties.Name' Value='FromTree'/></Style></TreeView.ItemContainerStyle><TreeViewItem IsExpanded='True'><TreeViewItem.Header><Button x:Name='p'>[ICON]</Button></TreeViewItem.Header></TreeViewItem></TreeView>
+r3 | Command StaticResource with text | <Button x:Name='p' Command='{StaticResource c}'>[ICON]</Button> | <RoutedUICommand x:Key='c' Text='Save it'/>
+r3 | Command StaticResource no text | <Button x:Name='p' Command='{StaticResource c}'>[ICON]</Button> | <RoutedUICommand x:Key='c'/>
+r3 | Command StaticResource empty text | <Button x:Name='p' Command='{StaticResource c}'>[ICON]</Button> | <RoutedUICommand x:Key='c' Text=''/>
+r3 | Command StaticResource RoutedCommand | <Button x:Name='p' Command='{StaticResource c}'>[ICON]</Button> | <RoutedCommand x:Key='c'/>
+r3 | Command StaticResource no content | <Button x:Name='p' Command='{StaticResource c}'/> | <RoutedUICommand x:Key='c' Text='Save it'/>
+r3 | Command DynamicResource with text | <Button x:Name='p' Command='{DynamicResource c}'>[ICON]</Button> | <RoutedUICommand x:Key='c' Text='Save it'/>
+r3 | Command from style resource | <Button x:Name='p' Style='{StaticResource st}'>[ICON]</Button> | <RoutedUICommand x:Key='c' Text='Save it'/><Style x:Key='st' TargetType='Button'><Setter Property='Command' Value='{StaticResource c}'/></Style>
+r3 | MenuItem Command StaticResource | <Menu><MenuItem x:Name='p' Command='{StaticResource c}'/></Menu> | <RoutedUICommand x:Key='c' Text='Save it'/>
+r3 | MenuItem Command StaticResource no text | <Menu><MenuItem x:Name='p' Command='{StaticResource c}'/></Menu> | <RoutedUICommand x:Key='c'/>
+r3 | Command element syntax | <Button x:Name='p'><Button.Command><RoutedUICommand Text='Save it'/></Button.Command>[ICON]</Button>
+r3 | SystemCommands close | <Button x:Name='p' Command='{x:Static SystemCommands.CloseWindowCommand}'>[ICON]</Button>
+r3 | SystemCommands short form | <Button x:Name='p' Command='SystemCommands.MinimizeWindowCommand'>[ICON]</Button>
+r3 | SystemCommands MenuItem | <Menu><MenuItem x:Name='p' Command='{x:Static SystemCommands.CloseWindowCommand}'/></Menu>
+r3 | Content single underscore | <Button x:Name='p' Content='_'/>
+r3 | Content double underscore | <Button x:Name='p' Content='__'/>
+r3 | Content underscore space | <Button x:Name='p' Content='_ '/>
+r3 | Content three underscores | <Button x:Name='p' Content='___'/>
+r3 | Content trailing underscore | <Button x:Name='p' Content='a_'/>
+r3 | Content two markers | <Button x:Name='p' Content='_a_b'/>
+r3 | Content underscore before symbol | <Button x:Name='p' Content='_×'/>
+r3 | MenuItem header underscore | <Menu><MenuItem x:Name='p' Header='_'/></Menu>
+r3 | Emoji VS16 | <Button x:Name='p' Content='&#x2699;&#xFE0F;'/>
+r3 | Emoji no VS | <Button x:Name='p' Content='&#x2699;'/>
+r3 | ToolTipService.ToolTip self binding | <Button x:Name='p' ToolTip='Save' AutomationProperties.Name='{Binding (ToolTipService.ToolTip), RelativeSource={RelativeSource Self}}'>[ICON]</Button>
+r3 | ToolTipService set, ToolTip bound | <Button x:Name='p' ToolTipService.ToolTip='Save' AutomationProperties.Name='{Binding ToolTip, RelativeSource={RelativeSource Self}}'>[ICON]</Button>
+r3 | UserControl content with Name | <Button x:Name='p'><UserControl AutomationProperties.Name='Save'>[ICON]</UserControl></Button>
+r3 | UserControl content with text | <Button x:Name='p'><UserControl Content='Save'/></Button>
+r3 | ContentControl content in Button | <Button x:Name='p'><ContentControl AutomationProperties.Name='Save'>[ICON]</ContentControl></Button>
+r3 | Underline in Hyperlink | <TextBlock><Hyperlink x:Name='p'><Underline><Run Text='Open'/></Underline></Hyperlink></TextBlock>
+r3 | local content beats a style trigger's content | <Button x:Name='p' Style='{StaticResource t}'>[ICON]</Button> | <Style x:Key='t' TargetType='Button'><Style.Triggers><Trigger Property='IsEnabled' Value='True'><Setter Property='Content' Value='Save'/></Trigger></Style.Triggers></Style>
+r3 | style trigger's content without local content | <Button x:Name='p' Style='{StaticResource t}'/> | <Style x:Key='t' TargetType='Button'><Style.Triggers><Trigger Property='IsEnabled' Value='True'><Setter Property='Content' Value='Save'/></Trigger></Style.Triggers></Style>
+r3 | Run text from its style | <TextBlock><Hyperlink x:Name='p'><Run Style='{StaticResource s}'/></Hyperlink></TextBlock> | <Style x:Key='s' TargetType='Run'><Setter Property='Text' Value='Show all'/></Style>
+r3 | Run text from a style trigger | <TextBlock><Hyperlink x:Name='p'><Run Style='{StaticResource s}'/></Hyperlink></TextBlock> | <Style x:Key='s' TargetType='Run'><Style.Triggers><Trigger Property='IsEnabled' Value='True'><Setter Property='Text' Value='Show all'/></Trigger></Style.Triggers></Style>
+r3 | Run implicit style text | <Button x:Name='p'><TextBlock><Run/></TextBlock></Button> | <Style TargetType='Run'><Setter Property='Text' Value='Save'/></Style>
+r3 | Run style without text | <TextBlock><Hyperlink x:Name='p'><Run Style='{StaticResource s}'/></Hyperlink></TextBlock> | <Style x:Key='s' TargetType='Run'><Setter Property='Foreground' Value='Red'/></Style>

@@ -21,14 +21,18 @@ internal static class Program
                 case "tabs": Probe.RunTabs(); break;
                 case "focus": Diag.ShowFocusVisuals(); Probe.RunFocus(); break;
                 case "check": return Check.Run();
+                case "check-names" when args.Length > 1: Check.NameFiles = args[1..]; Check.Show = true; return Check.Facts();
                 case "check-names": return Check.Facts() + Check.Themes() + Check.Generated();
                 case "check-keys": return Check.Tabs() + Check.FocusCases("focus.txt", null) + Check.Sizes();
                 case "focus-themes": ThemeFocus.Run(); break;
                 case "check-theme-focus": return Check.ThemeFocusCases();
                 case "check-corpus": return CorpusCheck.Run(args[1..]);
+                case "check-windows": return WindowCheck.Run(args[1..]);
                 case "record": Check.Record(args[1]); break;
+                case "check-hostile": return SafeMarkup.SelfTest();
+                case "axe-pid": Diag.AxePid(int.Parse(args[1])); break;
                 case "label": Diag.LabelTarget(); break;
-                default: Console.Error.WriteLine("modes: check | check-names | check-keys | names [--axe] | templates | themes | tabs | focus | label"); return 2;
+                default: Console.Error.WriteLine("modes: check | check-names [facts file] | check-keys | check-corpus <dirs> | check-windows [--axe] <dirs> | check-hostile | axe-pid <pid> | record <json> | names [--axe] | templates | themes | tabs | focus | label"); return 2;
             }
         }
         finally { app.Shutdown(); }

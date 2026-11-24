@@ -17,6 +17,10 @@
         "TextBox": { "as": "TextBox" },
         "PasswordBox": { "as": "TextBox" },
         "NumberBox": { "as": "TextBox" },
+        "RichTextBox": { "as": "RichTextBox" },
+        "CardExpander": { "as": "Expander" },
+        "Anchor": { "as": "Button" },
+        "MenuItem": { "as": "MenuItem" },
         "SymbolIcon": { "as": "Image" },
         "FontIcon": { "as": "Image" },
         "ImageIcon": { "as": "Image" },
@@ -32,6 +36,7 @@
       "assemblies": ["MahApps.Metro"],
       "controls": {
         "Tile": { "as": "Button" },
+        "MetroTabItem": { "as": "TabItem" },
         "ToggleSwitch": { "as": "(headered toggle)" }
       },
       "iconExtensions": []
@@ -45,7 +50,12 @@
       "controls": {
         "TextBox": { "as": "TextBox" },
         "SearchBar": { "as": "TextBox" },
-        "ComboBox": { "as": "ComboBox" }
+        "ComboBox": { "as": "ComboBox" },
+        "CheckComboBox": { "as": "ComboBox" },
+        "DatePicker": { "as": "DatePicker" },
+        "TabItem": { "as": "TabItem" },
+        "ContextMenuButton": { "as": "Button" },
+        "ProgressButton": { "as": "ToggleButton" }
       },
       "iconExtensions": []
     },
@@ -56,7 +66,9 @@
       "namespaces": ["http://materialdesigninxaml.net/winfx/xaml/themes"],
       "assemblies": ["MaterialDesignThemes.Wpf"],
       "controls": {
-        "PackIcon": { "as": "Image" }
+        "PackIcon": { "as": "Image" },
+        "SplitButton": { "as": "Button" },
+        "AutoSuggestBox": { "as": "TextBox" }
       },
       "iconExtensions": ["PackIcon"],
       "nameFrom": {

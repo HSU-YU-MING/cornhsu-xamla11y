@@ -117,11 +117,12 @@ public sealed class AuditResult
     public required IReadOnlyList<RuleStats> Rules { get; init; }
     public required int Files { get; init; }
     public required IReadOnlyList<string> ParseErrors { get; init; }
+    public IReadOnlyDictionary<string, string> ParseWhy { get; init; } = new Dictionary<string, string>();
     public required IReadOnlyList<(string File, string Dialect)> Foreign { get; init; }
     public required IReadOnlyList<ThemeUse> Themes { get; init; }
     /// <summary>不認得的控制項 → 卡住幾個位置。</summary>
     public required IReadOnlyList<(string Element, int Count)> UnknownControls { get; init; }
-    /// <summary>沒寫理由的 xamla11y-ignore（無效）。</summary>
+    /// <summary>沒作用的 xamla11y-ignore 與原因（「檔:行: 為什麼」）：沒寫理由、或停在被註解掉的元素前面。</summary>
     public required IReadOnlyList<string> InvalidIgnores { get; init; }
 
     public int Pass => Rules.Sum(r => r.Pass);
@@ -141,7 +142,7 @@ public sealed class AuditResult
         {
             var gate = Rules.Where(r => r.Rule is "R1" or "R2" or "R3" or "R4").ToList();
             double judged = gate.Sum(r => r.Pass + r.Findings + r.Suppressed), blocked = gate.Sum(r => r.Blocked);
-            return judged + blocked == 0 ? (Judged > 0 ? 100 : 0) : 100.0 * judged / (judged + blocked);
+            return judged + blocked == 0 ? (Judged > 0 || (Blocked == 0 && NotJudged > 0) ? 100 : 0) : 100.0 * judged / (judged + blocked);
         }
     }
 

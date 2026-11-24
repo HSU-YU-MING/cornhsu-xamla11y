@@ -45,9 +45,17 @@ internal static class TabRule
         if (styles.Resolve(e, "IsDefault").IsTrue || styles.Resolve(e, "IsCancel").IsTrue) { ctx.Pass("R5", e, "Enter or Esc presses it"); return; }
         if (styles.Resolve(e, "Command") is { IsValue: true, Value: { } cmd } && cmd.Contains("SystemCommands.", StringComparison.Ordinal)) { ctx.NotJudged("R5", e, "a window caption button (the system menu does the same)"); return; }
         if (Wpf.Buttons.Contains(control) && HasAccessKey(styles, e)) { ctx.Pass("R5", e, "it has an access key"); return; }
+        if (LabelHasAccessKey(e)) { ctx.Pass("R5", e, "a Label with an access key points at it"); return; }
+        // 同一個動作有別的鍵盤入口（快速鍵、選單），或是有內建快速鍵的命令
+        if (styles.Resolve(e, "Command") is { IsValue: true, Value: { } command })
+        {
+            if (HasBuiltInGesture(command)) { ctx.Pass("R5", e, "its command has a keyboard gesture of its own"); return; }
+            if (MouseRule.SameAction(ctx, e, command)) { ctx.Pass("R5", e, "a key binding or another control in the same file runs the same command"); return; }
+        }
+        if ((string?)e.Attribute("Click") is { } click && MouseRule.SameAction(ctx, e, click)) { ctx.Pass("R5", e, "another control in the same file has the same action"); return; }
 
         // 清單項目裡的控制項：項目自己拿焦點，鍵盤可能由清單處理
-        if (e.Ancestors().Any(a => a.Name.LocalName is "DataTemplate" && a.Parent?.Name.LocalName is { } h && (h.EndsWith(".ItemTemplate", StringComparison.Ordinal) || h.EndsWith(".CellTemplate", StringComparison.Ordinal)) && !h.StartsWith("ItemsControl.", StringComparison.Ordinal)))
+        if (MouseRule.InItemTemplate(ctx, e))
         {
             ctx.NotJudged("R5", e, "inside a list item template (the list may handle the keys)");
             return;
@@ -62,6 +70,25 @@ internal static class TabRule
     {
         var content = styles.Resolve(e, "Content");
         var text = content is { IsValue: true, Value: { } v } && !Markup.IsMarkup(v) ? v : Markup.OwnText(e);
+        // <AccessText Text="_Open"/> 也會登記存取鍵
+        if (e.Descendants().FirstOrDefault(d => d.Name.LocalName == "AccessText") is { } access) text = (string?)access.Attribute("Text") ?? access.Value;
+        return Marks(text);
+    }
+
+    private static bool LabelHasAccessKey(XElement e) =>
+        Markup.NameOf(e) is { Length: > 0 } name && e.Document!.Root!.Descendants().Any(d =>
+            d.Name.LocalName == "Label" && Markup.ReferencedElement((string?)d.Attribute("Target")) == name && Marks((string?)d.Attribute("Content") ?? Markup.OwnText(d)));
+
+    private static bool HasBuiltInGesture(string command)
+    {
+        var c = Markup.ExtensionName(command) == "x:Static" ? Markup.ExtensionBody(command) : command.Trim();
+        var last = c[(c.LastIndexOf('.') + 1)..];
+        var owner = c.LastIndexOf('.') is > 0 and var dot ? c[..dot] : "ApplicationCommands";
+        return owner == "ApplicationCommands" && last is "Copy" or "Cut" or "Paste" or "Undo" or "Redo" or "Delete" or "Find" or "Replace" or "SelectAll" or "Help" or "New" or "Open" or "Save" or "Print" or "PrintPreview" or "Properties" or "ContextMenu";
+    }
+
+    private static bool Marks(string text)
+    {
         var i = text.Replace("__", "", StringComparison.Ordinal).IndexOf('_');
         return i >= 0 && i < text.Length - 1;
     }

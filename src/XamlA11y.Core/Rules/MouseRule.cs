@@ -22,7 +22,9 @@ internal static partial class MouseRule
     public static void Check(Context ctx, XamlDoc doc, XElement e)
     {
         var control = ctx.Project.BaseOf(e);
-        if (control is null || !Wpf.NonControls.Contains(control)) return;
+        // 不認得的元素掛了滑鼠處理器：不知道鍵盤到不到得了（看起來是控制項的，R1／R2 已經數了）
+        var unknown = control is null && !Markup.IsWpf(e) && !NameRules.LooksInteractive(e.Name.LocalName) && !NameRules.LooksInput(e.Name.LocalName);
+        if (!unknown && (control is null || !Wpf.NonControls.Contains(control))) return;
 
         var (gesture, handler, preview) = ClickOn(ctx, e);
         if (gesture is null) return;
@@ -38,7 +40,7 @@ internal static partial class MouseRule
 
         // 拖曳：同時處理移動（畫布、分隔線、調整大小）。路徑本身就是輸入，WCAG 2.1.1 有例外，靜態分不出來
         if (HasAny(e, "MouseMove", "PreviewMouseMove", "DragDelta")
-            || (handler is not null && ctx.Project.MethodBody(doc.File, handler) is { } drag && (drag.Contains("CaptureMouse", StringComparison.Ordinal) || drag.Contains("DoDragDrop", StringComparison.Ordinal))))
+            || (handler is not null && LooksLikeDrag(ctx, doc, handler)))
         {
             ctx.NotJudged("R4", e, "looks like a drag gesture (it also handles mouse movement)");
             return;
@@ -102,26 +104,35 @@ internal static partial class MouseRule
             return;
         }
 
+        if (unknown) { ctx.Blocked("R4", e, "a control this tool does not know (declare it in treatAs)", local); return; }
+
         ctx.Report(Kinds.MouseOnly, e, $"<{local}> reacts to {gesture}{(handler is null ? "" : $" ({Context.Show(handler)})")} but the keyboard cannot reach it");
     }
 
-    private static bool SameAction(Context ctx, XElement e, string action)
+    private sealed record KeyboardActions(HashSet<string> Actions);
+
+    /// <summary>同一份文件裡，鍵盤做得到的動作（按鈕的 Command／Click、快速鍵）。每份文件只算一次。</summary>
+    internal static bool SameAction(Context ctx, XElement e, string action)
     {
         static string Squeeze(string s) => string.Concat(s.Where(c => !char.IsWhiteSpace(c)));
-        var wanted = Squeeze(action);
-        foreach (var d in e.Document!.Root!.Descendants())
+        var doc = e.Document!;
+        if (doc.Annotation<KeyboardActions>() is not { } known)
         {
-            if (ReferenceEquals(d, e)) continue;
-            foreach (var a in d.Attributes())
-                if (a.Name.LocalName is "Command" or "Click" && Squeeze(a.Value) == wanted
-                    && d.Name.LocalName is not ("MouseBinding" or "InputBinding" or "KeyBinding")
-                    && ctx.Project.BaseOf(d) is { } c && (Wpf.Buttons.Contains(c) || c is "MenuItem" or "Hyperlink")
-                    && !ctx.IsFalse(d, "Focusable") && !ctx.IsFalse(d, "IsTabStop"))
-                    return true;
-            // <KeyBinding Command="…"/>（視窗或父元素的快速鍵）
-            if (d.Name.LocalName == "KeyBinding" && (string?)d.Attribute("Command") is { } key && Squeeze(key) == wanted) return true;
+            known = new KeyboardActions(new HashSet<string>(StringComparer.Ordinal));
+            foreach (var d in doc.Root!.Descendants())
+            {
+                // <KeyBinding Command="…"/>（視窗或父元素的快速鍵）
+                if (d.Name.LocalName == "KeyBinding") { if ((string?)d.Attribute("Command") is { } key) known.Actions.Add(Squeeze(key)); continue; }
+                if (d.Name.LocalName is "MouseBinding" or "InputBinding") continue;
+                foreach (var a in d.Attributes())
+                    if (a.Name.LocalName is "Command" or "Click"
+                        && ctx.Project.BaseOf(d) is { } c && (Wpf.Buttons.Contains(c) || c is "MenuItem" or "Hyperlink")
+                        && !ctx.IsFalse(d, "Focusable") && !ctx.IsFalse(d, "IsTabStop"))
+                        known.Actions.Add(Squeeze(a.Value));
+            }
+            doc.AddAnnotation(known);
         }
-        return false;
+        return known.Actions.Contains(Squeeze(action));
     }
 
     /// <summary>元素上的點按：事件屬性、MouseBinding、Behaviors 的 EventTrigger、Caliburn 的 Message.Attach、樣式的 EventSetter。</summary>
@@ -138,8 +149,8 @@ internal static partial class MouseRule
             }
 
         foreach (var trigger in e.Elements().Where(x => x.Name.LocalName.EndsWith("Interaction.Triggers", StringComparison.Ordinal)).SelectMany(x => x.Elements()))
-            if (trigger.Name.LocalName == "EventTrigger" && (string?)trigger.Attribute("EventName") is { } ev && Clicks.Contains(ev))
-                return (ev, null, false);
+            if (trigger.Name.LocalName == "EventTrigger" && (string?)trigger.Attribute("EventName") is { } ev && (Clicks.Contains(ev) || PreviewClicks.Contains(ev)))
+                return (ev, trigger.Elements().FirstOrDefault(a => a.Name.LocalName == "InvokeCommandAction")?.Attribute("Command")?.Value, PreviewClicks.Contains(ev));
 
         if (e.Attributes().FirstOrDefault(a => a.Name.LocalName == "Message.Attach") is { } attach && CaliburnRegex().Match(attach.Value) is { Success: true } m)
             return (m.Groups["event"].Value, null, false);
@@ -203,11 +214,33 @@ internal static partial class MouseRule
     private static bool IsWindowDrag(Context ctx, XamlDoc doc, string handler)
     {
         if (ctx.Project.MethodBody(doc.File, handler) is { } body)
-            return body.Contains("DragMove", StringComparison.Ordinal) || body.Contains("WM_NCLBUTTONDOWN", StringComparison.Ordinal) || body.Contains("HTCAPTION", StringComparison.OrdinalIgnoreCase);
+            return Bodies(ctx, doc, body).Any(b => b.Contains("DragMove", StringComparison.Ordinal) || b.Contains("WM_NCLBUTTONDOWN", StringComparison.Ordinal)
+                || b.Contains("HTCAPTION", StringComparison.OrdinalIgnoreCase) || NcDragRegex().IsMatch(b));
         return handler.Contains("DragMove", StringComparison.OrdinalIgnoreCase) || handler.Contains("DragWindow", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool InItemTemplate(Context ctx, XElement e)
+    /// <summary>處理器自己的內容，加上它呼叫的同一個檔案裡的方法（一層）：「Drag_MouseDown(…) => BeginDrag(e);」。</summary>
+    private static IEnumerable<string> Bodies(Context ctx, XamlDoc doc, string body)
+    {
+        yield return body;
+        foreach (var name in CallRegex().Matches(body).Select(m => m.Groups["name"].Value).Distinct().Take(20))
+            if (name is not ("if" or "while" or "for" or "foreach" or "switch" or "return" or "new") && ctx.Project.MethodBody(doc.File, name) is { } inner) yield return inner;
+    }
+
+    /// <summary>拖曳手勢：捕捉滑鼠、拖放，或呼叫名字就叫拖曳／調整大小的方法（方法在別的檔案，讀不到內容）。</summary>
+    private static bool LooksLikeDrag(Context ctx, XamlDoc doc, string handler) =>
+        ctx.Project.MethodBody(doc.File, handler) is { } body
+        && (Bodies(ctx, doc, body).Any(b => b.Contains("CaptureMouse", StringComparison.Ordinal) || b.Contains("DoDragDrop", StringComparison.Ordinal))
+            || CallRegex().Matches(body).Any(m => m.Groups["name"].Value is { } n && (n.Contains("Drag", StringComparison.Ordinal) || n.Contains("MoveResize", StringComparison.Ordinal) || n.Contains("BeginResize", StringComparison.Ordinal))));
+
+    [GeneratedRegex(@"\b(?<name>[A-Za-z_]\w{0,100})\s{0,5}\(", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex CallRegex();
+
+    /// <summary>SendMessage(handle, 161, 2, 0)、0xA1：WM_NCLBUTTONDOWN 寫成數字的流傳寫法。</summary>
+    [GeneratedRegex(@"\b(?:Send|Post)Message\w{0,10}\s{0,5}\([^;]{0,200}?\b(?:161|0[xX]0{0,2}[aA]1)\b", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex NcDragRegex();
+
+    internal static bool InItemTemplate(Context ctx, XElement e)
     {
         foreach (var a in e.Ancestors())
         {

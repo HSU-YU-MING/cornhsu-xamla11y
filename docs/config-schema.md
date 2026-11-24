@@ -19,7 +19,7 @@ that is silently skipped would look like a setting that works.
 |---|---|---|
 | `schemaVersion` | `1` | optional |
 | `exclude` | list of text | files whose path relative to the root (starting with `/`) contains the text, ignoring case |
-| `minCoverage` | 0–100 | exit 3 below this resolution; default 60. `--min-coverage` wins |
+| `minCoverage` | 0–100 | exit 3 below this resolution; default 60, 0 accepts any. `--min-coverage` wins |
 | `treatAs` | name → WPF control | "this control gets its accessible name the way that WPF control does". Local names, no prefix. You vouch for it: the class must not override `OnCreateAutomationPeer` or set its own name in code |
 | `rules` | finding → `off`, `info`, `warn`, `fail` | severity of each kind of finding. `off` also stops counting it |
 | `themeShowsFocus` | bool | the theme your app merges draws keyboard focus even where `FocusVisualStyle` is removed, and you have seen it. Only matters for themes that were not measured |

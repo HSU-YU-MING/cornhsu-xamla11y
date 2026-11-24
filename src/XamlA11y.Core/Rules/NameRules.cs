@@ -32,7 +32,16 @@ internal static class NameRules
         }
 
         var rule = Wpf.Interactive.Contains(control) ? "R1" : Wpf.Inputs.Contains(control) ? "R2" : null;
-        if (rule is null) return;
+        if (rule is null)
+        {
+            // WPF 命名空間裡沒量過的控制項（RibbonButton、RibbonTextBox…）：不知道，不是沒事
+            if (Markup.IsWpf(e) && Wpf.NameSourceOf(control) == NameSource.Unknown && !Markup.IsPropertyElement(e) && e.Parent is not null)
+            {
+                if (LooksInteractive(local)) ctx.Blocked("R1", e, "a control that was not measured", local);
+                else if (LooksInput(local)) ctx.Blocked("R2", e, "a control that was not measured", local);
+            }
+            return;
+        }
 
         // x:Class 的根（<Button x:Class="App.IconButton">）是定義，不是用法：用它的地方才判
         if (e.Parent is null) return;
@@ -40,7 +49,7 @@ internal static class NameRules
         if (Context.ControlTemplateOf(e) is { } template)
         {
             var target = ctx.TemplateTarget(template);
-            if (target is not null && SilentTemplates.Contains(ctx.Project.TreatAs.GetValueOrDefault(target, target)))
+            if (target is not null && SilentTemplates.Contains(ctx.Project.BaseOfName(target)))
             {
                 ctx.NotJudged(rule, e, $"a part of a {target} template (not exposed as a control of its own)");
                 return;
@@ -114,6 +123,8 @@ internal static class NameRules
         ctx.Report(Kinds.MissingName, e, $"<{local}> has no accessible name: {name.Why}{onlyTip}", lowered: lowered);
     }
 
+    private sealed record LabelTargets(Dictionary<string, XElement> ByName);
+
     private static readonly string[] OwnTextProperties = ["Text", "Title", "Label", "Caption", "Header"];
 
     private static string? UnknownContent(Context ctx, XElement e, NameResult name)
@@ -126,14 +137,23 @@ internal static class NameRules
     private static string HintFor(Context ctx, XElement e)
     {
         if (Markup.NameOf(e) is { Length: > 0 } name && e.Document?.Root is { } root)
-            foreach (var label in root.Descendants().Where(d => d.Name.LocalName == "Label"))
-                if (Markup.ReferencedElement((string?)label.Attribute("Target")) == name)
-                    return $"; <Label Target> at line {Context.LineOf(label)} does not give it one (use AutomationProperties.LabeledBy)";
+        {
+            if (e.Document.Annotation<LabelTargets>() is not { } targets)
+            {
+                targets = new LabelTargets(new Dictionary<string, XElement>(StringComparer.Ordinal));
+                foreach (var label in root.Descendants().Where(d => d.Name.LocalName == "Label"))
+                    if (Markup.ReferencedElement((string?)label.Attribute("Target")) is { } t) targets.ByName.TryAdd(t, label);
+                e.Document.AddAnnotation(targets);
+            }
+            if (targets.ByName.TryGetValue(name, out var found))
+                return $"; <Label Target> at line {Context.LineOf(found)} does not give it one (use AutomationProperties.LabeledBy)";
+        }
 
         if (ctx.Project.Styles.Resolve(e, "ToolTip").IsSet) return "; its ToolTip is the help text, not the name";
 
-        for (var n = e.ElementsBeforeSelf().LastOrDefault(); n is not null; n = n.ElementsBeforeSelf().LastOrDefault())
+        for (var node = Markup.Previous(e); node is not null; node = Markup.Previous(node))
         {
+            if (node is not XElement n) continue;
             if (Markup.IsPropertyElement(n)) continue;
             var text = n.Name.LocalName switch
             {

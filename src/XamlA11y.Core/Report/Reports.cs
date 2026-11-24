@@ -26,12 +26,15 @@ public sealed class Baseline
 
     public static Baseline Parse(string json)
     {
+        // 新版多了欄位的檔案：先說「太新了」，不要丟「不認得的欄位」
+        using (var probe = JsonDocument.Parse(json))
+            if (probe.RootElement.ValueKind == JsonValueKind.Object && probe.RootElement.TryGetProperty("keyVersion", out var kv) && kv.ValueKind == JsonValueKind.Number
+                && kv.TryGetInt32(out var version) && version > CurrentKeyVersion)
+                throw new InvalidDataException($"baseline keyVersion {version} is newer than this tool understands ({CurrentKeyVersion}); upgrade xamla11y");
         var b = JsonSerializer.Deserialize<Baseline>(json, new JsonSerializerOptions { UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow })
                 ?? throw new InvalidDataException("the baseline file is empty");
         if (b.Known is null || b.Known.Any(k => k is null)) throw new InvalidDataException("\"known\" must be a list of keys");
         if (b.KeyVersion < 1) throw new InvalidDataException($"baseline keyVersion {b.KeyVersion} is not valid");
-        if (b.KeyVersion > CurrentKeyVersion)
-            throw new InvalidDataException($"baseline keyVersion {b.KeyVersion} is newer than this tool understands ({CurrentKeyVersion}); upgrade xamla11y");
         return b;
     }
 
@@ -63,6 +66,14 @@ public static class Text
     /// 印到 console 的字串：控制字元逃掉（MSBuild 與 CI 逐行解析，訊息裡夾一個換行就多一筆假的診斷），
     /// Azure Pipelines／GitHub Actions 的舊指令格式（##vso[、##[）拆開。文字來自使用者的 XAML，是不可信的輸入。
     /// </summary>
+    /// <summary>雙向控制與看不見的格式字元寫成 \uXXXX（會把別的文字的順序改掉）。表情用的零寬連字 U+200D 留著。</summary>
+    public static string Visible(string s)
+    {
+        if (!s.Any(Hidden)) return s;
+        return string.Concat(s.Select(c => Hidden(c) ? $"\\u{(int)c:x4}" : c.ToString()));
+        static bool Hidden(char c) => c != (char)0x200D && char.GetUnicodeCategory(c) == UnicodeCategory.Format;
+    }
+
     public static string Safe(string s)
     {
         var sb = new StringBuilder(s.Length + 8);
@@ -330,7 +341,7 @@ public static class MarkdownReport
     /// <summary>code span：圍欄比內容裡最長的反引號串多一個，換行收成空白，表格裡的 | 跳脫。</summary>
     internal static string Code(string s, bool table = true)
     {
-        var body = (table ? s.Replace("|", "\\|") : s).Replace("\r", " ").Replace("\n", " ");
+        var body = Text.Visible((table ? s.Replace("|", "\\|") : s).Replace("\r", " ").Replace("\n", " "));
         if (body.Trim().Length == 0) body = "(empty)";
         int longest = 0, run = 0;
         foreach (var c in body)

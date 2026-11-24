@@ -39,7 +39,7 @@ inputs:
     required: false
     default: ''
   min-coverage:
-    description: 'Fail the job (exit 3) when fewer than this percentage (0-100) of the elements could be judged. Omit to use the config file''s minCoverage, else 60; 0 disables'
+    description: 'Fail the job (exit 3) when fewer than this percentage (0-100) of the elements could be judged. Omit to use the config file''s minCoverage, else 60; 0 accepts any'
     required: false
     default: ''
   comment:
@@ -223,7 +223,7 @@ runs:
 
     # 把 finding 直接標在 PR 的行上。等級：fail → error、warn → warning、info → notice。
     # finding 的 file 是「root 相對、正斜線」路徑（JSON 與 SARIF 都是）；前綴 working-directory + root 即為 workspace 路徑。
-    # 前綴組完要把 "./"、"/./"、重複的 "/" 收乾淨，否則 GitHub 對不上檔案 —— root 是 "." 時前綴是空的。
+    # 前綴要收乾淨（"./"、".."、重複的 "/"、反斜線、workspace 底下的絕對路徑），否則 GitHub 對不上檔案。
     - name: Annotate findings
       if: ${{ always() }}
       shell: bash
@@ -233,8 +233,14 @@ runs:
       run: |
         report="$RUNNER_TEMP/xamla11y-report.json"
         [ -f "$report" ] || exit 0
-        prefix=$(echo "$XA_WORKDIR/$XA_ROOT" | sed 's|^|/|; s|$|/|; s|//*|/|g; s|/\./|/|g; s|/\./|/|g; s|/\./|/|g; s|^/||; s|/$||')
-        if [ -n "$prefix" ]; then prefix="$prefix/"; fi
+        case "$XA_ROOT" in
+          /*|[A-Za-z]:*) path=$XA_ROOT ;;
+          *) path="$XA_WORKDIR/$XA_ROOT" ;;
+        esac
+        path=$(printf '%s' "$path" | tr '\\' '/')
+        workspace=$(printf '%s' "${GITHUB_WORKSPACE:-}" | tr '\\' '/')
+        if [ -n "$workspace" ]; then case "$path/" in "$workspace"/*) path=${path#"$workspace"} ;; esac; fi
+        prefix=$(printf '%s\n' "$path" | awk -F/ '{ n = 0; for (i = 1; i <= NF; i++) { if ($i == "" || $i == ".") continue; if ($i == "..") { if (n > 0) n--; continue }; a[++n] = $i }; for (i = 1; i <= n; i++) printf "%s/", a[i] }')
         # workflow command 的跳脫（GitHub 規格）：訊息跳脫 % \r \n，屬性值（file=…）另外跳脫 : 與 ,。
         # 不跳脫的話，檔名裡一個逗號就把 file 屬性切斷、一個換行就讓後面的內容落在行首變成另一個 workflow command
         # （訊息裡有被掃的 repo 寫的字：Text="A&#10;::error::..." 是合法的 XAML，JSON 裡保留原樣）
@@ -257,10 +263,16 @@ runs:
       run: |
         f="$RUNNER_TEMP/xamla11y.sarif"
         [ -f "$f" ] || exit 0
-        prefix=$(echo "$XA_WORKDIR/$XA_ROOT" | sed 's|^|/|; s|$|/|; s|//*|/|g; s|/\./|/|g; s|/\./|/|g; s|/\./|/|g; s|^/||; s|/$||')
-        if [ -n "$prefix" ]; then prefix="$prefix/"; fi
+        case "$XA_ROOT" in
+          /*|[A-Za-z]:*) path=$XA_ROOT ;;
+          *) path="$XA_WORKDIR/$XA_ROOT" ;;
+        esac
+        path=$(printf '%s' "$path" | tr '\\' '/')
+        workspace=$(printf '%s' "${GITHUB_WORKSPACE:-}" | tr '\\' '/')
+        if [ -n "$workspace" ]; then case "$path/" in "$workspace"/*) path=${path#"$workspace"} ;; esac; fi
+        prefix=$(printf '%s\n' "$path" | awk -F/ '{ n = 0; for (i = 1; i <= NF; i++) { if ($i == "" || $i == ".") continue; if ($i == "..") { if (n > 0) n--; continue }; a[++n] = $i }; for (i = 1; i <= n; i++) printf "%s/", a[i] }')
         jq --arg root "$prefix" \
-          '(.runs[].results[].locations[].physicalLocation.artifactLocation.uri) |= ($root + .)' \
+          '(.runs[].results[].locations[].physicalLocation.artifactLocation.uri) |= (($root | split("/") | map(@uri) | join("/")) + .)' \
           "$f" > "$RUNNER_TEMP/xamla11y.repo.sarif"
         mv "$RUNNER_TEMP/xamla11y.repo.sarif" "$f"
     - name: Upload SARIF

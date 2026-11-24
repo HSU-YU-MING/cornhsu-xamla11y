@@ -82,14 +82,15 @@ public sealed class Context(Project project, AuditOptions options)
         var severity = Options.SeverityOf(kind, lowered);
         if (severity == Severity.Off) { Record(rule, Verdict.NotJudged, e, $"{kind.Slug} is turned off", null); return; }
 
-        if (IgnoreReason(site) is { } reason)
-        {
-            if (reason.Length > 0) { Record(rule, Verdict.Suppressed, e, reason, kind); return; }
-            _invalidIgnores.Add($"{StyleIndex.FileOf(site)}:{LineOf(site)}");
-        }
+        var (reason, stranded) = IgnoreOf(site);
+        if (reason is { Length: > 0 }) { Record(rule, Verdict.Suppressed, e, reason, kind); return; }
+        if (stranded || reason is not null)
+            _invalidIgnores.Add($"{StyleIndex.FileOf(site)}:{LineOf(site)}: xamla11y-ignore " + (stranded
+                ? "has a commented-out element or text after it, so it does nothing (put it right before the element it is for)"
+                : "has no reason, so it does nothing (write xamla11y-ignore: why)"));
 
         Record(rule, Verdict.Finding, e, message, kind);
-        _findings.Add(new Finding(kind, severity, StyleIndex.FileOf(site), LineOf(site), site.Name.LocalName, Cut(message, 600)) { Identity = identity ?? IdentityOf(site), Lowered = lowered is not null });
+        _findings.Add(new Finding(kind, severity, StyleIndex.FileOf(site), LineOf(site), site.Name.LocalName, Cut(XamlA11y.Core.Report.Text.Visible(message), 600)) { Identity = identity ?? IdentityOf(site), Lowered = lowered is not null });
     }
 
     private void Record(string rule, Verdict verdict, XElement e, string? reason, Kind? kind)
@@ -129,6 +130,7 @@ public sealed class Context(Project project, AuditOptions options)
             Rules = [.. Kinds.Rules.Select(r => _stats[r])],
             Files = Project.FilesScanned,
             ParseErrors = Project.ParseErrors,
+            ParseWhy = Project.ParseWhy,
             Foreign = Project.Foreign,
             Themes = Project.Themes,
             Gaps = Project.Gaps,
@@ -159,16 +161,24 @@ public sealed class Context(Project project, AuditOptions options)
     private const string IgnoreToken = "xamla11y-ignore";
 
     /// <summary>
-    /// 元素前面的 &lt;!-- xamla11y-ignore: 理由 --&gt;。null = 沒有；"" = 有但沒寫理由（無效）。
-    /// 中間可以隔別的註解（四件套的 ignore 註解會疊在同一個元素上），不能隔別的元素。
+    /// 元素前面的 &lt;!-- xamla11y-ignore: 理由 --&gt;。Reason：null = 沒有；"" = 有但沒寫理由（無效）。
+    /// Stranded = 有，但停在文字或被註解掉的元素前面（無效）。無效的都要講出來。
+    /// 中間可以隔別的註解（四件套的 ignore 註解會疊在同一個元素上），不能隔別的元素或文字 ——
+    /// 被註解掉的元素（註解以 &lt; 開頭）也算：前面的 ignore 管的是它，不能因為它被註解掉就改壓下一個。
     /// 同一個註解裡也可以寫好幾個工具的：理由到下一個「xaml…-ignore:」為止。
     /// 註解要**以** xaml…-ignore 開頭：「TODO: remove every xamla11y-ignore」是在談它，不是在用它。
     /// </summary>
-    internal static string? IgnoreReason(XElement e)
+    internal static (string? Reason, bool Stranded) IgnoreOf(XElement e)
     {
-        for (var node = e.PreviousNode; node is not null and not XElement; node = node.PreviousNode)
-            if (node is XComment c && ParseIgnore(c.Value) is { } reason) return reason;
-        return null;
+        var stranded = false;
+        for (var node = Markup.Previous(e); node is not null and not XElement; node = Markup.Previous(node))
+        {
+            if (node is XText t) stranded |= !string.IsNullOrWhiteSpace(t.Value); // 文字也是內容；處理指令不是，跳過
+            if (node is not XComment c) continue;
+            if (ParseIgnore(c.Value) is { } reason) return stranded ? (null, true) : (reason, false);
+            stranded |= c.Value.AsSpan().TrimStart().StartsWith("<");
+        }
+        return (null, false);
     }
 
     internal static string? ParseIgnore(string comment)

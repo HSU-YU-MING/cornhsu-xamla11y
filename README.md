@@ -125,17 +125,20 @@ Insights and of Visual Studio's checker.
 
 | compared with | cases | answered | unknown | **contradictions** |
 |---|---:|---:|---:|---:|
-| UI Automation names, hand-written | 235 | 224 | 11 | **0** |
+| UI Automation names, hand-written | 300 | 285 | 15 | **0** |
 | UI Automation names, every control × content × way of naming | 8,218 | 7,843 | 375 | **0** |
 | UI Automation names, distinct shapes from 19 real projects | 2,172 | 2,172 | 0 | **0** |
-| names under MahApps, MaterialDesign, HandyControl, WPF-UI, Fluent | 49 | 43 | 6 | **0** |
-| focus visible (pixels), default theme and the five themes | 98 | 81 | 17 | **0** |
-| tab order | 27 | 25 | 2 | **0** |
+| UI Automation names, whole files of 50 public projects and 3 apps, with their styles and resources | 10,019 | 10,019 | – | **0** |
+| names under MahApps, MaterialDesign, HandyControl, WPF-UI, Fluent | 97 | 74 | 23 | **0** |
+| focus visible (pixels), default theme and the five themes | 107 | 82 | 25 | **0** |
+| tab order | 29 | 27 | 2 | **0** |
 | target size (bounding rectangle) | 17 | 10 | 7 | **0** |
 
 "Unknown" is a correct answer; "fine" for something a screen reader cannot name is not. The oracle has
 earned its keep: the first version of the rules got 177 cases wrong. What it cannot catch is XAML nobody wrote a case
-for: an independent review then found twenty more ways to fool the tool, and each is now a test.
+for: two independent reviews then found some forty more ways to fool the tool, and each is now a test. The whole files
+are 1,836 that a real WPF window could load without running any of the projects' code; elements that need their code, a
+theme that was not measured or an open menu are left out of that row.
 
 The recorded answers of WPF ship with the tests (`tests/XamlA11y.Tests/uia-facts.json`), so CI on Linux
 checks the same facts. Details: [docs/M1-UIA實測.md](docs/M1-UIA實測.md) (Chinese).
@@ -154,25 +157,39 @@ Out of the box, no configuration:
 | Cornea (maintainer app) | 5 | **100.0%** | 0 | 19 | 0 | 0 | 0 |
 | Kindling (maintainer app) | 16 | **100.0%** | 7 | 17 | 0 | 1 | 0 |
 | QuillNest (maintainer app) | 32 | **99.5%** | 65 | 81 | 0 | 3 | 0 |
-| Bloxstrap | 40 | **87.5%** | 43 | 25 | 0 | 0 | 0 |
-| Flow.Launcher | 393 | **79.6%** | 28 | 107 | 0 | 3 | 11 |
-| GeekDesk | 33 | **87.4%** | 14 | 23 | 0 | 2 | 0 |
-| MAA | 89 | **81.2%** | 67 | 158 | 0 | 2 | 1 |
-| NETworkManager | 173 | **95.8%** | 245 | 475 | 0 | 0 | 37 |
-| Playnite | 275 | **100.0%** | 130 | 169 | 0 | 0 | 3 |
-| QuickLook | 56 | **97.0%** | 29 | 20 | 0 | 0 | 22 |
-| ScreenToGif (with its C#) | 121 | **99.3%** | 460 | 347 | 0 | 2 | 0 |
-| TwitchDownloader | 16 | **89.2%** | 44 | 54 | 0 | 26 | 0 |
+| Accessibility Insights | 71 | **59.4%** | 2 | 5 | 0 | 2 | 10 |
+| BetterGI | 153 | **97.7%** | 430 | 551 | 0 | 1 | 8 |
+| Bloxstrap | 40 | **89.9%** | 46 | 25 | 0 | 0 | 0 |
+| dnGrep | 72 | **100.0%** | 53 | 90 | 0 | 0 | 0 |
+| dnSpy | 124 | **99.3%** | 139 | 1365 | 0 | 1 | 94 |
+| Dopamine | 150 | **38.5%** | 67 | 38 | 4 | 2 | 0 |
+| EarTrumpet | 12 | **71.9%** | 11 | 9 | 0 | 0 | 8 |
+| Flow.Launcher | 393 | **80.6%** | 28 | 107 | 0 | 3 | 4 |
+| GeekDesk | 33 | **89.1%** | 14 | 23 | 0 | 2 | 0 |
+| HandBrake | 58 | **100.0%** | 30 | 85 | 0 | 3 | 3 |
+| MAA | 89 | **89.1%** | 68 | 165 | 0 | 4 | 1 |
+| NETworkManager | 173 | **95.8%** | 246 | 475 | 0 | 0 | 24 |
+| NuGet Package Explorer | 52 | **99.6%** | 40 | 55 | 0 | 0 | 0 |
+| Playnite | 275 | **100.0%** | 142 | 228 | 0 | 0 | 5 |
+| QuickLook | 56 | **89.6%** | 23 | 20 | 1 | 0 | 22 |
+| ScreenToGif | 121 | **99.6%** | 368 | 347 | 0 | 2 | 0 |
+| Snoop | 63 | **98.5%** | 23 | 41 | 0 | 0 | 8 |
+| SyncTrayzor | 25 | **100.0%** | 17 | 12 | 0 | 1 | 0 |
+| Text-Grab | 54 | **96.8%** | 179 | 59 | 1 | 1 | 26 |
+| TwitchDownloader | 16 | **89.9%** | 44 | 56 | 0 | 26 | 0 |
 | v2rayN | 24 | **89.5%** | 82 | 167 | 0 | 0 | 0 |
 | VisualHFT | 49 | **100.0%** | 14 | 96 | 0 | 0 | 0 |
-| HandyControl (library) | 342 | **72.1%** | 238 | 169 | 0 | 0 | 0 |
-| MahApps.Metro (library) | 312 | **84.8%** | 161 | 379 | 0 | 0 | 0 |
-| MaterialDesignInXaml (library) | 368 | **90.7%** | 400 | 213 | 0 | 0 | 0 |
-| WPF-UI (library) | 229 | **82.7%** | 41 | 34 | 0 | 0 | 0 |
+| WPF-Samples (Microsoft) | 745 | **99.2%** | 122 | 397 | 0 | 10 | 30 |
+| AvalonDock (library) | 73 | **100.0%** | 19 | 18 | 0 | 0 | 4 |
+| Fluent.Ribbon (library) | 70 | **29.2%** | 15 | 5 | 0 | 0 | 0 |
+| HandyControl (library) | 342 | **91.5%** | 390 | 205 | 0 | 0 | 0 |
+| MahApps.Metro (library) | 312 | **87.6%** | 161 | 379 | 1 | 0 | 0 |
+| MaterialDesignInXaml (library) | 368 | **95.3%** | 444 | 239 | 0 | 0 | 0 |
+| ModernWpf (library) | 298 | **81.2%** | 47 | 111 | 0 | 0 | 11 |
+| WPF-UI (library) | 229 | **99.0%** | 70 | 34 | 0 | 0 | 0 |
 
-The columns are findings. The public projects were read without their C# and project files, except ScreenToGif:
-with its C# next to the XAML the tool follows `class ExtendedButton : Button` by itself and goes from 36% to 99%.
-Controls from a library nobody has told it about stay unknown until you declare them with
+The columns are findings, in pinned commits ([docs/corpus.tsv](docs/corpus.tsv)), read with their C#: without it
+ScreenToGif is 36% instead of 99%, because `class ExtendedButton : Button` is not followed. Controls from a library nobody has told it about stay unknown until you declare them with
 [`treatAs`](docs/config-schema.md). Resolution counts the four rules that can fail a build (names, inputs, focus,
 mouse-only): the other two are almost never blocked and would only flatter the number.
 
@@ -201,7 +218,9 @@ mouse-only): the other two are almost never blocked and would only flatter the n
 Exit codes: **0** pass · **1** findings at or above `--fail-on` · **2** usage, config or input error ·
 **3** result not trustworthy.
 
-To accept one element, put a comment with a reason right before it. Without a reason it does nothing:
+To accept one element, put a comment with a reason right before it. Other comments may sit in
+between; another element or text may not. Without a reason, or in front of text or a commented-out element, it
+does nothing and the run says so:
 
 ```xml
 <!-- xamla11y-ignore: the whole row is the control, this check box only mirrors it -->
@@ -225,7 +244,7 @@ steps:
       baseline: a11y-baseline.json
 ```
 
-Every finding is annotated on its line, the Markdown report becomes one PR comment that is updated in
+Findings are annotated on their lines (GitHub shows the first ten or so per step; the report has all of them), the Markdown report becomes one PR comment that is updated in
 place, the JSON report is uploaded as an artifact, and the job fails last, after all of that is out.
 
 | Input | Default | |

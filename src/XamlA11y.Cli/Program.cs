@@ -24,6 +24,7 @@ public static class Program
         {
             case "-h" or "--help" or "help": Usage.Print(stdout); return 0;
             case "--version": stdout.WriteLine(Version()); return 0;
+            case "audit" when args.Contains("--help") || args.Contains("-h"): Usage.Print(stdout); return 0;
             case "audit": return AuditCommand.Run(args[1..], stdout, stderr);
             case "rules": Usage.PrintRules(stdout); return 0;
             default:
@@ -137,7 +138,7 @@ internal static class AuditCommand
         if (opts.WriteBaseline is not null)
         {
             // 什麼都沒看到的時候寫出一份空的 baseline，等於替「沒檢查」蓋章
-            if (Untrustworthy(result, 0) is { } empty) { stderr.WriteLine(empty); stderr.WriteLine("baseline not written"); return 3; }
+            if (Untrustworthy(result, double.Epsilon) is { } empty) { stderr.WriteLine(empty); stderr.WriteLine("baseline not written"); return 3; }
             if (!TryWrite(opts.WriteBaseline, Baseline.From(result.Findings, DateOnly.FromDateTime(DateTime.Now)).ToJson(), stderr)) return 2;
             stdout.WriteLine($"wrote baseline with {result.Findings.Count} known finding(s) → {Text.Safe(opts.WriteBaseline)}");
             return 0;
@@ -190,7 +191,8 @@ internal static class AuditCommand
         if (minCoverage > 0 && 100.0 * (wpf - r.ParseErrors.Count) / wpf < minCoverage)
             return string.Create(CultureInfo.InvariantCulture, $"{r.ParseErrors.Count} of {wpf} XAML file(s) could not be parsed, above what --min-coverage {minCoverage:0.#}% allows — result is not trustworthy");
         if (r.Candidates == 0) return "no interactive elements found — result is not trustworthy";
-        if (r.Judged == 0) return "not one element could be judged — result is not trustworthy";
+        // 全部卡住才是「沒看到」；全部都是執行期的資料（名稱綁定）不是專案改得了的，也不是工具漏看
+        if (minCoverage > 0 && r.Judged == 0 && r.Blocked > 0) return "not one element could be judged — result is not trustworthy";
         if (r.Resolution < minCoverage)
             return string.Create(CultureInfo.InvariantCulture, $"resolution {r.Resolution:F1}% is below --min-coverage {minCoverage:0.#}% — result is not trustworthy");
         return null;
@@ -207,10 +209,10 @@ internal static class AuditCommand
         foreach (var s in r.Rules.Where(s => s.Candidates > 0))
             o.WriteLine(string.Create(inv, $"    {s.Rule} {Kinds.RuleTitle(s.Rule),-20} {s.Findings,4} finding(s), {s.Pass,4} ok, {s.Blocked,4} blocked, {s.NotJudged,4} not judged"));
 
-        foreach (var f in r.ParseErrors) o.WriteLine($"  !! could not parse {Text.Safe(f)}");
+        foreach (var f in r.ParseErrors) o.WriteLine($"  !! could not parse {Text.Safe(f)}{(r.ParseWhy.TryGetValue(f, out var why) ? ": " + Text.Safe(why) : "")}");
         if (r.Gaps.Excluded > 0) o.WriteLine($"  {r.Gaps.Excluded} XAML file(s) excluded");
         foreach (var d in r.Gaps.Unreadable) o.WriteLine($"  !! could not read the folder {Text.Safe(d)}");
-        foreach (var f in r.InvalidIgnores) o.WriteLine($"  !! {Text.Safe(f)}: xamla11y-ignore without a reason is not valid (write xamla11y-ignore: why)");
+        foreach (var f in r.InvalidIgnores) o.WriteLine($"  !! {Text.Safe(f)}");
         foreach (var g in r.Foreign.GroupBy(f => f.Dialect)) o.WriteLine($"  {g.Count()} {g.Key} file(s) not checked (WPF only)");
         if (r.UnknownControls.Count > 0)
             o.WriteLine($"  unknown controls {string.Join(", ", r.UnknownControls.Take(8).Select(u => $"{Text.Safe(u.Element)} ×{u.Count}"))}  (declare them in treatAs)");

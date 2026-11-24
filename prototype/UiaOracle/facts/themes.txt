@@ -52,3 +52,71 @@ materialdesign | hint, own style no BasedOn | <TextBox x:Name='p' Style='{Static
 materialdesign | hint, own style BasedOn type | <TextBox x:Name='p' Style='{StaticResource s}' materialDesign:HintAssist.Hint='Email'/> | <Style x:Key='s' TargetType='TextBox' BasedOn='{StaticResource {x:Type TextBox}}'/>
 materialdesign | hint, own implicit style no BasedOn | <TextBox x:Name='p' materialDesign:HintAssist.Hint='Email'/> | <Style TargetType='TextBox'/>
 fluent | MaterialDesign hint without the MD theme | <TextBox x:Name='p' materialDesign:HintAssist.Hint='Email'/>
+mahapps | NumericUpDown named | <mah:NumericUpDown x:Name='p' AutomationProperties.Name='Size'/>
+mahapps | NumericUpDown labelled | <TextBlock x:Name='l' Text='Size'/><mah:NumericUpDown x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=l}'/>
+mahapps | NumericUpDown watermark | <mah:NumericUpDown x:Name='p' mah:TextBoxHelper.Watermark='Size'/>
+mahapps | MetroTabItem | <TabControl><mah:MetroTabItem x:Name='p' Header='One'/></TabControl>
+mahapps | MetroTabItem icon | <TabControl><mah:MetroTabItem x:Name='p'><mah:MetroTabItem.Header>[ICON]</mah:MetroTabItem.Header></mah:MetroTabItem></TabControl>
+mahapps | RangeSlider | <mah:RangeSlider x:Name='p'/>
+mahapps | RangeSlider named | <mah:RangeSlider x:Name='p' AutomationProperties.Name='Range'/>
+mahapps | DropDownButton named | <mah:DropDownButton x:Name='p' AutomationProperties.Name='More'/>
+mahapps | SplitButton named | <mah:SplitButton x:Name='p' AutomationProperties.Name='More'/>
+mahapps | HotKeyBox | <mah:HotKeyBox x:Name='p'/>
+mahapps | HotKeyBox named | <mah:HotKeyBox x:Name='p' AutomationProperties.Name='Key'/>
+mahapps | ColorPicker | <mah:ColorPicker x:Name='p'/>
+mahapps | DateTimePicker | <mah:DateTimePicker x:Name='p'/>
+mahapps | DateTimePicker named | <mah:DateTimePicker x:Name='p' AutomationProperties.Name='When'/>
+hc | NumericUpDown | <hc:NumericUpDown x:Name='p'/>
+hc | NumericUpDown named | <hc:NumericUpDown x:Name='p' AutomationProperties.Name='Size'/>
+hc | NumericUpDown title | <hc:NumericUpDown x:Name='p' hc:InfoElement.Title='Size' hc:InfoElement.Placeholder='Size'/>
+hc | PasswordBox | <hc:PasswordBox x:Name='p'/>
+hc | PasswordBox named | <hc:PasswordBox x:Name='p' AutomationProperties.Name='Pw'/>
+hc | CheckComboBox | <hc:CheckComboBox x:Name='p'/>
+hc | CheckComboBox named | <hc:CheckComboBox x:Name='p' AutomationProperties.Name='C'/>
+hc | SplitButton | <hc:SplitButton x:Name='p' Content='More'/>
+hc | SplitButton icon | <hc:SplitButton x:Name='p'>[ICON]</hc:SplitButton>
+hc | DatePicker | <hc:DatePicker x:Name='p'/>
+hc | DatePicker named | <hc:DatePicker x:Name='p' AutomationProperties.Name='D'/>
+hc | TabItem | <hc:TabControl><hc:TabItem x:Name='p' Header='One'/></hc:TabControl>
+hc | TabItem icon | <hc:TabControl><hc:TabItem x:Name='p'><hc:TabItem.Header>[ICON]</hc:TabItem.Header></hc:TabItem></hc:TabControl>
+hc | SideMenuItem | <hc:SideMenu><hc:SideMenuItem x:Name='p' Header='One'/></hc:SideMenu>
+hc | Shield | <hc:Shield x:Name='p' Subject='a' Status='b'/>
+hc | ContextMenuButton icon | <hc:ContextMenuButton x:Name='p'>[ICON]</hc:ContextMenuButton>
+hc | ContextMenuButton text | <hc:ContextMenuButton x:Name='p' Content='More'/>
+hc | ProgressButton icon | <hc:ProgressButton x:Name='p'>[ICON]</hc:ProgressButton>
+hc | ProgressButton text | <hc:ProgressButton x:Name='p' Content='Go'/>
+wpfui | CardExpander | <ui:CardExpander x:Name='p' Header='Advanced'/>
+wpfui | CardExpander icon | <ui:CardExpander x:Name='p'><ui:CardExpander.Header>[ICON]</ui:CardExpander.Header></ui:CardExpander>
+wpfui | CardExpander panel | <ui:CardExpander x:Name='p'><ui:CardExpander.Header><StackPanel><TextBlock Text='Advanced'/></StackPanel></ui:CardExpander.Header></ui:CardExpander>
+wpfui | Anchor icon | <ui:Anchor x:Name='p'>[ICON]</ui:Anchor>
+wpfui | Anchor text | <ui:Anchor x:Name='p' Content='Docs'/>
+wpfui | AutoSuggestBox | <ui:AutoSuggestBox x:Name='p'/>
+wpfui | AutoSuggestBox placeholder | <ui:AutoSuggestBox x:Name='p' PlaceholderText='Search'/>
+wpfui | AutoSuggestBox named | <ui:AutoSuggestBox x:Name='p' AutomationProperties.Name='Search'/>
+wpfui | RichTextBox | <ui:RichTextBox x:Name='p'/>
+wpfui | MenuItem | <Menu><ui:MenuItem x:Name='p' Header='File'/></Menu>
+wpfui | MenuItem icon only | <Menu><ui:MenuItem x:Name='p'/></Menu>
+wpfui | NavigationViewItem | <ui:NavigationViewItem x:Name='p' Content='Home'/>
+wpfui | NavigationViewItem icon | <ui:NavigationViewItem x:Name='p' Icon='{ui:SymbolIcon Home24}'/>
+wpfui | Card click | <ui:Card x:Name='p' Content='x'/>
+materialdesign | PopupBox | <materialDesign:PopupBox x:Name='p'/>
+materialdesign | PopupBox named | <materialDesign:PopupBox x:Name='p' AutomationProperties.Name='More'/>
+materialdesign | SplitButton | <materialDesign:SplitButton x:Name='p' Content='Go'/>
+materialdesign | SplitButton icon | <materialDesign:SplitButton x:Name='p'>[ICON]</materialDesign:SplitButton>
+materialdesign | NumericUpDown | <materialDesign:NumericUpDown x:Name='p'/>
+materialdesign | NumericUpDown named | <materialDesign:NumericUpDown x:Name='p' AutomationProperties.Name='N'/>
+materialdesign | TimePicker | <materialDesign:TimePicker x:Name='p'/>
+materialdesign | TimePicker hint | <materialDesign:TimePicker x:Name='p' materialDesign:HintAssist.Hint='When'/>
+materialdesign | TimePicker named | <materialDesign:TimePicker x:Name='p' AutomationProperties.Name='T'/>
+materialdesign | Chip text | <materialDesign:Chip x:Name='p' Content='Tag'/>
+materialdesign | Chip icon | <materialDesign:Chip x:Name='p'>[ICON]</materialDesign:Chip>
+materialdesign | RatingBar | <materialDesign:RatingBar x:Name='p'/>
+materialdesign | AutoSuggestBox | <materialDesign:AutoSuggestBox x:Name='p'/>
+materialdesign | AutoSuggestBox hint | <materialDesign:AutoSuggestBox x:Name='p' materialDesign:HintAssist.Hint='Search'/>
+materialdesign | SplitButton command | <materialDesign:SplitButton x:Name='p' Command='ApplicationCommands.Copy'/>
+hc | ProgressButton command | <hc:ProgressButton x:Name='p' Command='ApplicationCommands.Copy'>[ICON]</hc:ProgressButton>
+hc | ContextMenuButton command | <hc:ContextMenuButton x:Name='p' Command='ApplicationCommands.Copy'>[ICON]</hc:ContextMenuButton>
+wpfui | Anchor command | <ui:Anchor x:Name='p' Command='ApplicationCommands.Copy'>[ICON]</ui:Anchor>
+wpfui | CardExpander no header | <ui:CardExpander x:Name='p'/>
+hc | DatePicker title | <hc:DatePicker x:Name='p' hc:InfoElement.Title='When' hc:InfoElement.Placeholder='When'/>
+hc | CheckComboBox title | <hc:CheckComboBox x:Name='p' hc:InfoElement.Title='When' hc:InfoElement.Placeholder='When'/>

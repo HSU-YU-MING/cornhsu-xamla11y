@@ -8,6 +8,19 @@ namespace UiaOracle;
 
 internal static class Diag
 {
+    /// <summary>真的跑起來的 App：Axe-Windows 掃它的視窗，一行一筆。</summary>
+    public static void AxePid(int pid)
+    {
+        var config = global::Axe.Windows.Automation.Config.Builder.ForProcessId(pid).WithOutputFileFormat(global::Axe.Windows.Automation.OutputFileFormat.None).Build();
+        foreach (var w in global::Axe.Windows.Automation.ScannerFactory.CreateScanner(config).Scan(null).WindowScanOutputs)
+            foreach (var e in w.Errors)
+            {
+                string P(string k) => e.Element.Properties is { } p && p.TryGetValue(k, out var v) ? v ?? "" : "";
+                string Up() => e.Element.Parent?.Properties is { } p ? $"{(p.TryGetValue("ControlType", out var t) ? t : "")}#{(p.TryGetValue("AutomationId", out var i) ? i : "")}" : "";
+                Console.WriteLine($"{e.Rule.ID} | {P("ControlType")} | id={P("AutomationId")} | name={P("Name")} | class={P("ClassName")} | help={P("HelpText")} | parent={Up()} | {P("BoundingRectangle")}");
+            }
+    }
+
     /// <summary>Label.Target 有沒有真的設上、peer 怎麼回答（行程內）、UIA client 怎麼回答。</summary>
     public static void LabelTarget()
     {

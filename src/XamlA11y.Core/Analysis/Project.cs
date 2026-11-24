@@ -22,6 +22,8 @@ public sealed partial class Project
     public required IReadOnlyList<XamlDoc> Docs { get; init; }
     public required StyleIndex Styles { get; init; }
     public IReadOnlyList<string> ParseErrors { get; init; } = [];
+    /// <summary>解析不了的檔案 → 原因（重複的屬性、巢狀太深、編碼）。</summary>
+    public IReadOnlyDictionary<string, string> ParseWhy { get; init; } = new Dictionary<string, string>();
     public IReadOnlyList<(string File, string Dialect)> Foreign { get; init; } = [];
     public IReadOnlyList<ThemeUse> Themes { get; init; } = [];
     public int FilesScanned { get; init; }
@@ -32,6 +34,7 @@ public sealed partial class Project
 
     private Dictionary<string, XamlDoc> _byClass = new(StringComparer.Ordinal);
     private Dictionary<string, ClassInfo> _classes = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _ownXmlns = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _codeBehind = new(StringComparer.Ordinal);
     private readonly Dictionary<string, HashSet<string>> _versions = new(StringComparer.OrdinalIgnoreCase);
 
@@ -44,11 +47,12 @@ public sealed partial class Project
         var dialects = new string?[files.Count];
         var marked = new bool[files.Count];
         var errors = new List<string>();
+        var why = new Dictionary<string, string>(StringComparer.Ordinal);
 
         for (var i = 0; i < files.Count; i++)
         {
             try { docs[i] = SafeXml.Load(files[i]); }
-            catch (Exception) { errors.Add(rels[i]); continue; }
+            catch (Exception e) { errors.Add(rels[i]); why[rels[i]] = e.Message.ReplaceLineEndings(" "); continue; }
             if (docs[i]!.Root is { } r) (dialects[i], marked[i]) = XamlFiles.DialectOf(r);
         }
         XamlFiles.ResolveAmbiguous(rels, dialects, marked);
@@ -64,13 +68,13 @@ public sealed partial class Project
             docs[i]!.AddAnnotation(new SourceFile(rels[i]));
             list.Add(new XamlDoc(rels[i], files[i], docs[i]!));
             styles.Add(docs[i]!, rels[i]);
-            if (docs[i]!.Root!.Name.LocalName.EndsWith("Application", StringComparison.Ordinal)) appDirs.Add(XamlFiles.DirOf(rels[i]));
+            if (XamlFiles.IsApplication(docs[i]!.Root!, rels[i])) appDirs.Add(XamlFiles.DirOf(rels[i]));
         }
         styles.SetAppDirectories(appDirs);
 
         var project = new Project
         {
-            Root = root, Docs = list, Styles = styles, ParseErrors = errors, Foreign = foreign, FilesScanned = files.Count,
+            Root = root, Docs = list, Styles = styles, ParseErrors = errors, ParseWhy = why, Foreign = foreign, FilesScanned = files.Count,
             TreatAs = treatAs ?? new Dictionary<string, string>(),
             Themes = FindThemes(list, rels, appDirs), Gaps = gaps,
         };
@@ -85,10 +89,13 @@ public sealed partial class Project
         foreach (var doc in Docs)
             if (((string?)doc.Root.Attribute(Markup.XClass))?.Trim() is { Length: > 0 } cls) _byClass.TryAdd(cls, doc);
         Styles.OwnRoot = e => DocOfClass(e)?.Root;
+        Styles.BaseOf = BaseOf;
 
         // ── 哪本字典看得到 ──
         var merges = Docs.ToDictionary(d => d.File, d => MergedFrom(d), StringComparer.Ordinal);
-        var apps = Docs.Where(d => d.Root.Name.LocalName.EndsWith("Application", StringComparison.Ordinal)).Select(d => d.File).ToList();
+        var apps = Docs.Where(d => XamlFiles.IsApplication(d.Root, d.File)).Select(d => d.File).ToList();
+        // Themes/Generic.xaml 永遠看得到，它合併的字典也是（套件拆成一個控制項一個檔是標準做法）
+        var generic = Docs.Where(d => IsGeneric(d.File)).Select(d => d.File).ToList();
         HashSet<string> Reach(string from)
         {
             var seen = new HashSet<string>(StringComparer.Ordinal) { from };
@@ -99,22 +106,24 @@ public sealed partial class Project
             return seen;
         }
         // 掃描範圍裡沒有 App.xaml（控制項庫、只掃一個資料夾）：有任何檔案合併它就當成看得到
-        var fromApps = (apps.Count > 0 ? apps.SelectMany(Reach) : merges.Values.SelectMany(m => m)).ToHashSet(StringComparer.Ordinal);
+        var fromApps = (apps.Count > 0 ? apps.Concat(generic).SelectMany(Reach) : merges.Values.SelectMany(m => m)).ToHashSet(StringComparer.Ordinal);
         var cache = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         Styles.IsVisible = (dictionary, file) =>
         {
-            if (fromApps.Contains(dictionary) || mentionedInCode.Contains(Path.GetFileName(dictionary))
-                || dictionary.EndsWith("Themes/Generic.xaml", StringComparison.OrdinalIgnoreCase)) return true;
+            if (fromApps.Contains(dictionary) || mentionedInCode.Contains(Path.GetFileName(dictionary)) || IsGeneric(dictionary)) return true;
             if (!cache.TryGetValue(file, out var mine)) cache[file] = mine = Reach(file);
             return mine.Contains(dictionary);
         };
     }
 
+    private static bool IsGeneric(string file) =>
+        file.EndsWith("Themes/Generic.xaml", StringComparison.OrdinalIgnoreCase) && (file.Length == "Themes/Generic.xaml".Length || file[^("Themes/Generic.xaml".Length + 1)] == '/');
+
     /// <summary>這個檔案用 Source 合併了哪些檔案（相對路徑、根目錄路徑、pack URI；對不準時同名的全部算）。</summary>
     private List<string> MergedFrom(XamlDoc doc)
     {
         var found = new List<string>();
-        foreach (var source in doc.Root.DescendantsAndSelf().Select(e => (string?)e.Attribute("Source")).OfType<string>())
+        foreach (var source in doc.Root.DescendantsAndSelf().Select(e => e.Name.LocalName == "ResourceDictionary.Source" ? e.Value.Trim() : (string?)e.Attribute("Source")).OfType<string>())
         {
             if (!source.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase)) continue;
             var path = source.Replace('\\', '/');
@@ -170,7 +179,8 @@ public sealed partial class Project
     /// <summary>專案原始碼裡的一個類別。</summary>
     /// <param name="Bases">寫過的基底（不同檔案的同名類別可能不一樣）。</param>
     /// <param name="OwnName">類別自己換了 AutomationPeer 或在程式裡設名稱：名稱規則不能照基底套。</param>
-    private sealed record ClassInfo(List<string> Bases, bool OwnName);
+    /// <param name="OwnContent">類別在自己的程式碼裡設的內容屬性（Content、Header、Text）：沒寫內容不等於沒有。</param>
+    private sealed record ClassInfo(List<string> Bases, bool OwnName, HashSet<string> OwnContent);
 
     /// <summary>
     /// 這個元素的名稱照哪個 WPF 控制項算；null = 不知道。
@@ -213,9 +223,38 @@ public sealed partial class Project
         return DerivedFrom(name, named: false, 0);
     }
 
+    /// <summary>型別名字（範本的 TargetType）行為上是哪個 WPF 控制項；不認得就是它自己的名字。</summary>
+    public string BaseOfName(string name) => TreatAs.TryGetValue(name, out var declared) ? declared : DerivedFrom(name, named: false, 0) ?? name;
+
+    /// <summary>這個元素的類別（或它在專案裡的基底）在程式碼裡設了這個內容屬性。</summary>
+    public bool ClassSets(XElement e, string property)
+    {
+        if (Markup.IsWpf(e)) return false;
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var queue = new Queue<string>([e.Name.LocalName]);
+        while (queue.TryDequeue(out var name))
+        {
+            if (!seen.Add(name) || !_classes.TryGetValue(name, out var info)) continue;
+            if (info.OwnContent.Contains(property)) return true;
+            foreach (var b in info.Bases) queue.Enqueue(b);
+        }
+        return false;
+    }
+
+    private readonly Dictionary<(string, bool), string?> _derived = [];
+
+    /// <remarks>記住答案：同名類別互相當基底時，沒記住的話步數是分支的次方（140 KB 的 .cs 跑不完）。</remarks>
     private string? DerivedFrom(string name, bool named, int depth)
     {
-        if (depth > 8 || !_classes.TryGetValue(name, out var info)) return null;
+        if (_derived.TryGetValue((name, named), out var known)) return known;
+        if (depth > 8) return null;
+        _derived[(name, named)] = null;                        // 繞回自己：不知道
+        return _derived[(name, named)] = Derive(name, named, depth);
+    }
+
+    private string? Derive(string name, bool named, int depth)
+    {
+        if (!_classes.TryGetValue(name, out var info)) return null;
         if (named && info.OwnName) return null;
         string? answer = null;
         foreach (var b in info.Bases)
@@ -234,6 +273,9 @@ public sealed partial class Project
     public XamlDoc? DocOfClass(XElement e)
     {
         var ns = e.Name.NamespaceName;
+        // 專案自己的 XmlnsDefinition("http://myapp/controls", …)：同名的類別只有一個才認
+        if (_ownXmlns.Contains(ns))
+            return _byClass.Where(p => p.Key.EndsWith("." + e.Name.LocalName, StringComparison.Ordinal)).Select(p => p.Value).Take(2).ToList() is [var only] ? only : null;
         if (!ns.StartsWith("clr-namespace:", StringComparison.Ordinal)) return null;
         var end = ns.IndexOf(';');
         var clr = (end < 0 ? ns["clr-namespace:".Length..] : ns["clr-namespace:".Length..end]).Trim();
@@ -262,9 +304,12 @@ public sealed partial class Project
             {
                 if (text.Contains(".xaml", StringComparison.OrdinalIgnoreCase))
                     foreach (Match m in XamlNameRegex().Matches(text)) mentioned.Add(m.Value);
+                if (text.Contains("XmlnsDefinition", StringComparison.Ordinal))
+                    foreach (Match m in XmlnsRegex().Matches(text)) _ownXmlns.Add(m.Groups["uri"].Value);
 
                 if (!text.Contains("class ", StringComparison.Ordinal)) continue;
                 var code = CSharp.Strip(text, keepStrings: false);
+                if (code.Contains("Command", StringComparison.Ordinal)) ReadCommands(code);
                 var matches = ClassRegex().Matches(code).Cast<Match>().ToList();
                 for (var i = 0; i < matches.Count; i++)
                 {
@@ -272,7 +317,7 @@ public sealed partial class Project
                     // 到下一個類別為止就是這個類別的內容
                     var body = code[m.Index..(i + 1 < matches.Count ? matches[i + 1].Index : code.Length)];
                     var own = body.Contains("OnCreateAutomationPeer", StringComparison.Ordinal) || body.Contains("AutomationProperties.", StringComparison.Ordinal);
-                    AddClass(m.Groups["name"].Value, m.Groups["base"].Value, own);
+                    AddClass(m.Groups["name"].Value, m.Groups["base"].Value, own, ContentSetRegex().Matches(body).Where(x => !x.Value.EndsWith('=') || IsStatement(body, x.Index + x.Length)).Select(x => x.Groups["p"].Value));
                 }
             }
             catch (RegexMatchTimeoutException) { }       // 這個檔案的類別當成沒看到：用到的控制項會是「不認得」
@@ -280,21 +325,102 @@ public sealed partial class Project
         return mentioned;
     }
 
-    private void AddClass(string name, string baseName, bool own)
+    /// <summary>專案自己的靜態命令：「Commands.Save」→ 有沒有文字（null = 看不出來）。</summary>
+    private readonly Dictionary<string, bool?> _commands = new(StringComparer.Ordinal);
+
+    /// <summary>「Commands.Save」是哪一種：true = RoutedUICommand 有文字，false = 沒有文字（RoutedCommand、RelayCommand…），null = 不知道。</summary>
+    public bool? CommandHasText(string owner, string member) => _commands.GetValueOrDefault(owner + "." + member);
+
+    private void ReadCommands(string code)
+    {
+        var classes = AnyClassRegex().Matches(code).Select(m => (m.Index, Name: m.Groups["name"].Value)).ToList();
+        foreach (Match m in CommandRegex().Matches(code))
+        {
+            var owner = classes.LastOrDefault(c => c.Index < m.Index).Name;
+            if (owner is null) continue;
+            var type = m.Groups["type"].Value.TrimEnd('?');
+            type = type[(type.LastIndexOf('.') + 1)..];
+            var rest = Declaration(code, m.Index + m.Length);
+            // 宣告寫 ICommand、實際是 RoutedUICommand 的看不出來；自己的 RelayCommand 之類沒有文字
+            bool? text = type switch
+            {
+                "RoutedUICommand" => rest.IndexOf("new", StringComparison.Ordinal) is >= 0 and var n && rest.IndexOf('(', n) is >= 0 and var open && rest[open..].Contains(',', StringComparison.Ordinal) ? true : null,
+                "ICommand" => null,
+                _ => rest.Contains("RoutedUICommand", StringComparison.Ordinal) ? null : false,
+            };
+            var key = owner + "." + m.Groups["name"].Value;
+            _commands[key] = !_commands.TryGetValue(key, out var before) || before == text ? text : null;
+        }
+    }
+
+    /// <summary>宣告剩下的部分：「{ get; } = new(…);」「= new(…);」「;」。</summary>
+    private static string Declaration(string code, int from)
+    {
+        var depth = 0;
+        for (var i = from; i < code.Length && i < from + 2000; i++)
+        {
+            if (code[i] is '(' or '[' or '{') depth++;
+            else if (code[i] is ')' or ']') depth--;
+            else if (code[i] == ';' && depth == 0) return code[from..i];
+            else if (code[i] == '}' && --depth <= 0)
+            {
+                var next = i + 1;
+                while (next < code.Length && char.IsWhiteSpace(code[next])) next++;
+                if (next >= code.Length || code[next] is not ('=' or ';' or ')')) return code[from..i];
+            }
+        }
+        return code[from..Math.Min(code.Length, from + 2000)];
+    }
+
+    [GeneratedRegex(@"\b(?:class|struct|record)\s{1,50}(?<name>[A-Za-z_]\w{0,200})", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex AnyClassRegex();
+
+    [GeneratedRegex(@"\bstatic\s{1,20}(?:readonly\s{1,20}|new\s{1,20}){0,2}(?<type>(?:\w{1,60}\.){0,6}\w{0,60}Command\??)\s{1,20}(?<name>[A-Za-z_]\w{0,100})\s{0,20}(?=[={;])", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex CommandRegex();
+
+    /// <summary>「Content = …;」是設自己的；「new ToolTip { Content = …, }」是在建別的物件。看這個等號後面先遇到什麼。</summary>
+    private static bool IsStatement(string code, int from)
+    {
+        var depth = 0;
+        for (var i = from; i < code.Length && i < from + 5000; i++)
+            switch (code[i])
+            {
+                case '(' or '[' or '{': depth++; break;
+                case ')' or ']' or '}': if (--depth < 0) return false; break;
+                case ',' when depth == 0: return false;
+                case ';' when depth == 0: return true;
+            }
+        return false;
+    }
+
+    private void AddClass(string name, string baseName, bool own, IEnumerable<string> content)
     {
         var cut = baseName.LastIndexOfAny(['.', ':']);
         if (cut >= 0) baseName = baseName[(cut + 1)..];
         // 介面（partial class 的另一半）不是基底
         var isInterface = baseName.Length > 1 && baseName[0] == 'I' && char.IsUpper(baseName[1]);
-        if (!_classes.TryGetValue(name, out var info)) _classes[name] = info = new ClassInfo([], false);
+        if (!_classes.TryGetValue(name, out var info)) _classes[name] = info = new ClassInfo([], false, new HashSet<string>(StringComparer.Ordinal));
+        info.OwnContent.UnionWith(content);
         if (own && !info.OwnName) _classes[name] = info = info with { OwnName = true };
         if (!isInterface && !info.Bases.Contains(baseName)) info.Bases.Add(baseName);
     }
+
+    /// <summary>類別自己設內容：Content = …、this.Text = …、SetBinding(ContentProperty, …)。別的物件的（x.Content = …）不算。</summary>
+    [GeneratedRegex(@"(?:(?<![\w.])(?:this\s{0,5}\.\s{0,5}|base\s{0,5}\.\s{0,5})?(?<p>Content|Header|Text)\s{0,10}(?:\?\?|\+)?=(?![=>])|\b(?:SetBinding|SetResourceReference|SetCurrentValue|OverrideMetadata)\s{0,5}\(\s{0,5}(?:\w{1,60}\.){0,6}(?<p>Content|Header|Text)Property\b|(?<![\w.])(?:this\s{0,5}\.\s{0,5})?(?<p>Inlines)\s{0,5}\.\s{0,5}Add|\b(?<p>Content|Header|Text)Property\s{0,5}\.\s{0,5}OverrideMetadata\b)", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex ContentSetRegex();
+
+    [GeneratedRegex(@"XmlnsDefinition(?:Attribute)?\s{0,5}\(\s{0,5}""(?<uri>[^""\r\n]{1,300})""", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex XmlnsRegex();
 
     [GeneratedRegex(@"[A-Za-z0-9_.\-]{1,100}\.xaml", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
     private static partial Regex XamlNameRegex();
 
     // ───────────────────────── code-behind ─────────────────────────
+
+    private readonly HashSet<string> _visualBasic = new(StringComparer.Ordinal);
+
+    /// <summary>VB 不分大小寫：x:Name="Play" 在程式裡可以寫 play.Content。</summary>
+    private RegexOptions CodeOptions(string rel) => RegexOptions.CultureInvariant | (_visualBasic.Contains(rel) ? RegexOptions.IgnoreCase : RegexOptions.None);
 
     /// <summary>XAML 檔自己的 code-behind（Foo.xaml.cs／.vb）。別的檔案一律不看。</summary>
     public string CodeBehind(string rel)
@@ -306,8 +432,11 @@ public sealed partial class Project
             foreach (var ext in (ReadOnlySpan<string>)[".cs", ".vb"])
                 try
                 {
-                    if (File.Exists(doc.FullPath + ext) && new FileInfo(doc.FullPath + ext).Length <= 2_000_000)
+                    if (File.Exists(doc.FullPath + ext) && !XamlFiles.IsFileLink(doc.FullPath + ext) && new FileInfo(doc.FullPath + ext).Length <= 2_000_000)
+                    {
                         text += CSharp.Strip(File.ReadAllText(doc.FullPath + ext), keepStrings: false, vb: ext == ".vb") + "\n";
+                        if (ext == ".vb") _visualBasic.Add(rel);
+                    }
                 }
                 catch (IOException) { }
                 catch (UnauthorizedAccessException) { }
@@ -318,12 +447,23 @@ public sealed partial class Project
     public bool CodeSets(XElement e, params ReadOnlySpan<string> members)
     {
         if (Markup.NameOf(e) is not { Length: > 0 } name) return false;
-        var code = CodeBehind(StyleIndex.FileOf(e));
+        var file = StyleIndex.FileOf(e);
+        var code = CodeBehind(file);
         if (code.Length == 0) return false;
         try
         {
+            var n = Regex.Escape(name);
             foreach (var member in members)
-                if (Regex.IsMatch(code, $@"\b{Regex.Escape(name)}\s{{0,5}}[?!]?\.\s{{0,20}}{member}\s{{0,20}}(?:\+?=(?!=)|\.\s{{0,20}}(?:Add|Insert)\b)", RegexOptions.CultureInvariant, RegexLimit)) return true;
+            {
+                // btn.Content = …（+=、??=）、btn.Inlines.Add(…)
+                if (Regex.IsMatch(code, $@"\b{n}\s{{0,5}}[?!]?\.\s{{0,20}}{member}\s{{0,20}}(?:(?:\+|\?\?)?=(?![=>])|\.\s{{0,20}}(?:Add|Insert)\b)", CodeOptions(file), RegexLimit)) return true;
+                // btn.SetBinding(Button.ContentProperty, …)、btn.SetResourceReference(…)、btn.AddHandler(UIElement.KeyDownEvent, …)
+                if (Regex.IsMatch(code, $@"\b{n}\s{{0,5}}[?!]?\.\s{{0,20}}(?:Set(?:Binding|ResourceReference|Value|CurrentValue)|AddHandler)\s{{0,20}}\(\s{{0,20}}(?:\w{{1,60}}\.){{0,6}}{member}(?:Property|Event)\b", CodeOptions(file), RegexLimit)) return true;
+                // BindingOperations.SetBinding(btn, Button.ContentProperty, …)
+                if (Regex.IsMatch(code, $@"\bSetBinding\s{{0,20}}\(\s{{0,20}}(?:this\.|Me\.)?{n}\s{{0,20}},\s{{0,20}}(?:\w{{1,60}}\.){{0,6}}{member}Property\b", CodeOptions(file), RegexLimit)) return true;
+                // VB：AddHandler btn.KeyDown, AddressOf …
+                if (_visualBasic.Contains(file) && Regex.IsMatch(code, $@"\bAddHandler\s{{1,20}}(?:Me\.)?{n}\s{{0,5}}\.\s{{0,20}}{member}\b", CodeOptions(file), RegexLimit)) return true;
+            }
             return false;
         }
         // 讀的是別人的程式碼：跑太久就當成「它動了這個控制項」（不知道），不是「沒動」
@@ -334,11 +474,13 @@ public sealed partial class Project
     public bool CodeNames(XElement e)
     {
         if (Markup.NameOf(e) is not { Length: > 0 } name) return false;
-        var code = CodeBehind(StyleIndex.FileOf(e));
-        if (!code.Contains("AutomationProperties", StringComparison.Ordinal)) return false;
+        var file = StyleIndex.FileOf(e);
+        var code = CodeBehind(file);
+        if (!code.Contains("AutomationProperties", StringComparison.OrdinalIgnoreCase)) return false;
         try
         {
-            return Regex.IsMatch(code, $@"\bSet(?:Name|LabeledBy)\s{{0,20}}\(\s{{0,20}}(?:this\.)?{Regex.Escape(name)}\b|\b{Regex.Escape(name)}\s{{0,5}}[?!]?\.\s{{0,20}}SetValue\s{{0,20}}\(\s{{0,20}}AutomationProperties\.", RegexOptions.CultureInvariant, RegexLimit);
+            var n = Regex.Escape(name);
+            return Regex.IsMatch(code, $@"\bSet(?:Name|LabeledBy)\s{{0,20}}\(\s{{0,20}}(?:element\s{{0,5}}:\s{{0,5}})?(?:this\.|Me\.)?{n}\b|\b{n}\s{{0,5}}[?!]?\.\s{{0,20}}Set(?:Value|Binding|ResourceReference|CurrentValue)\s{{0,20}}\(\s{{0,20}}(?:\w{{1,60}}\.){{0,6}}AutomationProperties\.|\bSetBinding\s{{0,20}}\(\s{{0,20}}(?:this\.|Me\.)?{n}\s{{0,20}},\s{{0,20}}(?:\w{{1,60}}\.){{0,6}}AutomationProperties\.", CodeOptions(file), RegexLimit);
         }
         catch (RegexMatchTimeoutException) { return true; }
     }
@@ -351,6 +493,15 @@ public sealed partial class Project
     public string? MethodBody(string rel, string method)
     {
         var code = CodeBehind(rel);
+        if (_visualBasic.Contains(rel))
+        {
+            try
+            {
+                var vb = Regex.Match(code, $@"\b(?:Sub|Function)\s{{1,20}}{Regex.Escape(method)}\s{{0,20}}\((?<body>.*?)\bEnd\s{{1,20}}(?:Sub|Function)\b", CodeOptions(rel) | RegexOptions.Singleline, RegexLimit);
+                if (vb.Success) return vb.Groups["body"].Value;
+            }
+            catch (RegexMatchTimeoutException) { return null; }
+        }
         Match m;
         try { m = Regex.Match(code, $@"\b{Regex.Escape(method)}\s{{0,20}}\([^)]{{0,2000}}\)\s{{0,50}}(?<body>\{{|=>)", RegexOptions.CultureInvariant, RegexLimit); }
         catch (RegexMatchTimeoutException) { return null; }
@@ -376,7 +527,7 @@ public sealed partial class Project
         var result = new List<ThemeUse>();
         foreach (var doc in docs)
         {
-            var appWide = doc.Root.Name.LocalName is "ResourceDictionary" || doc.Root.Name.LocalName.EndsWith("Application", StringComparison.Ordinal);
+            var appWide = doc.Root.Name.LocalName is "ResourceDictionary" || XamlFiles.IsApplication(doc.Root, doc.File);
             var scope = doc.File;
             if (appWide)
             {

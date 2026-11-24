@@ -54,7 +54,13 @@ internal static class CorpusCheck
         string Body(IEnumerable<(string, XElement E)> list) => string.Concat(list.Select(x => Wrap(x.E)));
         var xaml = $"<Window {Host.Ns}><StackPanel x:Name=\"host\">{Body(part.Select(p => (p.Where, p.Element)))}</StackPanel></Window>";
         Window window;
-        try { window = (Window)XamlReader.Parse(xaml); }
+        try
+        {
+            var parsed = XElement.Parse(xaml, LoadOptions.PreserveWhitespace);
+            // 只留 WPF 與 x 兩個命名空間；過最後一關才解析（別人的 XAML）
+            foreach (var a in parsed.Attributes().Where(a => a.IsNamespaceDeclaration && a.Value != XamlMarkup.WpfNamespace && a.Value != XamlMarkup.XamlNamespace).ToList()) a.Remove();
+            window = (Window)SafeMarkup.Parse(parsed, WindowCheck.TypeNamed);
+        }
         catch (Exception ex)
         {
             if (part.Count == 1)
