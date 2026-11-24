@@ -24,20 +24,23 @@ xamla11y audit ./src --baseline a11y-baseline.json         # 之後只擋新增�
 
 ## 找什麼
 
-| 種類 | WCAG | 預設 | |
+| 種類 | WCAG 2.2（等級） | 預設 | |
 |---|---|---|---|
-| `missing-name` | 4.1.2、1.1.1 | fail | 按鈕、核取方塊、頁籤、選單…，螢幕閱讀器只念得出「按鈕」。**ToolTip 不是名稱**，WPF 把它當說明文字。 |
-| `text-not-in-name` | 4.1.2 | fail | 畫面上**有**字，但字在 `StackPanel`、`Border`、`AccessText` 裡。WPF 只從字串、`TextBlock`、`ContentControl` 取名稱。 |
-| `meaningless-name` | 4.1.2、1.1.1 | fail | 名稱是圖示字型的字元、空白、`System.Windows.Controls.TabItem`、或 Geometry 路徑。 |
-| `input-no-name` | 4.1.2、1.3.1、3.3.2 | fail | `TextBox`、`PasswordBox`、`RichTextBox`、`ComboBox`、`Slider`、`DatePicker` 沒有名稱。**`<Label Target=…>` 不會給名稱**（見下）。 |
-| `focus-not-visible` | 2.4.7 | fail | `FocusVisualStyle` 關掉了，範本與樣式也沒有別的東西畫出焦點。報在關掉的那一行，一次。 |
-| `mouse-only` | 2.1.1 | fail | `Border`、`Image`、`TextBlock`… 掛了點按，鍵盤沒有路。 |
-| `not-in-tab-order` | 2.1.1、2.4.3 | warn | `IsTabStop="False"` 或 `Focusable="False"`，又沒有存取鍵、`IsDefault`／`IsCancel` 這些看得到的入口。 |
-| `small-target` | 2.5.8 | warn | **你自己設的**大小小於 24 DIP，而且離鄰居太近、用不了間距例外。 |
-| `list-no-name` | 4.1.2, 1.3.1 | warn | `ListBox`、`ListView`、`TreeView`、`DataGrid` 沒有名稱。外面包的 `GroupBox` 不算。 |
-| `symbol-name` | 1.1.1 | info | 名稱只有 `×`、`…` 或表情符號。 |
+| `missing-name` | 4.1.2 (A), 1.1.1 (A) | fail | 按鈕、核取方塊、頁籤、選單…，螢幕閱讀器沒有名稱可以念。**ToolTip 不是名稱**，WPF 把它當說明文字。 |
+| `text-not-in-name` | 4.1.2 (A), 2.5.3 (A) | fail | 畫面上**有**字，但字在 `StackPanel`、`Border`、`AccessText` 裡。WPF 只從字串、`TextBlock`、`ContentControl` 取名稱。 |
+| `meaningless-name` | 4.1.2 (A), 1.1.1 (A) | fail | 名稱是圖示字型的字元、空白、`System.Windows.Controls.TabItem`、或 Geometry 路徑。 |
+| `input-no-name` | 4.1.2 (A), 1.3.1 (A) | fail | `TextBox`、`PasswordBox`、`RichTextBox`、`ComboBox`、`Slider`、`DatePicker` 沒有名稱。**`<Label Target=…>` 不會給名稱**（見下）。 |
+| `focus-not-visible` | 2.4.7 (AA) | fail | `FocusVisualStyle` 關掉了，範本與樣式也沒有別的東西畫出焦點。報在關掉的那一行，一次。 |
+| `mouse-only` | 2.1.1 (A) | fail | `Border`、`Image`、`TextBlock`… 掛了點按，鍵盤沒有路。 |
+| `not-in-tab-order` | 2.1.1 (A) | warn | `IsTabStop="False"` 或 `Focusable="False"`，又沒有存取鍵、`IsDefault`／`IsCancel` 這些看得到的入口。 |
+| `small-target` | 2.5.8 (AA) | warn | **你自己設的**大小小於 24 DIP，而且離鄰居太近、用不了間距例外。 |
+| `list-no-name` | 4.1.2 (A), 1.3.1 (A) | warn | `ListBox`、`ListView`、`TreeView`、`DataGrid` 沒有名稱。外面包的 `GroupBox` 不算。 |
+| `symbol-name` | 1.1.1 (A) | info | 名稱只有 `×`、`…` 或表情符號。 |
 
 `xamla11y rules` 會印同一份清單與修法。
+
+依據是 **WCAG 2.2 的 A 與 AA**：55 條裡的 7 條，照 [WCAG2ICT](https://www.w3.org/TR/wcag2ict-22/) 的方式套到桌面軟體。
+每一種為什麼是那一條、什麼情況不算違反、跟 EN 301 549／Section 508／台灣規範差在哪、還有什麼要人來看：[docs/標準對照.md](docs/標準對照.md)。
 
 這**不是** WCAG、EN 301 549 或歐盟無障礙法（EAA）的合規聲明：靜態工具只看得到其中一部分。
 
@@ -67,7 +70,8 @@ UI Automation client 讀樹（螢幕閱讀器看到的）、走 Tab、移動焦�
 
 | 跟什麼比 | 案例 | 有答案 | 不知道 | **說錯** |
 |---|---:|---:|---:|---:|
-| UIA 名稱，手寫 | 325 | 310 | 15 | **0** |
+| NVDA 2026.2 用 Tab 走到時念的話 | 48 | 45 | 3 | **0** |
+| UIA 名稱，手寫 | 338 | 323 | 15 | **0** |
 | UIA 名稱，控制項 × 內容 × 命名方式的窮舉 | 8,218 | 7,843 | 375 | **0** |
 | UIA 名稱，19 個真實專案裡的不同形狀 | 2,172 | 2,172 | 0 | **0** |
 | UIA 名稱，49 個公開專案與 3 個 App 的整個檔案（連樣式與資源） | 10,398 | 10,398 | – | **0** |
@@ -78,8 +82,8 @@ UI Automation client 讀樹（螢幕閱讀器看到的）、走 Tab、移動焦�
 
 整個檔案那一列是不執行專案程式碼就載得進真的 WPF 的 1,919 個檔；要靠它的程式碼、沒量過的佈景、要打開選單才看得到的元素不算在內。
 
-「不知道」是對的答案；把念不出名字的說成沒問題才是錯的。WPF 的答案錄在 `tests/XamlA11y.Tests/uia-facts.json`，
-CI 在 Linux 上也比同一份。細節在 [docs/M1-UIA實測.md](docs/M1-UIA實測.md)。
+「不知道」是對的答案；把念不出名字的說成沒問題才是錯的。WPF 與 NVDA 的答案錄在 `tests/XamlA11y.Tests/` 的
+`uia-facts.json` 與 `nvda-facts.json`，CI 在 Linux 上也比同一份。朗讀程式（Narrator）與 JAWS 沒跑過。細節在 [docs/M1-UIA實測.md](docs/M1-UIA實測.md)。
 
 ## 老實說看得到多少
 

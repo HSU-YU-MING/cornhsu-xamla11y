@@ -290,9 +290,11 @@ internal static class Usage
 
     public static void PrintRules(TextWriter o)
     {
+        o.WriteLine($"WCAG {Wcag.Version} success criteria, level in brackets. Passing is not a claim of conformance: https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/standards.md");
+        o.WriteLine();
         foreach (var k in Kinds.All)
         {
-            o.WriteLine($"{k.Slug,-18} {k.Rule}  {Text.Slug(k.Default),-4}  WCAG {k.Wcag}");
+            o.WriteLine($"{k.Slug,-18} {k.Rule}  {Text.Slug(k.Default),-4}  WCAG {k.WcagWithLevels}");
             o.WriteLine($"    {k.Title}. {k.Help}");
         }
     }

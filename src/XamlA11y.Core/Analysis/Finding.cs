@@ -6,15 +6,41 @@ public enum Severity { Off, Info, Warn, Fail }
 
 /// <summary>一條規則的說明（SARIF、--help、文件都從這裡來）。</summary>
 /// <param name="Rule">規劃書的規則編號（R1…R7）：報告依它分組算可解析率。</param>
-public sealed record Kind(string Slug, string Rule, Severity Default, string Wcag, string Title, string Help);
+/// <param name="Wcag">WCAG 2.2 的成功準則（對應理由在 docs/standards.md）。</param>
+public sealed record Kind(string Slug, string Rule, Severity Default, string Wcag, string Title, string Help)
+{
+    /// <summary>「4.1.2 (A), 2.5.3 (A)」。</summary>
+    public string WcagWithLevels => string.Join(", ", Criteria.Select(c => $"{c} ({Analysis.Wcag.Level(c)})"));
+
+    public IReadOnlyList<string> Criteria => Wcag.Split(", ");
+}
+
+/// <summary>用到的 WCAG 2.2 成功準則。等級與名稱照 W3C 的資料（tests/XamlA11y.Tests/wcag22.json 守著）。</summary>
+public static class Wcag
+{
+    public const string Version = "2.2";
+
+    public static readonly IReadOnlyDictionary<string, (string Level, string Name)> Criteria = new Dictionary<string, (string, string)>(StringComparer.Ordinal)
+    {
+        ["1.1.1"] = ("A", "Non-text Content"),
+        ["1.3.1"] = ("A", "Info and Relationships"),
+        ["2.1.1"] = ("A", "Keyboard"),
+        ["2.4.7"] = ("AA", "Focus Visible"),
+        ["2.5.3"] = ("A", "Label in Name"),
+        ["2.5.8"] = ("AA", "Target Size (Minimum)"),
+        ["4.1.2"] = ("A", "Name, Role, Value"),
+    };
+
+    public static string Level(string criterion) => Criteria[criterion].Level;
+}
 
 public static class Kinds
 {
     public static readonly Kind MissingName = new("missing-name", "R1", Severity.Fail, "4.1.2, 1.1.1",
         "Control has no accessible name",
-        "A screen reader announces this control as just \"button\" (or \"check box\", \"tab\"…). Set AutomationProperties.Name, or AutomationProperties.LabeledBy to an element that has text. A ToolTip is not a name: WPF exposes it as the help text.");
+        "UI Automation has no name for this control, so all a screen reader can call it is \"button\" (or \"check box\", \"tab\"…). Set AutomationProperties.Name, or AutomationProperties.LabeledBy to an element that has text. A ToolTip is not a name: WPF exposes it as the help text, which some screen readers read as a description after the type.");
 
-    public static readonly Kind TextNotName = new("text-not-in-name", "R1", Severity.Fail, "4.1.2",
+    public static readonly Kind TextNotName = new("text-not-in-name", "R1", Severity.Fail, "4.1.2, 2.5.3",
         "Visible text is not the accessible name",
         "The control shows text, but the text sits inside a panel, a Border or an AccessText, and WPF only takes the name from a string, a TextBlock or a ContentControl. The accessible name is empty. Set AutomationProperties.Name to the same text.");
 
@@ -26,7 +52,7 @@ public static class Kinds
         "Accessible name is only a symbol",
         "The accessible name is only punctuation or an emoji, and a screen reader reads the symbol's own name (\"times\" for ×). Set AutomationProperties.Name to what the control does.");
 
-    public static readonly Kind InputNoName = new("input-no-name", "R2", Severity.Fail, "4.1.2, 1.3.1, 3.3.2",
+    public static readonly Kind InputNoName = new("input-no-name", "R2", Severity.Fail, "4.1.2, 1.3.1",
         "Input has no accessible name",
         "A screen reader cannot say what this field is for. A TextBlock next to it is not a label, and <Label Target=…> only moves focus with the access key: WPF does not use it for the name. Set AutomationProperties.LabeledBy to the label, or AutomationProperties.Name.");
 
@@ -38,7 +64,7 @@ public static class Kinds
         "Works with the mouse but not the keyboard",
         "An element that is not a control handles mouse clicks, and the keyboard has no way to do the same. Use a Button (restyle it if needed): making a Border focusable fixes Tab, but a Border is never in the UI Automation tree.");
 
-    public static readonly Kind NotInTabOrder = new("not-in-tab-order", "R5", Severity.Warn, "2.1.1, 2.4.3",
+    public static readonly Kind NotInTabOrder = new("not-in-tab-order", "R5", Severity.Warn, "2.1.1",
         "Interactive control is not in the tab order",
         "IsTabStop=\"False\" or Focusable=\"False\" keeps Tab from reaching this control. Fine when the same action has a keyboard shortcut or another focusable entry point; otherwise keyboard users cannot use it.");
 

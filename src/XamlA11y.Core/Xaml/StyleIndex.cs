@@ -599,7 +599,7 @@ public sealed class StyleIndex
 
     /// <summary>資源裡有文字、但文字是建構物件用的（Geometry 的路徑語法、TextBlock 的內容）：要當成物件看。</summary>
     private static bool LooksLikeObject(XElement e) => e.Name.LocalName is
-        "Geometry" or "PathGeometry" or "StreamGeometry" or "TextBlock" or "Button" or "Label" or "BitmapImage" or "AccessText" or "Run" or "Hyperlink";
+        "Geometry" or "PathGeometry" or "StreamGeometry" or "Color" or "TextBlock" or "Button" or "Label" or "BitmapImage" or "AccessText" or "Run" or "Hyperlink";
 
     // ───────────────────────── 範本 ─────────────────────────
 

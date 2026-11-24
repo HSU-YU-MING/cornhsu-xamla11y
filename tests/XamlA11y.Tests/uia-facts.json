@@ -3779,6 +3779,162 @@
       }
     },
     {
+      "file": "round3-names.txt",
+      "title": "EllipseGeometry content",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CButton.Content\u003E\u003CEllipseGeometry RadiusX=\u00223\u0022 RadiusY=\u00223\u0022/\u003E\u003C/Button.Content\u003E\u003C/Button\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Media.EllipseGeometry",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "RectangleGeometry content",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CButton.Content\u003E\u003CRectangleGeometry Rect=\u00220,0,3,3\u0022/\u003E\u003C/Button.Content\u003E\u003C/Button\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Media.RectangleGeometry",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "LineGeometry content",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CButton.Content\u003E\u003CLineGeometry EndPoint=\u00223,3\u0022/\u003E\u003C/Button.Content\u003E\u003C/Button\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Media.LineGeometry",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "EllipseGeometry resource",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003CEllipseGeometry x:Key=\u0022G\u0022 RadiusX=\u00223\u0022 RadiusY=\u00223\u0022/\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CGroupBox Header=\u0022G\u0022\u003E\u003CButton x:Name=\u0022p\u0022 Content=\u0022{StaticResource G}\u0022/\u003E\u003C/GroupBox\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Media.EllipseGeometry",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "LinearGradientBrush content",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CButton.Content\u003E\u003CLinearGradientBrush/\u003E\u003C/Button.Content\u003E\u003C/Button\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Media.LinearGradientBrush",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "RadialGradientBrush content",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CButton.Content\u003E\u003CRadialGradientBrush/\u003E\u003C/Button.Content\u003E\u003C/Button\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Media.RadialGradientBrush",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "ImageDrawing content",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CButton.Content\u003E\u003CImageDrawing/\u003E\u003C/Button.Content\u003E\u003C/Button\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Media.ImageDrawing",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Color content",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CButton.Content\u003E\u003CColor\u003ERed\u003C/Color\u003E\u003C/Button.Content\u003E\u003C/Button\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "#FFFF0000",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "PathGeometry content",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CButton.Content\u003E\u003CPathGeometry Figures=\u0022M0,0 L3,3\u0022/\u003E\u003C/Button.Content\u003E\u003C/Button\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "M0,0L3,3",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "GeometryGroup content",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CButton.Content\u003E\u003CGeometryGroup\u003E\u003CEllipseGeometry RadiusX=\u00223\u0022 RadiusY=\u00223\u0022/\u003E\u003C/GeometryGroup\u003E\u003C/Button.Content\u003E\u003C/Button\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Media.GeometryGroup",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "CombinedGeometry content",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CButton.Content\u003E\u003CCombinedGeometry/\u003E\u003C/Button.Content\u003E\u003C/Button\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Media.CombinedGeometry",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "SolidColorBrush content",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CButton.Content\u003E\u003CSolidColorBrush Color=\u0022Red\u0022/\u003E\u003C/Button.Content\u003E\u003C/Button\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "#FFFF0000",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Color resource",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003CColor x:Key=\u0022G\u0022\u003ERed\u003C/Color\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022p\u0022 Content=\u0022{StaticResource G}\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "#FFFF0000",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
       "file": "lists.txt",
       "title": "ListBox empty",
       "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListBox x:Name=\u0022p\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",

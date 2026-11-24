@@ -16,6 +16,7 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
 2. `dotnet build prototype/UiaOracle -c Release`，跑 `uiaoracle check`（約 4 分鐘，會在螢幕左上角開小視窗、搶焦點）。**任何一個 WRONG 都不能放過。**
 3. `uiaoracle check-corpus <專案資料夾…>`：真實專案的形狀。`uiaoracle check-windows <專案資料夾…>`：整個檔案連樣式、資源載進真的 WPF（視窗在螢幕外，不搶焦點；49 個專案約 40 分鐘，開四個平行約 15 分鐘）。
    別人的 XAML 一律過 `SafeMarkup`（白名單）才交給 XamlReader；改它之後跑 `uiaoracle check-hostile`。
+   名稱的規則大改之後，用真的 NVDA 再走一次：`node prototype/UiaOracle/nvda.mjs`（會出聲、搶焦點約 3 分鐘，先講；只在自己的視窗是前景時按鍵），更新 `nvda-facts.json`。
 4. `uiaoracle record tests/XamlA11y.Tests/uia-facts.json`：把 WPF 的答案錄給跨平台的測試。**只錄真值，不錄工具的答案。**
 5. `scripts/corpus-fetch.sh` 抓語料（`docs/corpus.tsv`，commit 釘死），`scripts/corpus-run.sh <輸出資料夾>` 前後各一次，`node scripts/corpus-diff.mjs 前 後` 逐類抽樣看原始碼，`node scripts/readme-corpus.mjs <輸出> --update` 重貼 README 的表。Oracle 抓規則想錯，語料抓規則想漏 —— 兩個都要。
 
@@ -75,6 +76,10 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
 | 39 | 深度有上限、沒記住答案 | 同名類別互相當基底，142 KB 的 .cs 跑不完。`DerivedFrom` 有記憶 | 第二輪審查 |
 | 40 | LINQ to XML 的 `PreviousNode` 是從頭數 | 三萬個兄弟元素 39 秒。用 `Markup.Previous` | 第二輪審查 |
 | 41 | XamlReader 會建立 XAML 指名的任何型別 | Oracle 讀的是別人的 XAML。`SafeMarkup` 是白名單、不看清理做了什麼，自己從頭檢查 | 自動安全審查 |
+| 43 | 條文對應憑印象寫 | 「輸入框沒名稱」列了 3.3.2（那條要的是看得到的標籤）、「移出 Tab」列了 2.4.3（那條管順序），「畫面有字」漏了 2.5.3。現在等級與名稱跟 W3C 的 JSON 核對，README 與兩份標準文件的表由 `StandardsTests` 守（照 Ramp 的 test:docs） | 2026-11-24 查證 |
+| 44 | 說「螢幕閱讀器只念得出按鈕」 | 有 ToolTip 時 NVDA 會把 HelpText 當描述念出來。名稱還是空的（4.1.2、Axe 都算），但話不能說滿 | NVDA 原始碼 → NVDA 2026.2 實跑確認 |
+| 45 | Guidepup 的 `press` 預設只收第一句 | 清單項目、頁籤的名字在第二句，看起來像沒念。要 `{ capture: true }` | NVDA 實跑 |
+| 46 | 繪圖物件（EllipseGeometry、漸層筆刷、Color）當內容 | 名稱是型別名或色碼，不是空的；第一版說沒有名稱 | NVDA 實跑 → Oracle 確認 |
 
 ## 沒做的、知道的
 

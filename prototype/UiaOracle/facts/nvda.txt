@@ -1,0 +1,50 @@
+# 真的 NVDA 怎麼念（每一案一個可聚焦的控制項，用 Tab 走過去）。x:Name='p' 的就是它；[ICON] 是沒有文字的圖示。
+nvda | Button text | <Button x:Name='p' Content='Save'/>
+nvda | Button icon, no name | <Button x:Name='p'>[ICON]</Button>
+nvda | Button icon, ToolTip only | <Button x:Name='p' ToolTip='Delete'>[ICON]</Button>
+nvda | Button icon, Name | <Button x:Name='p' AutomationProperties.Name='Delete'>[ICON]</Button>
+nvda | Button icon, Name and ToolTip | <Button x:Name='p' AutomationProperties.Name='Delete' ToolTip='Delete the file'>[ICON]</Button>
+nvda | Button icon, HelpText only | <Button x:Name='p' AutomationProperties.HelpText='Delete'>[ICON]</Button>
+nvda | Button text in a panel | <Button x:Name='p'><StackPanel><TextBlock Text='Save'/></StackPanel></Button>
+nvda | Button private-use glyph | <Button x:Name='p' FontFamily='Segoe MDL2 Assets' Content='&#xE74D;'/>
+nvda | Button multiplication sign | <Button x:Name='p' Content='×'/>
+nvda | Button ellipsis | <Button x:Name='p' Content='…'/>
+nvda | Button emoji | <Button x:Name='p' Content='🗑'/>
+nvda | Button geometry | <Button x:Name='p'><Button.Content><EllipseGeometry RadiusX='3' RadiusY='3'/></Button.Content></Button>
+nvda | ToggleButton icon | <ToggleButton x:Name='p'>[ICON]</ToggleButton>
+nvda | CheckBox no content | <CheckBox x:Name='p'/>
+nvda | CheckBox content | <CheckBox x:Name='p' Content='Remember'/>
+nvda | RadioButton no content | <RadioButton x:Name='p'/>
+nvda | TextBox nothing | <TextBox x:Name='p'/>
+nvda | TextBox after a TextBlock | <TextBlock Text='Name'/><TextBox x:Name='p'/>
+nvda | TextBox Label Target | <Label Content='Name' Target='{Binding ElementName=p}'/><TextBox x:Name='p'/>
+nvda | TextBox LabeledBy | <TextBlock x:Name='l' Text='Name'/><TextBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=l}'/>
+nvda | TextBox ToolTip only | <TextBox x:Name='p' ToolTip='Name'/>
+nvda | TextBox Name | <TextBox x:Name='p' AutomationProperties.Name='Name'/>
+nvda | PasswordBox nothing | <PasswordBox x:Name='p'/>
+nvda | ComboBox nothing | <ComboBox x:Name='p' SelectedIndex='0'><ComboBoxItem Content='One'/></ComboBox>
+nvda | ComboBox Name | <ComboBox x:Name='p' SelectedIndex='0' AutomationProperties.Name='Size'><ComboBoxItem Content='One'/></ComboBox>
+nvda | Slider nothing | <Slider x:Name='p' Value='3'/>
+nvda | Slider Name | <Slider x:Name='p' Value='3' AutomationProperties.Name='Volume'/>
+nvda | ListBox nothing | <ListBox x:Name='p'><ListBoxItem Content='One'/></ListBox>
+nvda | ListBox in GroupBox | <GroupBox Header='Files'><ListBox x:Name='p'><ListBoxItem Content='One'/></ListBox></GroupBox>
+nvda | ListBox Name | <ListBox x:Name='p' AutomationProperties.Name='Files'><ListBoxItem Content='One'/></ListBox>
+nvda | TreeView nothing | <TreeView x:Name='p'><TreeViewItem Header='One'/></TreeView>
+nvda | TreeView Name | <TreeView x:Name='p' AutomationProperties.Name='Folders'><TreeViewItem Header='One'/></TreeView>
+nvda | ListView GridView nothing | <ListView x:Name='p'><ListView.View><GridView><GridViewColumn Header='H'/></GridView></ListView.View><ListViewItem Content='One'/></ListView>
+nvda | TabItem icon | <TabControl><TabItem x:Name='p'><TabItem.Header>[ICON]</TabItem.Header></TabItem></TabControl>
+nvda | TabItem Name | <TabControl><TabItem x:Name='p' AutomationProperties.Name='Home'><TabItem.Header>[ICON]</TabItem.Header></TabItem></TabControl>
+nvda | ListBoxItem icon | <ListBox AutomationProperties.Name='Pages'><ListBoxItem x:Name='p'>[ICON]</ListBoxItem></ListBox>
+nvda | Hyperlink text | <TextBlock><Hyperlink x:Name='p'>Open</Hyperlink></TextBlock>
+nvda | Hyperlink empty | <TextBlock><Hyperlink x:Name='p'><InlineUIContainer>[ICON]</InlineUIContainer></Hyperlink></TextBlock>
+nvda | Expander no header | <Expander x:Name='p'/>
+nvda | Expander header | <Expander x:Name='p' Header='Advanced'/>
+nvda | DatePicker nothing | <DatePicker x:Name='p'/>
+nvda | Focusable Border with Name | <Border x:Name='p' Focusable='True' Height='20' Background='Red' AutomationProperties.Name='Open'/>
+nvda | Focusable TextBlock | <TextBlock x:Name='p' Focusable='True' Text='Open the folder'/>
+nvda | UserControl with Name | <UserControl x:Name='p' Focusable='True' IsTabStop='True' AutomationProperties.Name='Card' Height='20'/>
+nvda | Button command text | <Button x:Name='p' Command='ApplicationCommands.Copy'>[ICON]</Button>
+nvda | Button access key | <Button x:Name='p' Content='_Save'/>
+nvda | GroupBox around a Button | <GroupBox Header='Danger'><Button x:Name='p' Content='Reset'/></GroupBox>
+nvda | Button AccessText | <Button x:Name='p'><AccessText Text='_Open'/></Button>
+nvda | Two buttons, same name | <StackPanel><Button x:Name='p' Content='Edit'/><Button Content='Edit'/></StackPanel>

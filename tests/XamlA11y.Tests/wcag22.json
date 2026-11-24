@@ -1,0 +1,335 @@
+{
+ "source": "https://www.w3.org/WAI/WCAG22/wcag.json (2026-11-24): the success criteria of WCAG 2.2 at level A and AA",
+ "criteria": [
+  {
+   "num": "1.1.1",
+   "level": "A",
+   "name": "Non-text Content",
+   "since": "2.0"
+  },
+  {
+   "num": "1.2.1",
+   "level": "A",
+   "name": "Audio-only and Video-only (Prerecorded)",
+   "since": "2.0"
+  },
+  {
+   "num": "1.2.2",
+   "level": "A",
+   "name": "Captions (Prerecorded)",
+   "since": "2.0"
+  },
+  {
+   "num": "1.2.3",
+   "level": "A",
+   "name": "Audio Description or Media Alternative (Prerecorded)",
+   "since": "2.0"
+  },
+  {
+   "num": "1.2.4",
+   "level": "AA",
+   "name": "Captions (Live)",
+   "since": "2.0"
+  },
+  {
+   "num": "1.2.5",
+   "level": "AA",
+   "name": "Audio Description (Prerecorded)",
+   "since": "2.0"
+  },
+  {
+   "num": "1.3.1",
+   "level": "A",
+   "name": "Info and Relationships",
+   "since": "2.0"
+  },
+  {
+   "num": "1.3.2",
+   "level": "A",
+   "name": "Meaningful Sequence",
+   "since": "2.0"
+  },
+  {
+   "num": "1.3.3",
+   "level": "A",
+   "name": "Sensory Characteristics",
+   "since": "2.0"
+  },
+  {
+   "num": "1.3.4",
+   "level": "AA",
+   "name": "Orientation",
+   "since": "2.1"
+  },
+  {
+   "num": "1.3.5",
+   "level": "AA",
+   "name": "Identify Input Purpose",
+   "since": "2.1"
+  },
+  {
+   "num": "1.4.1",
+   "level": "A",
+   "name": "Use of Color",
+   "since": "2.0"
+  },
+  {
+   "num": "1.4.2",
+   "level": "A",
+   "name": "Audio Control",
+   "since": "2.0"
+  },
+  {
+   "num": "1.4.3",
+   "level": "AA",
+   "name": "Contrast (Minimum)",
+   "since": "2.0"
+  },
+  {
+   "num": "1.4.4",
+   "level": "AA",
+   "name": "Resize Text",
+   "since": "2.0"
+  },
+  {
+   "num": "1.4.5",
+   "level": "AA",
+   "name": "Images of Text",
+   "since": "2.0"
+  },
+  {
+   "num": "1.4.10",
+   "level": "AA",
+   "name": "Reflow",
+   "since": "2.1"
+  },
+  {
+   "num": "1.4.11",
+   "level": "AA",
+   "name": "Non-text Contrast",
+   "since": "2.1"
+  },
+  {
+   "num": "1.4.12",
+   "level": "AA",
+   "name": "Text Spacing",
+   "since": "2.1"
+  },
+  {
+   "num": "1.4.13",
+   "level": "AA",
+   "name": "Content on Hover or Focus",
+   "since": "2.1"
+  },
+  {
+   "num": "2.1.1",
+   "level": "A",
+   "name": "Keyboard",
+   "since": "2.0"
+  },
+  {
+   "num": "2.1.2",
+   "level": "A",
+   "name": "No Keyboard Trap",
+   "since": "2.0"
+  },
+  {
+   "num": "2.1.4",
+   "level": "A",
+   "name": "Character Key Shortcuts",
+   "since": "2.1"
+  },
+  {
+   "num": "2.2.1",
+   "level": "A",
+   "name": "Timing Adjustable",
+   "since": "2.0"
+  },
+  {
+   "num": "2.2.2",
+   "level": "A",
+   "name": "Pause, Stop, Hide",
+   "since": "2.0"
+  },
+  {
+   "num": "2.3.1",
+   "level": "A",
+   "name": "Three Flashes or Below Threshold",
+   "since": "2.0"
+  },
+  {
+   "num": "2.4.1",
+   "level": "A",
+   "name": "Bypass Blocks",
+   "since": "2.0"
+  },
+  {
+   "num": "2.4.2",
+   "level": "A",
+   "name": "Page Titled",
+   "since": "2.0"
+  },
+  {
+   "num": "2.4.3",
+   "level": "A",
+   "name": "Focus Order",
+   "since": "2.0"
+  },
+  {
+   "num": "2.4.4",
+   "level": "A",
+   "name": "Link Purpose (In Context)",
+   "since": "2.0"
+  },
+  {
+   "num": "2.4.5",
+   "level": "AA",
+   "name": "Multiple Ways",
+   "since": "2.0"
+  },
+  {
+   "num": "2.4.6",
+   "level": "AA",
+   "name": "Headings and Labels",
+   "since": "2.0"
+  },
+  {
+   "num": "2.4.7",
+   "level": "AA",
+   "name": "Focus Visible",
+   "since": "2.0"
+  },
+  {
+   "num": "2.4.11",
+   "level": "AA",
+   "name": "Focus Not Obscured (Minimum)",
+   "since": "2.2"
+  },
+  {
+   "num": "2.5.1",
+   "level": "A",
+   "name": "Pointer Gestures",
+   "since": "2.1"
+  },
+  {
+   "num": "2.5.2",
+   "level": "A",
+   "name": "Pointer Cancellation",
+   "since": "2.1"
+  },
+  {
+   "num": "2.5.3",
+   "level": "A",
+   "name": "Label in Name",
+   "since": "2.1"
+  },
+  {
+   "num": "2.5.4",
+   "level": "A",
+   "name": "Motion Actuation",
+   "since": "2.1"
+  },
+  {
+   "num": "2.5.7",
+   "level": "AA",
+   "name": "Dragging Movements",
+   "since": "2.2"
+  },
+  {
+   "num": "2.5.8",
+   "level": "AA",
+   "name": "Target Size (Minimum)",
+   "since": "2.2"
+  },
+  {
+   "num": "3.1.1",
+   "level": "A",
+   "name": "Language of Page",
+   "since": "2.0"
+  },
+  {
+   "num": "3.1.2",
+   "level": "AA",
+   "name": "Language of Parts",
+   "since": "2.0"
+  },
+  {
+   "num": "3.2.1",
+   "level": "A",
+   "name": "On Focus",
+   "since": "2.0"
+  },
+  {
+   "num": "3.2.2",
+   "level": "A",
+   "name": "On Input",
+   "since": "2.0"
+  },
+  {
+   "num": "3.2.3",
+   "level": "AA",
+   "name": "Consistent Navigation",
+   "since": "2.0"
+  },
+  {
+   "num": "3.2.4",
+   "level": "AA",
+   "name": "Consistent Identification",
+   "since": "2.0"
+  },
+  {
+   "num": "3.2.6",
+   "level": "A",
+   "name": "Consistent Help",
+   "since": "2.2"
+  },
+  {
+   "num": "3.3.1",
+   "level": "A",
+   "name": "Error Identification",
+   "since": "2.0"
+  },
+  {
+   "num": "3.3.2",
+   "level": "A",
+   "name": "Labels or Instructions",
+   "since": "2.0"
+  },
+  {
+   "num": "3.3.3",
+   "level": "AA",
+   "name": "Error Suggestion",
+   "since": "2.0"
+  },
+  {
+   "num": "3.3.4",
+   "level": "AA",
+   "name": "Error Prevention (Legal, Financial, Data)",
+   "since": "2.0"
+  },
+  {
+   "num": "3.3.7",
+   "level": "A",
+   "name": "Redundant Entry",
+   "since": "2.2"
+  },
+  {
+   "num": "3.3.8",
+   "level": "AA",
+   "name": "Accessible Authentication (Minimum)",
+   "since": "2.2"
+  },
+  {
+   "num": "4.1.2",
+   "level": "A",
+   "name": "Name, Role, Value",
+   "since": "2.0"
+  },
+  {
+   "num": "4.1.3",
+   "level": "AA",
+   "name": "Status Messages",
+   "since": "2.1"
+  }
+ ]
+}

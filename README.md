@@ -28,20 +28,25 @@ lets you stop the number from growing and pay it down when you touch each view.
 
 ## What it finds
 
-| Finding | WCAG | Default | |
+| Finding | WCAG 2.2 (level) | Default | |
 |---|---|---|---|
-| `missing-name` | 4.1.2, 1.1.1 | fail | A button, check box, tab, menu item… that a screen reader announces as just "button". **A ToolTip is not a name** — WPF exposes it as the help text. |
-| `text-not-in-name` | 4.1.2 | fail | It *shows* text, but the text is inside a `StackPanel`, `Border` or `AccessText`. WPF only takes the name from a string, a `TextBlock` or a `ContentControl`. |
-| `meaningless-name` | 4.1.2, 1.1.1 | fail | The name is an icon-font character, white space, `System.Windows.Controls.TabItem`, or geometry path data. |
-| `input-no-name` | 4.1.2, 1.3.1, 3.3.2 | fail | A `TextBox`, `PasswordBox`, `RichTextBox`, `ComboBox`, `Slider` or `DatePicker` nothing names. **`<Label Target=…>` does not name it** — see below. |
-| `focus-not-visible` | 2.4.7 | fail | `FocusVisualStyle` removed, and neither the template nor any style draws focus instead. Reported once, at the setter. |
-| `mouse-only` | 2.1.1 | fail | A `Border`, `Image`, `TextBlock`… with a click handler and no keyboard way in. |
-| `not-in-tab-order` | 2.1.1, 2.4.3 | warn | `IsTabStop="False"` or `Focusable="False"` on a control with no access key, `IsDefault`/`IsCancel` or other visible way in. |
-| `small-target` | 2.5.8 | warn | A size *you set* under 24 DIP, too close to its neighbour for the spacing exception. |
-| `list-no-name` | 4.1.2, 1.3.1 | warn | A `ListBox`, `ListView`, `TreeView` or `DataGrid` nothing names. The `GroupBox` around it does not. |
-| `symbol-name` | 1.1.1 | info | Named only `×`, `…` or an emoji. |
+| `missing-name` | 4.1.2 (A), 1.1.1 (A) | fail | A button, check box, tab, menu item… that has no name for a screen reader to say. **A ToolTip is not a name** — WPF exposes it as the help text. |
+| `text-not-in-name` | 4.1.2 (A), 2.5.3 (A) | fail | It *shows* text, but the text is inside a `StackPanel`, `Border` or `AccessText`. WPF only takes the name from a string, a `TextBlock` or a `ContentControl`. |
+| `meaningless-name` | 4.1.2 (A), 1.1.1 (A) | fail | The name is an icon-font character, white space, `System.Windows.Controls.TabItem`, or geometry path data. |
+| `input-no-name` | 4.1.2 (A), 1.3.1 (A) | fail | A `TextBox`, `PasswordBox`, `RichTextBox`, `ComboBox`, `Slider` or `DatePicker` nothing names. **`<Label Target=…>` does not name it** — see below. |
+| `focus-not-visible` | 2.4.7 (AA) | fail | `FocusVisualStyle` removed, and neither the template nor any style draws focus instead. Reported once, at the setter. |
+| `mouse-only` | 2.1.1 (A) | fail | A `Border`, `Image`, `TextBlock`… with a click handler and no keyboard way in. |
+| `not-in-tab-order` | 2.1.1 (A) | warn | `IsTabStop="False"` or `Focusable="False"` on a control with no access key, `IsDefault`/`IsCancel` or other visible way in. |
+| `small-target` | 2.5.8 (AA) | warn | A size *you set* under 24 DIP, too close to its neighbour for the spacing exception. |
+| `list-no-name` | 4.1.2 (A), 1.3.1 (A) | warn | A `ListBox`, `ListView`, `TreeView` or `DataGrid` nothing names. The `GroupBox` around it does not. |
+| `symbol-name` | 1.1.1 (A) | info | Named only `×`, `…` or an emoji. |
 
 `xamla11y rules` prints the same list with the fix for each.
+
+The standard is **WCAG 2.2, levels A and AA**: seven of its 55 criteria, read for desktop software as
+[WCAG2ICT](https://www.w3.org/TR/wcag2ict-22/) says. Why each finding is that criterion, when it is not a violation, how
+EN 301 549, Section 508 and Taiwan's rules differ, and what a person still has to check:
+[docs/standards.md](docs/standards.md).
 
 This is **not** a claim of WCAG, EN 301 549 or European Accessibility Act conformance. A static tool
 sees part of what those ask for, and only part of that is decided by XAML.
@@ -130,7 +135,8 @@ Insights and of Visual Studio's checker.
 
 | compared with | cases | answered | unknown | **contradictions** |
 |---|---:|---:|---:|---:|
-| UI Automation names, hand-written | 325 | 310 | 15 | **0** |
+| what NVDA 2026.2 says when Tab reaches it | 48 | 45 | 3 | **0** |
+| UI Automation names, hand-written | 338 | 323 | 15 | **0** |
 | UI Automation names, every control × content × way of naming | 8,218 | 7,843 | 375 | **0** |
 | UI Automation names, distinct shapes from 19 real projects | 2,172 | 2,172 | 0 | **0** |
 | UI Automation names, whole files of 49 public projects and 3 apps, with their styles and resources | 10,398 | 10,398 | – | **0** |
@@ -145,8 +151,8 @@ for: two independent reviews then found some forty more ways to fool the tool, a
 are 1,919 that a real WPF window could load without running any of the projects' code; elements that need their code, a
 theme that was not measured or an open menu are left out of that row.
 
-The recorded answers of WPF ship with the tests (`tests/XamlA11y.Tests/uia-facts.json`), so CI on Linux
-checks the same facts. Details: [docs/M1-UIA實測.md](docs/M1-UIA實測.md) (Chinese).
+The recorded answers of WPF and of NVDA ship with the tests (`tests/XamlA11y.Tests/uia-facts.json`, `nvda-facts.json`), so
+CI on Linux checks the same facts. Narrator and JAWS were not run. Details: [docs/M1-UIA實測.md](docs/M1-UIA實測.md) (Chinese).
 
 ## What it can see, honestly
 

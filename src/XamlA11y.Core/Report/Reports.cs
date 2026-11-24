@@ -142,6 +142,7 @@ public static class JsonReport
             },
             inBaseline = baselined,
             reportedAfterBaseline = reported.Count,
+            wcagVersion = Wcag.Version,
             scope = Summary.Scope,
         },
         findings = reported.Select(f => new
@@ -150,6 +151,7 @@ public static class JsonReport
             rule = f.Kind.Rule,
             severity = Text.Slug(f.Severity),
             wcag = f.Kind.Wcag,
+            wcagLevels = f.Kind.Criteria.ToDictionary(c => c, Wcag.Level, StringComparer.Ordinal),
             site = f.Site,
             file = f.File,
             line = f.Line,
@@ -197,9 +199,9 @@ public static class SarifReport
                                 name = string.Concat(k.Slug.Split('-').Select(p => char.ToUpperInvariant(p[0]) + p[1..])),
                                 shortDescription = new { text = k.Title },
                                 fullDescription = new { text = k.Help },
-                                help = new { text = $"{k.Help} (WCAG {k.Wcag})" },
+                                help = new { text = $"{k.Help} (WCAG {Wcag.Version}: {k.WcagWithLevels})" },
                                 defaultConfiguration = new { level = Level(k.Default) },
-                                properties = new { tags = new[] { "accessibility", "WCAG " + k.Wcag } },
+                                properties = new { tags = k.Criteria.Select(c => "WCAG " + c).Prepend("accessibility") },
                             }),
                         },
                     },
@@ -324,7 +326,7 @@ public static class MarkdownReport
     {
         sb.AppendLine("| Location | Kind | WCAG | Detail |").AppendLine("|---|---|---|---|");
         foreach (var f in findings.Take(RowsPerSection))
-            sb.AppendLine($"| {Code(f.Site)} | {f.Kind.Slug} | {f.Kind.Wcag} | {Code(Trunc(f.Message, 220))} |");
+            sb.AppendLine($"| {Code(f.Site)} | {f.Kind.Slug} | {f.Kind.WcagWithLevels} | {Code(Trunc(f.Message, 220))} |");
         sb.AppendLine();
         if (findings.Count > RowsPerSection)
             sb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"<sub>… and {findings.Count - RowsPerSection} more — see the JSON report artifact.</sub>")).AppendLine();
