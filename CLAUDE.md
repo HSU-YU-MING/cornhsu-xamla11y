@@ -75,6 +75,8 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
 | 39 | 深度有上限、沒記住答案 | 同名類別互相當基底，142 KB 的 .cs 跑不完。`DerivedFrom` 有記憶 | 第二輪審查 |
 | 40 | LINQ to XML 的 `PreviousNode` 是從頭數 | 三萬個兄弟元素 39 秒。用 `Markup.Previous` | 第二輪審查 |
 | 41 | XamlReader 會建立 XAML 指名的任何型別 | Oracle 讀的是別人的 XAML。`SafeMarkup` 是白名單、不看清理做了什麼，自己從頭檢查 | 自動安全審查 |
+| 43 | 條文對應憑印象寫 | 「輸入框沒名稱」列了 3.3.2（那條要的是看得到的標籤）、「移出 Tab」列了 2.4.3（那條管順序），「畫面有字」漏了 2.5.3。現在等級與名稱跟 W3C 的 JSON 核對，README 與兩份標準文件的表由 `StandardsTests` 守（照 Ramp 的 test:docs） | 2026-11-24 查證 |
+| 44 | 說「螢幕閱讀器只念得出按鈕」 | 有 ToolTip 時 NVDA 會把 HelpText 當描述念出來。名稱還是空的（4.1.2、Axe 都算），但話不能說滿 | NVDA 原始碼 |
 
 ## 沒做的、知道的
 
