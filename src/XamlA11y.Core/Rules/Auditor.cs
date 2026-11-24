@@ -10,12 +10,15 @@ public sealed record AuditOptions
     /// <summary>規則 → 嚴重度（設定檔 rules）。Off = 這一種不報。</summary>
     public IReadOnlyDictionary<string, Severity> Severities { get; init; } = new Dictionary<string, Severity>();
 
+    /// <summary>依哪個標準、哪個等級：準則全不在裡面的種類預設不報。設定檔 rules 明寫的照寫的。</summary>
+    public Scope Scope { get; init; } = Scope.Default;
+
     /// <summary>使用者擔保：外部佈景在 FocusVisualStyle 關掉之後自己畫焦點（設定檔 themeShowsFocus）。</summary>
     public bool ThemeShowsFocus { get; init; }
 
     public Severity SeverityOf(Kind kind, Severity? lowered = null)
     {
-        var s = Severities.TryGetValue(kind.Slug, out var configured) ? configured : kind.Default;
+        var s = Severities.TryGetValue(kind.Slug, out var configured) ? configured : Scope.Covers(kind) ? kind.Default : Severity.Off;
         return lowered is { } l && l < s ? l : s;
     }
 }
@@ -48,7 +51,7 @@ public sealed class Context(Project project, AuditOptions options)
 
     private readonly List<Finding> _findings = [];
     private readonly List<Judgement> _judgements = [];
-    private readonly Dictionary<string, RuleStats> _stats = Kinds.Rules.ToDictionary(r => r, r => new RuleStats(r), StringComparer.Ordinal);
+    private readonly Dictionary<string, RuleStats> _stats = Kinds.Rules.ToDictionary(r => r, r => new RuleStats(r) { Off = Kinds.CountedIn(r).All(k => options.SeverityOf(k) == Severity.Off) }, StringComparer.Ordinal);
     private readonly Dictionary<string, int> _unknown = new(StringComparer.Ordinal);
     private readonly SortedSet<string> _invalidIgnores = new(StringComparer.Ordinal);
 
@@ -75,12 +78,14 @@ public sealed class Context(Project project, AuditOptions options)
     /// <param name="at">報在哪裡（樣式的 Setter；預設就是元素）。</param>
     /// <param name="lowered">這一筆最多報到這個嚴重度。</param>
     /// <param name="rule">算在哪條規則的統計裡（預設是這一種自己的規則；輸入框的亂碼名稱算 R2）。</param>
-    public void Report(Kind kind, XElement e, string message, XElement? at = null, Severity? lowered = null, string? identity = null, string? rule = null)
+    /// <param name="control">名稱規則的：當成哪一個 WPF 控制項。</param>
+    /// <param name="spokenName">NVDA 會念的名稱（空名稱是 null）。</param>
+    public void Report(Kind kind, XElement e, string message, XElement? at = null, Severity? lowered = null, string? identity = null, string? rule = null, string? control = null, string? spokenName = null, bool unreadable = false)
     {
         rule ??= kind.Rule;
         var site = at ?? e;
         var severity = Options.SeverityOf(kind, lowered);
-        if (severity == Severity.Off) { Record(rule, Verdict.NotJudged, e, $"{kind.Slug} is turned off", null); return; }
+        if (severity == Severity.Off) { Record(rule, Verdict.NotJudged, e, Options.Severities.ContainsKey(kind.Slug) ? $"{kind.Slug} is turned off" : $"{kind.Slug} is not in {Options.Scope.Title}", null); return; }
 
         var (reason, stranded) = IgnoreOf(site);
         if (reason is { Length: > 0 }) { Record(rule, Verdict.Suppressed, e, reason, kind); return; }
@@ -90,7 +95,25 @@ public sealed class Context(Project project, AuditOptions options)
                 : "has no reason, so it does nothing (write xamla11y-ignore: why)"));
 
         Record(rule, Verdict.Finding, e, message, kind);
-        _findings.Add(new Finding(kind, severity, StyleIndex.FileOf(site), LineOf(site), site.Name.LocalName, Cut(XamlA11y.Core.Report.Text.Visible(message), 600)) { Identity = identity ?? IdentityOf(site), Lowered = lowered is not null });
+        _findings.Add(new Finding(kind, severity, StyleIndex.FileOf(site), LineOf(site), site.Name.LocalName, CutMiddle(XamlA11y.Core.Report.Text.Visible(message), 600)) { Identity = identity ?? IdentityOf(site), Lowered = lowered is not null, Control = control, SpokenName = spokenName, Unreadable = unreadable, Description = control is null ? null : DescriptionOf(e) });
+    }
+
+    /// <summary>沒有是 ""，不確定是 null。UIA 的 HelpText：AutomationProperties.HelpText，空的話是字串 ToolTip（WPF 原始碼，NVDA 實跑）。</summary>
+    private string? DescriptionOf(XElement e)
+    {
+        foreach (var property in (ReadOnlySpan<string>)["AutomationProperties.HelpText", "ToolTip"])
+        {
+            var r = Project.Styles.Resolve(e, property);
+            if (r.Kind == ResolveKind.NotSet || r.IsNull || r.Origin is null) continue;
+            if (r.IsValue && r.Element is null && r.Value is { } v && !Markup.IsMarkup(v))
+            {
+                // 空字串的 HelpText 才往下看 ToolTip；只有空白的就是它了（WPF）
+                if (Markup.Literal(v) is { Length: > 0 } text) return text;
+                continue;
+            }
+            return null;      // 綁定、物件：執行時才知道，念法不猜
+        }
+        return "";
     }
 
     private void Record(string rule, Verdict verdict, XElement e, string? reason, Kind? kind)
@@ -109,7 +132,7 @@ public sealed class Context(Project project, AuditOptions options)
         // 原因裡夾了 repo 的字（資源鍵、綁定），一個二十萬字的鍵不能把報告撐爆
         static void Count(Dictionary<string, int> map, string? reason)
         {
-            var r = Cut(reason ?? "", 200);
+            var r = CutMiddle(reason ?? "", 200);
             map[r] = map.GetValueOrDefault(r) + 1;
         }
     }
@@ -129,6 +152,7 @@ public sealed class Context(Project project, AuditOptions options)
             Findings = sorted,
             Rules = [.. Kinds.Rules.Select(r => _stats[r])],
             Files = Project.FilesScanned,
+            Scope = Options.Scope,
             ParseErrors = Project.ParseErrors,
             ParseWhy = Project.ParseWhy,
             Foreign = Project.Foreign,
@@ -156,6 +180,15 @@ public sealed class Context(Project project, AuditOptions options)
     {
         if (s.Length <= n) return s;
         return s[..(char.IsHighSurrogate(s[n - 1]) ? n - 1 : n)];
+    }
+
+    /// <summary>截中間：句子的樣子在頭尾，repo 的字（資源鍵、綁定）在中間。</summary>
+    internal static string CutMiddle(string s, int n)
+    {
+        if (s.Length <= n) return s;
+        var tail = n / 3;
+        var from = s.Length - tail;
+        return Cut(s, n - tail - 1) + "…" + s[(char.IsLowSurrogate(s[from]) ? from + 1 : from)..];
     }
 
     private const string IgnoreToken = "xamla11y-ignore";

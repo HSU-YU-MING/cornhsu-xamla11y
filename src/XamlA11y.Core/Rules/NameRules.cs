@@ -33,6 +33,9 @@ internal static class NameRules
             return;
         }
 
+        // NVDA 把有欄位的 ListView 念成資料格（實跑）
+        var spoken = SpokenAs(ctx, e, control);
+
         var rule = Wpf.Interactive.Contains(control) ? "R1" : Wpf.Inputs.Contains(control) ? "R2" : Wpf.Lists.Contains(control) ? "R7" : null;
         if (rule is null)
         {
@@ -103,25 +106,27 @@ internal static class NameRules
         {
             ctx.Report(Kinds.ListNoName, e, name.Kind == NameKind.Meaningless
                 ? $"<{local}> has an unreadable accessible name: {name.Why}"
-                : $"<{local}> has no accessible name{HintFor(ctx, e)}", lowered: lowered is null ? null : Severity.Info);
+                : $"<{local}> has no accessible name{HintFor(ctx, e)}", lowered: lowered is null ? null : Severity.Info, control: name.Kind == NameKind.Meaningless ? null : spoken, unreadable: name.Kind == NameKind.Meaningless);
             return;
         }
 
         if (rule == "R2" && name.Kind != NameKind.Meaningless)
         {
-            ctx.Report(Kinds.InputNoName, e, $"<{local}> has no accessible name{HintFor(ctx, e)}", lowered: lowered);
+            ctx.Report(Kinds.InputNoName, e, $"<{local}> has no accessible name{HintFor(ctx, e)}", lowered: lowered, control: spoken);
             return;
         }
 
         if (name.Kind == NameKind.TextNotUsed)
         {
-            ctx.Report(Kinds.TextNotName, e, $"<{local}> shows {(name.Text == "{…}" ? "bound text" : $"\"{Context.Show(name.Text)}\"")} but has no accessible name: {name.Why}", lowered: lowered);
+            ctx.Report(Kinds.TextNotName, e, $"<{local}> shows {(name.Text == "{…}" ? "bound text" : $"\"{Context.Show(name.Text)}\"")} but has no accessible name: {name.Why}", lowered: lowered, control: spoken);
             return;
         }
 
         if (name.Kind == NameKind.Meaningless)
         {
-            ctx.Report(Kinds.MeaninglessName, e, $"<{local}> has an unreadable accessible name{(name.Text is { Length: > 0 } t && t.Trim().Length > 0 ? $" ({Context.Show(t)})" : "")}: {name.Why}", lowered: lowered, rule: rule);
+            // 項目容器沒文字：名稱是型別名（自己的子類別是它自己的型別名，念法不猜）
+            var typeName = Wpf.Items.Contains(control) && spoken is not null && name.Text is null && name.Why?.EndsWith("type name", StringComparison.Ordinal) == true;
+            ctx.Report(Kinds.MeaninglessName, e, $"<{local}> has an unreadable accessible name{(name.Text is { Length: > 0 } t && t.Trim().Length > 0 ? $" ({Context.Show(t)})" : "")}: {name.Why}", lowered: lowered, rule: rule, control: typeName ? control : null, spokenName: typeName ? control : null);
             return;
         }
 
@@ -130,7 +135,21 @@ internal static class NameRules
         var own = Markup.IsWpf(e) ? null : OwnTextProperties.FirstOrDefault(p => !string.IsNullOrWhiteSpace((string?)e.Attribute(p)));
         var onlyTip = own is not null ? $"; its {own} property belongs to the class and is not the name"
             : tip.IsSet ? "; its ToolTip is the help text, not the name" : "";
-        ctx.Report(Kinds.MissingName, e, $"<{local}> has no accessible name: {name.Why}{onlyTip}", lowered: lowered);
+        ctx.Report(Kinds.MissingName, e, $"<{local}> has no accessible name: {name.Why}{onlyTip}", lowered: lowered, control: spoken);
+    }
+
+    /// <summary>NVDA 會把它念成哪一種控制項；不確定（不是 WPF 自己的類別、停用或不能聚焦、有快速鍵要念、別的 View）是 null。</summary>
+    private static string? SpokenAs(Context ctx, XElement e, string control)
+    {
+        var styles = ctx.Project.Styles;
+        if (!Markup.IsWpf(e) || e.Name.LocalName != control) return null;
+        if (ctx.IsFalse(e, "Focusable") || ctx.IsFalse(e, "IsTabStop") || styles.Resolve(e, "IsEnabled") is { Kind: not ResolveKind.NotSet, IsTrue: false }) return null;
+        if (styles.Resolve(e, "AutomationProperties.AccessKey").IsSet || styles.Resolve(e, "AutomationProperties.AcceleratorKey").IsSet) return null;
+        if (e.Descendants().Any(d => d.Name.LocalName == "AccessText")) return null;
+        if (control != "ListView") return control;
+        // 有欄位的念成資料格（實跑），別的 View 沒跑過
+        var view = styles.Resolve(e, "View");
+        return view.Kind == ResolveKind.NotSet || view.IsNull ? control : view.Element is { Name.LocalName: "GridView" } g && Markup.IsWpf(g) ? "DataGrid" : null;
     }
 
     private sealed record LabelTargets(Dictionary<string, XElement> ByName);

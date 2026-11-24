@@ -52,9 +52,34 @@ Axe-Windows reports the same control. The finding stays a `fail`.
 
 | | Uses | What differs |
 |---|---|---|
-| **EN 301 549** (EU; chapter 11 is software) | V3.2.1 (2021): WCAG 2.1 A and AA. V4.1.1 was published in September 2026 and uses WCAG 2.2; the Commission's [AccessibleEU](https://accessible-eu-centre.ec.europa.eu/content-corner/news/european-accessibility-standard-en-301-549-has-been-updated-2026-09-07_en) wrote on 2026-09-07 that V3.2.1 stays the reference until V4.1.1 is cited in the Official Journal. | Under V3.2.1, 2.5.8 is not required (`"small-target": "off"`). |
-| **Section 508** (US) | [WCAG 2.0 A and AA](https://www.access-board.gov/ict/) for software (E207.2), plus 502.3.1: role, state, name and description programmatically determinable. | 2.5.3 and 2.5.8 are not in WCAG 2.0. |
-| **網站無障礙規範** (Taiwan) | The 115 revision aligns with WCAG 2.2 and takes effect on 2026-11-30. | Its scope is public *web sites*; desktop software is not mentioned. |
+| **EN 301 549** (EU; chapter 11 is software) | V3.2.1 (2021): WCAG 2.1 A and AA. V4.1.1 was published in September 2026 and uses WCAG 2.2; V3.2.1 stays the reference until V4.1.1 is cited in the Official Journal ([AccessibleEU](https://accessible-eu-centre.ec.europa.eu/content-corner/news/european-accessibility-standard-en-301-549-has-been-updated-2026-09-07_en), 2026-09-07). On 2026-11-23 the [Commission's list](https://digital-strategy.ec.europa.eu/en/policies/web-accessibility-directive-standards-and-harmonisation) still had V3.2.1 as the latest; Deque expects the citation on 2027-01-22. | `--standard en301549` (V3.2.1: 2.5.8 is not required) or `--standard en301549-v4`. |
+| **Section 508** (US) | [WCAG 2.0 A and AA](https://www.access-board.gov/ict/) for software (E207.2), plus 502.3.1: role, state, name and description programmatically determinable. | `--standard section508`: 2.5.3 and 2.5.8 are not in WCAG 2.0. |
+| **網站無障礙規範** (Taiwan) | The 115 revision aligns with WCAG 2.2 and takes effect on 2026-11-30. | Its scope is public *web sites*; desktop software is not mentioned. Its check codes (檢測碼) are for web pages, so this tool does not quote them; `--lang zh-Hant` uses its names of the criteria. |
+
+### Choosing one
+
+`--standard wcag22` (the default), `wcag21`, `wcag20`, `en301549`, `en301549-v4`, `section508` and `--level A|AA` decide which findings
+are in scope and which criteria and clauses the report quotes. What WPF does with your XAML does not change. A finding whose
+criteria are all outside the standard is off, unless the config file's `rules` sets it.
+
+The clause numbers, read from the standards on 2026-11-24 (EN 301 549 chapter 11, the *open functionality* sub-clauses of V3.2.1;
+the ICT standards for Section 508). JSON and SARIF carry all of them, whichever standard was chosen; HTML shows those of the chosen standard (all of them when it is a
+WCAG version), Markdown only those of the chosen one:
+
+| WCAG | EN 301 549 V3.2.1 | EN 301 549 V4.1.1 | Section 508 |
+|---|---|---|---|
+| 1.1.1 | 11.1.1.1.1 | 11.1.1.1 | E207.2 |
+| 1.3.1 | 11.1.3.1.1 | 11.1.3.1 | E207.2 |
+| 2.1.1 | 11.2.1.1.1 | 11.2.1.1 | E207.2 |
+| 2.4.7 | 11.2.4.7 | 11.2.4.7 | E207.2 |
+| 2.5.3 | 11.2.5.3.1 | 11.2.5.3 | – |
+| 2.5.8 | – | 11.2.5.8 | – |
+| 4.1.2 | 11.4.1.2.1 | 11.4.1.2 | E207.2 |
+| the name is empty | 11.5.2.5 | 11.5.2.5 | 502.3.1 |
+
+`E207.2` is the whole of WCAG 2.0 A and AA; Section 508 does not number the criteria of software separately. The last row is *Object
+information*: names have to be programmatically determinable. It goes with `missing-name`, `text-not-in-name`, `input-no-name` and
+`list-no-name` when the name is empty, not with a name that exists and means nothing.
 
 Whether a product falls under one of these is a legal question about the product and where it is sold. This page does not
 answer it.
@@ -63,12 +88,14 @@ answer it.
 
 Other tools of the family cover part of the list: [XamlContrast](https://github.com/HSU-YU-MING/cornhsu-xamlcontrast)
 1.4.3 and 1.4.11, [XamlFit](https://github.com/HSU-YU-MING/cornhsu-xamlfit) text that is cut off in another language.
-The rest needs a person. The ones that go wrong most in desktop software:
+The rest needs a person. The ones that go wrong most in desktop software (the HTML, Markdown and JSON reports list the ones that are in
+the chosen standard):
 
 | WCAG 2.2 | Check it like this |
 |---|---|
 | 1.3.2 Meaningful Sequence (A) | Read the window with a screen reader: does the order make sense? |
 | 1.4.1 Use of Color (A) | Is anything (an error, a state) shown only by color? |
+| 1.4.3 Contrast (Minimum) (AA) | Text against its background, 4.5:1 (large text 3:1). XamlContrast checks it. |
 | 1.4.4 Resize Text (AA) | WPF does not follow the Windows text size. Does the app offer its own scaling to 200 %? |
 | 1.4.11 Non-text Contrast (AA) | Borders, icons and the focus indicator against their background, 3:1. |
 | 1.4.13 Content on Hover or Focus (AA) | Can a ToolTip or popup be dismissed, hovered, and does it stay? |
@@ -77,12 +104,12 @@ The rest needs a person. The ones that go wrong most in desktop software:
 | 2.1.4 Character Key Shortcuts (A) | Single-letter shortcuts: can they be turned off? |
 | 2.4.3 Focus Order (A) | Does Tab follow the meaning? Where is focus after a dialog closes? |
 | 2.4.6 Headings and Labels (AA) | Do the names say what the control does? A name that exists passes this tool. |
-| 2.4.11 Focus Not Obscured (AA) | Does a sticky bar or popup cover the focused control? |
+| 2.4.11 Focus Not Obscured (Minimum) (AA) | Does a sticky bar or popup cover the focused control? |
 | 2.5.7 Dragging Movements (AA) | Is there a way without dragging? |
 | 3.2.1 On Focus, 3.2.2 On Input (A) | Does something unexpected happen when a control gets focus or a value? |
 | 3.3.1 Error Identification (A), 3.3.3 Error Suggestion (AA) | Is the error said in text, and tied to the field? |
-| 3.3.7 Redundant Entry (A), 3.3.8 Accessible Authentication (AA) | Is anything asked twice? Does signing in need a puzzle? |
-| 4.1.2, the rest (A) | Roles, states and values of custom controls: `OnCreateAutomationPeer`. |
+| 3.3.7 Redundant Entry (A), 3.3.8 Accessible Authentication (Minimum) (AA) | Is anything asked twice? Does signing in need a puzzle? |
+| 4.1.2 Name, Role, Value (A), the rest | Roles, states and values of custom controls: `OnCreateAutomationPeer`. |
 | 4.1.3 Status Messages (AA) | Is "Saved" announced? `AutomationProperties.LiveSetting` and `RaiseAutomationEvent`. |
 
 The levels and names on this page are checked against [W3C's data](https://www.w3.org/WAI/WCAG22/wcag.json)

@@ -16,7 +16,7 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
 2. `dotnet build prototype/UiaOracle -c Release`，跑 `uiaoracle check`（約 4 分鐘，會在螢幕左上角開小視窗、搶焦點）。**任何一個 WRONG 都不能放過。**
 3. `uiaoracle check-corpus <專案資料夾…>`：真實專案的形狀。`uiaoracle check-windows <專案資料夾…>`：整個檔案連樣式、資源載進真的 WPF（視窗在螢幕外，不搶焦點；49 個專案約 40 分鐘，開四個平行約 15 分鐘）。
    別人的 XAML 一律過 `SafeMarkup`（白名單）才交給 XamlReader；改它之後跑 `uiaoracle check-hostile`。
-   名稱的規則大改之後，用真的 NVDA 再走一次：`node prototype/UiaOracle/nvda.mjs`（會出聲、搶焦點約 3 分鐘，先講；只在自己的視窗是前景時按鍵），更新 `nvda-facts.json`。
+   名稱的規則大改之後，用真的 NVDA 再走一次：`node prototype/UiaOracle/nvda.mjs … zh_TW` 與 `… en`（各約 4 分鐘，會出聲、搶焦點，先講；只在自己的視窗是前景時按鍵），`nvda-merge.mjs` 合成 `nvda-facts.json`。
 4. `uiaoracle record tests/XamlA11y.Tests/uia-facts.json`：把 WPF 的答案錄給跨平台的測試。**只錄真值，不錄工具的答案。**
 5. `scripts/corpus-fetch.sh` 抓語料（`docs/corpus.tsv`，commit 釘死），`scripts/corpus-run.sh <輸出資料夾>` 前後各一次，`node scripts/corpus-diff.mjs 前 後` 逐類抽樣看原始碼，`node scripts/readme-corpus.mjs <輸出> --update` 重貼 README 的表。Oracle 抓規則想錯，語料抓規則想漏 —— 兩個都要。
 
@@ -27,8 +27,10 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
 - **R3 報在樣式的 Setter，不報在每個用到的元素**：修的地方只有一個。
 - **`DataBound` 不進分母**：`Content="{Binding}"` 專案改不了「靜態看不到」。
 - **C# 的 `class X : Button` 會自動跟**，但只要那個檔案提到 `AutomationProperties` 或 `OnCreateAutomationPeer` 就整個算不知道。
-- **訊息裡的文字一律當不可信輸入**：console 走 `Text.Safe`、Markdown 走 `Code`。新增輸出點時照做。
-- baseline 的鍵不含行號。
+- **訊息裡的文字一律當不可信輸入**：console 走 `Text.Safe`、Markdown 走 `Code`、HTML 走 `H`。新增輸出點時照做。
+- baseline 的鍵不含行號，也不含語言與標準。
+- **中文是照英文訊息的句型翻的**（`Zh.cs`）：規則只寫英文。新增或改一句訊息，`Zh.cs` 要跟著加，ReportTests 會擋。JSON、SARIF、MSBuild 一律英文。
+- **台灣的檢測碼不標**：那是給網頁的。EN 301 549 與 508 的條號在 `Standards.cs`，照標準原文查的，文件的表由測試守。EN 301 549 V4.1.1 刊登歐盟公報之後（Deque 預期 2027-01-22）要改兩份標準文件那一列。
 
 ## 實查踩過的坑
 
@@ -80,6 +82,11 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
 | 44 | 說「螢幕閱讀器只念得出按鈕」 | 有 ToolTip 時 NVDA 會把 HelpText 當描述念出來。名稱還是空的（4.1.2、Axe 都算），但話不能說滿 | NVDA 原始碼 → NVDA 2026.2 實跑確認 |
 | 45 | Guidepup 的 `press` 預設只收第一句 | 清單項目、頁籤的名字在第二句，看起來像沒念。要 `{ capture: true }` | NVDA 實跑 |
 | 46 | 繪圖物件（EllipseGeometry、漸層筆刷、Color）當內容 | 名稱是型別名或色碼，不是空的；第一版說沒有名稱 | NVDA 實跑 → Oracle 確認 |
+| 47 | 「關掉的規則不算可解析率」做成 gate 空了就 100 | 全部關掉變成通過。一條都沒開就是 exit 3；R2 要連亂碼、只有符號的名稱都關了才算關（它們也算在 R2） | 獨立審查 |
+| 48 | NVDA 的念法照控制項型別寫 | RichTextBox 念「文件」不是「編輯區」，有欄位的 ListView 念「資料格」，AccessText 還會念快速鍵。沒跑過的一律不寫（自己的類別、停用的、提示裡有符號的） | 獨立審查、NVDA 實跑 |
+| 49 | 報告只說「這支查不到的 17 件」 | 讀起來像其餘都查過了。清單是最常出問題的，要寫明不是 WCAG 剩下的全部 | 獨立審查 |
+| 50 | 訊息從尾巴截斷 | 中文照英文的句型翻，尾巴不見就翻不到。`CutMiddle` 截中間 | 獨立審查 |
+| 51 | 看不見的字元一個 char 一個 char 看 | BMP 外的標籤字元（U+E00xx）漏掉。用 Rune | 獨立審查 |
 
 ## 沒做的、知道的
 

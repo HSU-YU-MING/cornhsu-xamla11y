@@ -96,8 +96,8 @@
 
 ## 5d. NVDA 怎麼念
 
-2026-11-24，NVDA 2026.2、繁體中文語音，用 Tab 走過 49 種寫法的真視窗（`prototype/UiaOracle/nvda.mjs` + `facts/nvda.txt`，逐句記在
-`tests/XamlA11y.Tests/nvda-facts.json`）。工具判得出來的 45 案跟 NVDA 念的沒有一案矛盾。第一次跑抓到一個判錯種類的：按鈕內容是 EllipseGeometry
+2026-11-24，NVDA 2026.2，繁體中文與英文各一遍，用 Tab 走過 76 種寫法的真視窗（`prototype/UiaOracle/nvda.mjs` + `facts/nvda.txt`，逐句記在
+`tests/XamlA11y.Tests/nvda-facts.json`）。工具判得出來的 72 案跟 NVDA 念的沒有一案矛盾，兩種語言一樣；報告上的「NVDA 會念」也逐案比過。第一次跑抓到一個判錯種類的：按鈕內容是 EllipseGeometry
 時念的是型別名，工具說「沒有名稱」（已修，同類的漸層筆刷、Color 一起）。
 
 | 寫法 | NVDA 念 |
@@ -116,8 +116,16 @@
 | 清單有名稱 | Files, 清單. One, … |
 | 只有圖示的 TabItem | 索引標籤控制項. System dot Windows dot Controls dot Tab Item 標頭: 內容:, 索引標籤… |
 | 可聚焦的 Border 設了 Name | （什麼都沒念） |
+| RichTextBox | 文件, 空白（不是「編輯區」） |
+| ListView：沒有 View／有欄位 | 清單／資料格 |
+| 內容是 AccessText 的按鈕 | 按鈕, O（快速鍵會念） |
+| ToolTip 寫成 `<ToolTip Content=…>` | 按鈕, Delete（跟字串一樣） |
+| HelpText 與 ToolTip 都有 | 按鈕, Help（HelpText 贏；HelpText 是空字串才念 ToolTip） |
+| 下拉式方塊、滑桿、清單、樹只有 ToolTip | 下拉式方塊, One, 折疊, Name／滑桿, 0, Name／清單, Name／樹狀檢視, Name |
+| DataGrid 的一列 | System dot Windows dot Controls dot Text Block, 資料項目（列的名稱是資料的 ToString()） |
 
 - **GroupBox 的標題聽得到**（當成群組念），只是不是清單的名稱 —— R7 放在 warn 的另一個理由。
+- **DataGrid 的列念的是資料物件的 `ToString()`**：沒覆寫就是型別名。資料的事，XAML 看不到，這支不判。
 - 停用的命令按鈕 Tab 停不到，沒有比。Narrator 與 JAWS 沒跑過。
 
 ## 6. .NET Framework 4.8

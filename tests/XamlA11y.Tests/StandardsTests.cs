@@ -8,9 +8,9 @@ namespace XamlA11y.Tests;
 /// <summary>條文對應：等級、名稱跟 W3C 的資料一致；README 與標準文件寫的跟程式一致（手寫的表會漂）。</summary>
 public class StandardsTests
 {
-    private static readonly Dictionary<string, (string Level, string Name)> W3C =
+    private static readonly Dictionary<string, (string Level, string Name, string Since)> W3C =
         JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "wcag22.json"))).RootElement.GetProperty("criteria").EnumerateArray()
-            .ToDictionary(c => c.GetProperty("num").GetString()!, c => (c.GetProperty("level").GetString()!, c.GetProperty("name").GetString()!), StringComparer.Ordinal);
+            .ToDictionary(c => c.GetProperty("num").GetString()!, c => (c.GetProperty("level").GetString()!, c.GetProperty("name").GetString()!, c.GetProperty("since").GetString()!), StringComparer.Ordinal);
 
     /// <summary>從輸出資料夾往上找。⚠ 不要用 CallerFilePath：CI 的建置會把原始碼路徑換成 /_/。</summary>
     private static string Repo() => ActionContractTests.RepoRoot();
@@ -19,13 +19,14 @@ public class StandardsTests
     public void The_levels_and_names_are_the_ones_W3C_publishes()
     {
         Assert.Equal(55, W3C.Count);
-        foreach (var (number, (level, name)) in Wcag.Criteria)
+        foreach (var c in Wcag.Criteria.Values)
         {
-            Assert.Equal(W3C[number].Level, level);
-            Assert.Equal(W3C[number].Name, name);
+            Assert.Equal(W3C[c.Number].Level, c.Level);
+            Assert.Equal(W3C[c.Number].Name, c.Name);
+            Assert.Equal(W3C[c.Number].Since, c.Since);
         }
         // 沒用到的不要留著，用到的都要有
-        Assert.Equal(Wcag.Criteria.Keys.Order(StringComparer.Ordinal), Kinds.All.SelectMany(k => k.Criteria).Distinct().Order(StringComparer.Ordinal));
+        Assert.Equal(Wcag.Criteria.Keys.Order(StringComparer.Ordinal), Kinds.All.SelectMany(k => k.Criteria).Concat(ManualCheck.All.SelectMany(m => m.Criteria)).Distinct().Order(StringComparer.Ordinal));
     }
 
     [Theory]
