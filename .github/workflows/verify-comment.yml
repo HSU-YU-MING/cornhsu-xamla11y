@@ -1,0 +1,26 @@
+name: verify-comment (temporary)
+on: pull_request
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  comment:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.x'
+      - id: pack
+        run: |
+          v="0.0.0-ci.${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}"
+          dotnet pack src/XamlA11y.Cli/XamlA11y.Cli.csproj -c Release -o ci-feed -p:Version="$v"
+          printf '<configuration><packageSources><add key="ci" value="ci-feed" /></packageSources></configuration>\n' > nuget.config
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - continue-on-error: true
+        uses: ./
+        with: { root: samples/demo, version: "${{ steps.pack.outputs.version }}" }
+      - name: Second call updates the same comment
+        continue-on-error: true
+        uses: ./
+        with: { root: samples/demo, version: "${{ steps.pack.outputs.version }}" , upload-report: 'false' }
