@@ -49,8 +49,7 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
 | 14 | 佈景的焦點常是動畫 | 拍照前要等（`SettleMilliseconds`），不然看起來沒變 | focus-themes |
 | 15 | Bash 的 heredoc 會吃反斜線、指令太長會被截斷 | 寫程式碼檔用 Write 工具；改既有檔案寫一支 `.js` 找錨點取代，找不到要丟例外 | 這一輪踩了四次 |
 | 16 | PowerShell 5.1 把沒有 BOM 的檔案當 Big5 讀 | 中文註解吃掉下一行的 `param`。`net48.ps1` 只能用 ASCII | net48.ps1 |
-| 17 | XamlContrast 1.8.3 與 XamlFit 0.12.0 只認最近的那個 ignore 註解 | 兩支疊在同一個元素上，遠的那個失效。XamlA11y 不挑順序；文件教「xamla11y-ignore 放最前面」 | 四支實跑 |
-
+| 17 | XamlContrast 1.8.3 與 XamlFit 0.12.0 以前只認最近的那個 ignore 註解 | 兩支疊在同一個元素上，遠的那個失效。1.9.0、0.13.0（與 XamlKeys 0.4.0）起四支同一條規則、不挑順序，見第 32 條與 docs/four-tools.md | 四支實跑 |
 | 18 | 設計期屬性（`d:Content`）、別的 XAML 前綴（`xaml:Null`） | 屬性只比區域名稱就會把設計期的當真。載入時統一處理（`SafeXml.Normalize`） | 獨立審查 |
 | 19 | 樣式的型別只比區域名稱 | `TargetType="ui:Button"` 套到 WPF 的 Button。一律用 `Markup.TypeId` | 獨立審查 |
 | 20 | 沒人合併的資源字典 | 裡面的隱含樣式套不到任何人。`Project.Link` 算合併關係，程式碼提到檔名的當成看得到 | 獨立審查 |
@@ -64,9 +63,8 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
 | 28 | 降過級的 finding 變嚴重了，baseline 還是蓋住 | 鍵加「~」 | 獨立審查 |
 | 29 | MaterialDesign 的 Hint 名稱來自**樣式** | 樣式被換掉、佈景沒合併就沒有。光看套件版本不夠 | 獨立審查 → Oracle 確認 |
 | 30 | 疊在按鈕上的 TextBlock 做同一個動作 | 鍵盤本來就有路。同檔有鍵盤控制項綁同一個命令／處理器就不報 | MAA |
-| 32 | 被註解掉的元素在 XML 裡也是註解 | 「註解都跳過、元素才停」會讓前面的 ignore 改壓下一個元素。註解以 `<` 開頭就停，文字也停（處理指令跳過），而且要警告（四件套一致，使用者 2026-11-24 定） | 四支對照實跑 |
 | 31 | xunit 的字串 Assert 預設用文化比對 | 軟連字號是可忽略字元，`DoesNotContain` 永遠失敗。要 `StringComparison.Ordinal` | ReviewTests |
-
+| 32 | 被註解掉的元素在 XML 裡也是註解 | 「註解都跳過、元素才停」會讓前面的 ignore 改壓下一個元素。註解以 `<` 開頭就停，文字也停（處理指令跳過），而且要警告（四件套一致，使用者 2026-11-24 定） | 四支對照實跑 |
 | 33 | ToolBar 把直接子元素的隱含樣式換掉 | 隱含樣式給的名稱在工具列裡沒有 —— 偏偏圖示按鈕都在那裡（假通過） | 第二輪審查 → Oracle 確認 |
 | 34 | `ItemContainerStyle` 沒算 | 名稱寫在那裡的 TabItem、ListBoxItem 被報「念不出來」 | 第二輪審查 → Oracle 確認 |
 | 35 | 樣式觸發器的 Content 壓過本地內容 | 本地值才是贏的 | panuon 語料 |

@@ -21,17 +21,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.8.3
+      - uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.9.0
         if: ${{ !cancelled() }}
-        with: { root: src, version: 1.8.3 }
+        with: { root: src, version: 1.9.0 }
 
-      - uses: HSU-YU-MING/cornhsu-xamlkeys@v0.3.1
+      - uses: HSU-YU-MING/cornhsu-xamlkeys@v0.4.0
         if: ${{ !cancelled() }}
-        with: { root: src, version: 0.3.1 }
+        with: { root: src, version: 0.4.0 }
 
-      - uses: HSU-YU-MING/cornhsu-xamlfit@v0.12.0
+      - uses: HSU-YU-MING/cornhsu-xamlfit@v0.13.0
         if: ${{ !cancelled() }}
-        with: { root: src, version: 0.12.0, resx: src/Resources }
+        with: { root: src, version: 0.13.0, resx: src/Resources }
 
       - uses: HSU-YU-MING/cornhsu-xamla11y@v0.1.0
         if: ${{ !cancelled() }}
@@ -69,18 +69,25 @@ by side. Each tool reads only its own.
 Each tool has its own comment and each needs a reason: `xamlcontrast-ignore`, `xamlkeys-ignore`,
 `xamlfit-ignore`, `xamla11y-ignore`.
 
-XamlA11y finds its comment in any position among the comments before an element, but not past text or a
-commented-out element: the comment in front of that one was about that one. **XamlContrast 1.8.3 and
-XamlFit 0.12.0 only look at the comment closest to the element**, so put `xamla11y-ignore` first:
+Put one comment per tool in front of the element, in any order:
 
 ```xml
-<!-- xamla11y-ignore: the text above is the accessible way to open it -->
 <!-- xamlcontrast-ignore: decorative -->
+<!-- xamla11y-ignore: the text above is the accessible way to open it -->
 <TextBlock Text="»" Foreground="#DDDDDD" MouseLeftButtonUp="OnOpen"/>
 ```
 
-For the same reason an element cannot carry both a `xamlcontrast-ignore` and a `xamlfit-ignore` today —
-whichever is further away has no effect. Put one of the two in that tool's baseline.
+The four tools look for their comment the same way:
+
+- Other comments and processing instructions in between are skipped. Content is not: an element, text, or a
+  commented-out element (a comment that starts with `<`). A comment in front of that was about that.
+- A comment that stops at text or at a commented-out element does nothing, and the run says so. So does one
+  without a reason.
+- With several comments of the same tool on one element, the closest one decides.
+
+This needs XamlContrast 1.9.0, XamlKeys 0.4.0 and XamlFit 0.13.0 or later. XamlContrast 1.8.3 and XamlFit 0.12.0
+only look at the comment closest to the element, so of two that are stacked the further one has no effect; XamlKeys
+0.3.1 also skips text and commented-out elements, so its comment can hide the wrong element.
 
 ## Order of adoption
 
