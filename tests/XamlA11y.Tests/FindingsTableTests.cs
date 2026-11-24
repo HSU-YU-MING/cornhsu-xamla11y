@@ -19,6 +19,8 @@ public sealed class FindingsTableTests
     [InlineData("docs/fixes.md", "item-type-name")]
     [InlineData("docs/fixes.md", "silent-tab-stop")]
     [InlineData("docs/fixes.md", "same-name")]
+    [InlineData("docs/fixes.md", "name-differs")]
+    [InlineData("docs/修法.md", "name-differs")]
     [InlineData("docs/修法.md", "missing-name")]
     [InlineData("docs/修法.md", "text-not-in-name")]
     [InlineData("docs/修法.md", "meaningless-name")]
@@ -86,5 +88,46 @@ public sealed class FindingsTableTests
         Assert.Equal(["missing-name", "text-not-in-name", "meaningless-name", "input-no-name", "mouse-only", "focus-not-visible"], Kinds.All.Where(k => k.Default == Severity.Fail).Select(k => k.Slug));
         Assert.Equal(["symbol-name", "same-name"], Kinds.All.Where(k => k.Default == Severity.Info).Select(k => k.Slug));
         Assert.Equal(["missing-name", "text-not-in-name", "input-no-name", "list-no-name", "widget-no-name"], Kinds.All.Where(k => k.NameIsEmpty).Select(k => k.Slug));
+    }
+
+    /// <summary>文件裡手寫的數字：幾種、幾條準則。</summary>
+    [Fact]
+    public void The_numbers_in_the_documents_are_right()
+    {
+        static string Doc(string file) => File.ReadAllText(Path.Combine(ActionContractTests.RepoRoot(), file));
+        var kinds = Kinds.All.Count;
+        var criteria = Kinds.All.SelectMany(k => k.Criteria).Distinct().Count();
+        var total = Wcag.Total("2.2", "AA");
+        string[] words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
+        Assert.Contains($"{words[kinds]} kinds of finding", Doc("CHANGELOG.md"), StringComparison.Ordinal);
+        Assert.Contains($"，{kinds} 種）", Doc("CLAUDE.md"), StringComparison.Ordinal);
+        Assert.Contains($"{words[criteria]} of its {total} criteria", Doc("README.md"), StringComparison.Ordinal);
+        Assert.Contains($"{total} 條裡的 {criteria} 條", Doc("README.zh-Hant.md"), StringComparison.Ordinal);
+        Assert.Contains($"{words[criteria]} of its {total} success criteria", Doc("docs/standards.md"), StringComparison.Ordinal);
+        Assert.Contains($"the other {total - criteria} criteria are not checked", Doc("docs/standards.md").Replace("\r\n", " ", StringComparison.Ordinal).Replace('\n', ' '), StringComparison.Ordinal);
+        Assert.Contains($"找其中 {criteria} 條", Doc("docs/標準對照.md"), StringComparison.Ordinal);
+        Assert.Contains($"另外 {total - criteria} 條沒查，這 {criteria} 條", Doc("docs/標準對照.md"), StringComparison.Ordinal);
+        foreach (var k in Kinds.All) Assert.Contains($"        - {k.Slug}\n", Doc(".github/ISSUE_TEMPLATE/1-false-alarm.yml").Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
+        foreach (var k in Kinds.All) Assert.Contains($"\"{k.Slug}\":", Doc("scripts/verify-demo.sh"), StringComparison.Ordinal);
+    }
+
+    /// <summary>README.md 跟著 NuGet 套件走，nuget.org 不解析相對連結；其他文件的相對連結要找得到檔案。</summary>
+    [Fact]
+    public void Links_lead_somewhere()
+    {
+        var root = ActionContractTests.RepoRoot();
+        const string blob = "https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/";
+        foreach (var file in Directory.EnumerateFiles(root, "*.md").Concat(Directory.EnumerateFiles(Path.Combine(root, "docs"), "*.md", SearchOption.AllDirectories)))
+        {
+            var text = Regex.Replace(File.ReadAllText(file), "```.*?```", "", RegexOptions.Singleline);
+            foreach (var link in Regex.Matches(text, @"\]\((?<u>[^)\s]+)\)").Select(m => m.Groups["u"].Value))
+            {
+                var local = link.StartsWith(blob, StringComparison.Ordinal) ? Path.Combine(root, link[blob.Length..]) : link.Contains("://", StringComparison.Ordinal) ? null : Path.Combine(Path.GetDirectoryName(file)!, link);
+                if (Path.GetFileName(file) == "README.md") Assert.True(link.Contains("://", StringComparison.Ordinal) || link[0] == '#', $"README.md: {link} is relative");
+                if (local is null || link[0] == '#') continue;
+                local = Uri.UnescapeDataString(local.Split('#')[0]);
+                Assert.True(File.Exists(local) || Directory.Exists(local), $"{Path.GetFileName(file)}: {link}");
+            }
+        }
     }
 }

@@ -6,7 +6,8 @@ using XamlA11y.Core.Xaml;
 namespace XamlA11y.Core.Rules;
 
 /// <summary>
-/// mouse-only：滑鼠按得到、鍵盤按不到。只看 XAML 裡寫的處理器（程式碼裡 += 的看不到，報告有講）。
+/// mouse-only：滑鼠按得到、鍵盤按不到。看 XAML 寫的處理器，與它自己的 code-behind 對有名字的元素掛的（x.MouseUp += …）。
+/// C# 建的元素看不到，報告會說有多少。
 ///
 /// 誤報最多的情形逐一排除：拖動視窗的標題列、拖曳手勢（同時有 MouseMove）、容器底下有真的控制項、
 /// 根元素、Preview 事件（通道事件多半是旁聽，不是「按這裡」）。
@@ -39,7 +40,7 @@ internal static partial class MouseRule
         }
 
         // 拖曳：同時處理移動（畫布、分隔線、調整大小）。路徑本身就是輸入，WCAG 2.1.1 有例外，靜態分不出來
-        if (HasAny(e, "MouseMove", "PreviewMouseMove", "DragDelta")
+        if (HasAny(e, "MouseMove", "PreviewMouseMove", "DragDelta") || ctx.Project.CodeSets(e, "MouseMove", "PreviewMouseMove")
             || (handler is not null && LooksLikeDrag(ctx, doc, handler)))
         {
             ctx.NotJudged(Checks.Mouse, e, "looks like a drag gesture (it also handles mouse movement)");
@@ -163,6 +164,8 @@ internal static partial class MouseRule
 
         foreach (var c in PreviewClicks)
             if (Handler(e, c) is { } h) return (c, h, true);
+
+        if (ctx.Project.CodeClick(e, Clicks) is { } click) return (click.Event, click.Handler, false);
         return (null, null, false);
     }
 

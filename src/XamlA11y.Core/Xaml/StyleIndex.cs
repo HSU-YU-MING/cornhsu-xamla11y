@@ -179,7 +179,7 @@ public sealed class StyleIndex
         var owner = property[..dot].Trim('(', ' ');
         var name = property[(dot + 1)..].Trim(')', ' ');
         if (OwnOwners.Contains(owner)) return name;
-        if (owner == "KeyboardNavigation" && name == "IsTabStop") return name;      // Control.IsTabStop 就是它
+        if (owner == "KeyboardNavigation" && (name is "IsTabStop" or "TabIndex")) return name;      // Control.IsTabStop、Control.TabIndex 就是它
         if (owner == "ToolTipService" && name == "ToolTip") return name;            // FrameworkElement.ToolTip 就是它（UiaOracle round3）
         var colon = owner.LastIndexOf(':');
         return (colon >= 0 ? owner[(colon + 1)..] : owner) + "." + name;

@@ -72,7 +72,8 @@ public sealed class A11yConfig
                 UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
             });
         }
-        catch (JsonException ex) { return (null, [new Problem(path, ex.Message)]); }
+        // 型別不對的：指出欄位與要什麼，不要把 .NET 的型別名給使用者看
+        catch (JsonException ex) { return (null, [ex.Path is { Length: > 2 } at && ex.Message.Contains("could not be converted", StringComparison.Ordinal) ? new Problem(at[2..], "is not the right kind of value: " + Wanted(at[2..])) : new Problem(path, ex.Message)]); }
         if (config is null) return (null, [new Problem(path, "the file is empty")]);
 
         var problems = new List<Problem>();
@@ -104,13 +105,23 @@ public sealed class A11yConfig
         {
             if (Kinds.BySlug(slug) is null)
                 problems.Add(new Problem($"rules[\"{slug}\"]", Kinds.All.Where(k => k.Check == slug || k.Group == slug).Select(k => k.Slug).ToList() is { Count: > 0 } members
-                    ? $"is a group; name its findings instead: {string.Join(", ", members)}"
+                    ? $"is not one finding but several; name them instead: {string.Join(", ", members)}"
                     : $"is not a finding; they are {string.Join(", ", Kinds.All.Select(k => k.Slug))}"));
             if (ParseSeverity(severity) is null)
                 problems.Add(new Problem($"rules[\"{slug}\"]", "must be off, info, warn or fail"));
         }
         return (config, problems);
     }
+
+    private static string Wanted(string field) => field.Split('.', '[')[0] switch
+    {
+        "schemaVersion" or "minCoverage" => "it must be a number, without quotes",
+        "themeShowsFocus" => "it must be true or false, without quotes",
+        "exclude" => "it must be a list of texts",
+        "treatAs" => "it must be an object: \"MyButton\": \"Button\"",
+        "rules" => "it must be an object: \"not-in-tab-order\": \"off\"",
+        _ => "it must be a text in quotes",
+    };
 
     private static readonly string[] Fields = ["$schema", "schemaVersion", "exclude", "minCoverage", "treatAs", "rules", "standard", "level", "language", "themeShowsFocus"];
 

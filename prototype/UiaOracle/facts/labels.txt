@@ -1,0 +1,28 @@
+# 名稱有沒有包含畫面上的字（WCAG 2.5.3）。標題 | XAML | 資源
+label | Button another name | <Button x:Name='p' Content='Save' AutomationProperties.Name='Store the document'/>
+label | Button name starts with it | <Button x:Name='p' Content='Browse' AutomationProperties.Name='Browse for the input folder'/>
+label | Button name has it in the middle | <Button x:Name='p' Content='Browse' AutomationProperties.Name='Input folder: browse'/>
+label | Button same, other case and punctuation | <Button x:Name='p' Content='Browse…' AutomationProperties.Name='browse'/>
+label | Button access key | <Button x:Name='p' Content='_Save' AutomationProperties.Name='Save'/>
+label | Button access key inside the word | <Button x:Name='p' Content='Sa_ve' AutomationProperties.Name='Save all'/>
+label | Button only part of a word | <Button x:Name='p' Content='Can' AutomationProperties.Name='Cancel'/>
+label | Button name is the type | <Button x:Name='p' Content='Close' AutomationProperties.Name='Button'/>
+label | CheckBox another name | <CheckBox x:Name='p' Content='I accept the terms' AutomationProperties.Name='Agree'/>
+label | RadioButton words the other way round | <RadioButton x:Name='p' Content='From right' AutomationProperties.Name='Right from'/>
+label | ToggleButton panel text | <ToggleButton x:Name='p' AutomationProperties.Name='Italic'><StackPanel><TextBlock Text='Bold'/></StackPanel></ToggleButton>
+label | Button panel text in the name | <Button x:Name='p' AutomationProperties.Name='Save the file'><StackPanel><Ellipse Width='5' Height='5'/><TextBlock Text='Save'/></StackPanel></Button>
+label | Button LabeledBy another text | <StackPanel><TextBlock x:Name='t' Text='Input folder'/><Button x:Name='p' Content='Browse' AutomationProperties.LabeledBy='{Binding ElementName=t}'/></StackPanel>
+label | Expander another name | <Expander x:Name='p' Header='Details' AutomationProperties.Name='More'/>
+label | TabItem another name | <TabControl><TabItem x:Name='p' Header='Home' AutomationProperties.Name='Start'/></TabControl>
+label | MenuItem the same | <Menu><MenuItem x:Name='p' Header='_File' AutomationProperties.Name='File menu'/></Menu>
+label | Hyperlink another name | <TextBlock><Hyperlink x:Name='p' AutomationProperties.Name='Release notes'>What is new</Hyperlink></TextBlock>
+label | ListBoxItem another name | <ListBox><ListBoxItem x:Name='p' Content='Inbox' AutomationProperties.Name='Mail'/></ListBox>
+label | name from a style | <Button x:Name='p' Content='Save' Style='{StaticResource S}'/> | <Style x:Key='S' TargetType='Button'><Setter Property='AutomationProperties.Name' Value='Keep'/></Style>
+label | name and text from resources | <Button x:Name='p' Content='{StaticResource a}' AutomationProperties.Name='{StaticResource b}'/> | <x:String x:Key='a'>Open</x:String><x:String x:Key='b'>Show</x:String>
+label | Chinese, contained | <Button x:Name='p' Content='瀏覽' AutomationProperties.Name='瀏覽輸入資料夾'/>
+label | Chinese, not contained | <Button x:Name='p' Content='儲存' AutomationProperties.Name='保留這份文件'/>
+label | text in parentheses | <Button x:Name='p' Content='Save' AutomationProperties.Name='Save (Ctrl+S)'/>
+label | full width letters | <Button x:Name='p' Content='Save' AutomationProperties.Name='Save it now'/>
+label | template without a ContentPresenter | <Button x:Name='p' Content='Save' AutomationProperties.Name='Keep' Template='{StaticResource T}'/> | <ControlTemplate x:Key='T' TargetType='Button'><Border Width='9' Height='9'/></ControlTemplate>
+label | symbol is not a label | <Button x:Name='p' Content='×' AutomationProperties.Name='Close'/>
+label | one letter is not a label | <Button x:Name='p' Content='B' AutomationProperties.Name='Bold text'/>

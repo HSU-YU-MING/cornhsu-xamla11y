@@ -26,13 +26,14 @@ reason XAML does not show.
 | Finding | WCAG 2.2 | Default | Why this criterion | When it is not a violation |
 |---|---|---|---|---|
 | `missing-name` | 4.1.2 (A), 1.1.1 (A) | fail | 4.1.2: the name can be programmatically determined. 1.1.1 when the content is an icon: a control has a name that describes its purpose. | The name is set in code the tool cannot see (it says *unknown* when it sees that code). |
-| `text-not-in-name` | 4.1.2 (A), 2.5.3 (A) | fail | 2.5.3: the name contains the text that is presented visually. The name is empty. | As above. |
+| `text-not-in-name` | 4.1.2 (A), 2.5.3 (A) | fail | 2.5.3: the name contains the text that is presented visually. The name is empty, or (tabs, list items, hyperlinks) a type name or a space. | As above. |
 | `meaningless-name` | 4.1.2 (A), 1.1.1 (A) | fail | A private-use character, white space, a type name or path data does not describe a purpose. | — |
 | `input-no-name` | 4.1.2 (A), 1.3.1 (A) | fail | 1.3.1: a label next to a field is a relationship that has to be there programmatically too. | The name is set in code. |
 | `list-no-name` | 4.1.2 (A), 1.3.1 (A) | warn | A list is a user interface component; Axe-Windows reports it under Section 508 502.3.1. | Some auditors accept a list without a name when it is the only one and its purpose is obvious. |
 | `widget-no-name` | 4.1.2 (A) | warn | They are user interface components too; Axe-Windows reports them. `Menu` and `ToolBar` are info. | A progress bar whose text next to it already says everything. |
 | `item-type-name` | 4.1.2 (A) | warn | The name can be determined, but it is the class name: it does not identify the item. | The class gets a `ToString()` from somewhere this tool cannot see (a base class of a library). |
 | `silent-tab-stop` | 4.1.2 (A) | warn | Something that takes focus has neither a name nor a role that can be determined. | Focus is passed on in code, or the element is never shown in a place Tab reaches. |
+| `name-differs` | 2.5.3 (A) | warn | The name contains the text that is presented visually. Compared only where both are literal; case, punctuation and symbols are left aside, as the understanding document says. | The text is not a label: an instruction, an example, a value. |
 | `symbol-name` | 1.1.1 (A) | info | `×` or an emoji may or may not describe the purpose. | When the symbol's own name is what the control does. |
 | `same-name` | 2.4.6 (AA) | info | Labels describe the purpose. WCAG does not ask for unique labels; Axe-Windows reports focusable siblings with the same name, under 4.1.2. | The context tells them apart: a group that is announced, a label. |
 | `mouse-only` | 2.1.1 (A) | fail | All functionality is operable through a keyboard interface. | The same action is available elsewhere, or the input depends on the path of the pointer. |

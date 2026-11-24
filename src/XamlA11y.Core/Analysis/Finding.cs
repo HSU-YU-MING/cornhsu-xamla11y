@@ -28,7 +28,7 @@ public sealed record Finding(Kind Kind, Severity Severity, string File, int Line
     /// <summary>baseline 的鍵用這個、不用檔名：報在類別上的，多一個用它的檔案不能變成新的一筆。</summary>
     public string? KeyFile { get; init; }
 
-    /// <summary>因為元素不能聚焦而降了一級。</summary>
+    /// <summary>降了級：不能聚焦、停用、藏起來，或選單與工具列。</summary>
     public bool Lowered { get; init; }
 
     /// <summary>名稱是空的。清單的亂碼名稱也報 list-no-name，但它不是空的。</summary>
@@ -68,6 +68,37 @@ public sealed record CheckStats(string Check)
 
     public int Candidates => Pass + Findings + Blocked + NotJudged + Suppressed;
     public double Resolution => Pass + Findings + Suppressed + Blocked == 0 ? 100 : 100.0 * (Pass + Findings + Suppressed) / (Pass + Findings + Suppressed + Blocked);
+
+    public void Add(Verdict verdict, string? reason)
+    {
+        switch (verdict)
+        {
+            case Verdict.Pass: Pass++; break;
+            case Verdict.Finding: Findings++; break;
+            case Verdict.Suppressed: Suppressed++; break;
+            case Verdict.Blocked: Blocked++; Count(BlockedReasons, reason); break;
+            case Verdict.NotJudged: NotJudged++; Count(NotJudgedReasons, reason); break;
+        }
+
+        // 原因裡夾了 repo 的字（資源鍵、綁定），一個二十萬字的鍵不能把報告撐爆
+        static void Count(Dictionary<string, int> map, string? reason)
+        {
+            var r = Rules.Context.CutMiddle(reason ?? "", 200);
+            map[r] = map.GetValueOrDefault(r) + 1;
+        }
+    }
+}
+
+/// <summary>用 xamla11y-ignore 放過的一筆：誰、為什麼。報告要列出來，審的人才查得到。</summary>
+public sealed record Suppression(Kind Kind, string File, int Line, string Element, string Reason);
+
+/// <summary>C# 裡建的畫面：這支看不到，但要說有多少。</summary>
+/// <param name="Controls">new Button { … } 這種。</param>
+/// <param name="MouseHandlers">x.MouseLeftButtonUp += …，x 不是 XAML 裡有名字的元素。</param>
+public sealed record CodeBuilt(int Controls, int MouseHandlers)
+{
+    public static readonly CodeBuilt None = new(0, 0);
+    public bool Any => Controls > 0 || MouseHandlers > 0;
 }
 
 public sealed class AuditResult
@@ -88,6 +119,14 @@ public sealed class AuditResult
     /// <summary>沒作用的 xamla11y-ignore 與原因（「檔:行: 為什麼」）：沒寫理由、或停在被註解掉的元素前面。</summary>
     public required IReadOnlyList<string> InvalidIgnores { get; init; }
 
+    /// <summary>放過的（xamla11y-ignore）與理由。</summary>
+    public IReadOnlyList<Suppression> Suppressions { get; init; } = [];
+
+    /// <summary>用不到的 xamla11y-ignore（「檔:行」）：它管的元素沒有問題。留著的話，之後再壞也會被蓋住。</summary>
+    public IReadOnlyList<string> UnusedIgnores { get; init; } = [];
+
+    public CodeBuilt CodeBuilt { get; init; } = CodeBuilt.None;
+
     /// <summary>沒關掉的檢查。</summary>
     public IEnumerable<CheckStats> On => Checks.Where(r => !r.Off);
 
@@ -107,10 +146,39 @@ public sealed class AuditResult
     {
         get
         {
-            var gate = On.Where(r => Kinds.IsGate(r.Check)).ToList();
-            double judged = gate.Sum(r => r.Pass + r.Findings + r.Suppressed), blocked = gate.Sum(r => r.Blocked);
+            double judged = GateJudged, blocked = GateBlocked;
             return judged + blocked == 0 ? (Judged > 0 || (Blocked == 0 && NotJudged > 0) ? 100 : 0) : 100.0 * judged / (judged + blocked);
         }
+    }
+
+    /// <summary>可解析率的分子與分母：百分比旁邊印的要是這兩個數，不是全部的。</summary>
+    public int GateJudged => On.Where(r => Kinds.IsGate(r.Check)).Sum(r => r.Pass + r.Findings + r.Suppressed);
+    public int GateBlocked => On.Where(r => Kinds.IsGate(r.Check)).Sum(r => r.Blocked);
+
+    /// <summary>只留這些檔案的（--only）。樣式、資源照樣從整個專案讀。</summary>
+    public AuditResult Only(IReadOnlySet<string> files)
+    {
+        var judgements = Judgements.Where(j => files.Contains(j.File)).ToList();
+        var stats = Checks.ToDictionary(c => c.Check, c => new CheckStats(c.Check) { Off = c.Off }, StringComparer.Ordinal);
+        foreach (var j in judgements) stats[j.Check].Add(j.Verdict, j.Reason);
+        bool Here(string site) => files.Any(f => site.StartsWith(f + ":", StringComparison.Ordinal));
+        return new AuditResult
+        {
+            // 自己的類別只報一次、報在別的檔案：這個檔案有用到它就要帶上
+            Findings = [.. Findings.Where(f => files.Contains(f.File) || f.KeyFile is not null && judgements.Any(j => j.Check == f.Kind.Check && j.Element.Name.LocalName == f.Identity))],
+            Checks = [.. Checks.Select(c => stats[c.Check])],
+            Files = files.Count,
+            Scope = Scope,
+            ParseErrors = [.. ParseErrors.Where(files.Contains)],
+            ParseWhy = ParseWhy,
+            Foreign = [.. Foreign.Where(f => files.Contains(f.File))],
+            Themes = Themes,
+            UnknownControls = [.. judgements.Where(j => j.Control is not null).GroupBy(j => j.Control!).Select(g => (g.Key, g.Count())).OrderByDescending(x => x.Item2).ThenBy(x => x.Key, StringComparer.Ordinal)],
+            InvalidIgnores = [.. InvalidIgnores.Where(Here)],
+            UnusedIgnores = [.. UnusedIgnores.Where(Here)],
+            Suppressions = [.. Suppressions.Where(s => files.Contains(s.File))],
+            Judgements = judgements,
+        };
     }
 
     public ScanGaps Gaps { get; init; } = new();
@@ -120,4 +188,8 @@ public sealed class AuditResult
 }
 
 /// <param name="Element">XAML 元素。</param>
-public sealed record Judgement(string Check, Verdict Verdict, System.Xml.Linq.XElement Element, string File, int Line, string? Reason, Kind? Kind);
+public sealed record Judgement(string Check, Verdict Verdict, System.Xml.Linq.XElement Element, string File, int Line, string? Reason, Kind? Kind)
+{
+    /// <summary>不認得的控制項（卡住的原因）。</summary>
+    public string? Control { get; init; }
+}

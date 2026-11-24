@@ -1,3 +1,5 @@
+using XamlA11y.Core.Analysis;
+using System.Text.Json;
 using XamlA11y.Core.Rules;
 
 namespace XamlA11y.Tests;
@@ -74,4 +76,45 @@ public sealed class IgnoreCommentTests
     [InlineData("xamlfit-ignore: a", null)]
     [InlineData("", null)]
     public void Ignore_comments_are_read_strictly(string comment, string? reason) => Assert.Equal(reason, Context.ParseIgnore(comment));
+
+    /// <summary>放過的與理由都在報告上：審的人查得到誰被放過、為什麼。</summary>
+    [Fact]
+    public void Accepted_findings_are_listed_with_their_reason()
+    {
+        using var f = new Folder().Add("M.xaml", Kit.Window("<!-- xamla11y-ignore: the row <b> is the control -->\n<TextBox/>\n<Button Content=\"x\"/>"));
+        var s = Assert.Single(f.Audit().Suppressions);
+        Assert.Equal((Kinds.InputNoName, "M.xaml", 2, "TextBox", "the row <b> is the control"), (s.Kind, s.File, s.Line, s.Element, s.Reason));
+        f.Run("audit", f.Root, "--json", f.At("r.json"), "--md", f.At("r.md"), "--html", f.At("r.html"));
+        using var json = JsonDocument.Parse(File.ReadAllText(f.At("r.json")));
+        Assert.Equal("the row <b> is the control", json.RootElement.GetProperty("suppressed")[0].GetProperty("reason").GetString());
+        Assert.Contains("| `M.xaml:2` | input-no-name | `the row <b> is the control` |", File.ReadAllText(f.At("r.md")), StringComparison.Ordinal);
+        Assert.Contains("<td>the row &lt;b&gt; is the control</td>", File.ReadAllText(f.At("r.html")), StringComparison.Ordinal);
+    }
+
+    /// <summary>修好之後留著的 ignore：之後再壞會被蓋住，所以要說。</summary>
+    [Theory]
+    [InlineData("<!-- xamla11y-ignore: fixed long ago --><Button Content=\"OK\"/>", 1)]
+    [InlineData("<!-- xamla11y-ignore: on a panel --><Grid/>", 1)]
+    [InlineData("<!-- xamla11y-ignore: used --><TextBox/>", 0)]
+    [InlineData("<!-- xamla11y-ignore: cannot tell --><local:FancyButton/>", 0)]
+    [InlineData("<!-- xamla11y-ignore: cannot tell --><Button Content=\"{Binding T}\"/>", 0)]
+    [InlineData("<!-- xamla11y-ignore --><Button Content=\"OK\"/>", 0)]
+    [InlineData("<Button Content=\"OK\"/>", 0)]
+    public void An_ignore_with_nothing_to_accept(string xaml, int expected) => Assert.Equal(expected, Kit.Audit(xaml).UnusedIgnores.Count);
+
+    [Fact]
+    public void Unused_ignores_are_printed_and_not_counted_when_the_kind_is_off()
+    {
+        using var f = new Folder().Add("M.xaml", Kit.Window("<!-- xamla11y-ignore: a --><Button Content=\"OK\"/><!-- xamla11y-ignore: b --><TextBox/>"));
+        Assert.Contains("xamla11y-ignore with nothing to accept (remove it): M.xaml:1", f.Run("audit", f.Root).Out, StringComparison.Ordinal);
+        Assert.Contains("沒有東西要放過的 xamla11y-ignore（可以拿掉）：M.xaml:1", f.Run("audit", f.Root, "--lang", "zh-Hant").Out, StringComparison.Ordinal);
+        Assert.Single(f.Audit(new AuditOptions { Severities = new Dictionary<string, Severity> { ["input-no-name"] = Severity.Off } }).UnusedIgnores);
+    }
+
+    [Fact]
+    public void An_accepted_class_is_listed_once_with_its_kind()
+    {
+        using var f = Kit.Files("<!-- xamla11y-ignore: handled elsewhere --><local:Pad/>", "namespace App; public class Pad : Control { }");
+        Assert.Equal(Kinds.SilentTabStop, Assert.Single(f.Audit().Suppressions).Kind);
+    }
 }

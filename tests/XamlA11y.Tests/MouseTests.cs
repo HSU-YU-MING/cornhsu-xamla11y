@@ -208,4 +208,37 @@ public sealed class MouseTests
     [InlineData("<ItemsControl><ItemsControl.ItemTemplate><DataTemplate><Border MouseDown=\"H\"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>", "mouse-only")]
     [InlineData("<ListBox><ListBox.ItemTemplate><DataTemplate><Border MouseDown=\"H\"/></DataTemplate></ListBox.ItemTemplate></ListBox>", "NotJudged")]
     public void Where_the_click_is(string xaml, string expected) => Assert.Equal(expected, Kit.Verdict("mouse", xaml));
+
+    /// <summary>code-behind 對有名字的元素掛的點按。</summary>
+    [Theory]
+    [InlineData("box.MouseLeftButtonUp += OnOpen;", "mouse-only")]
+    [InlineData("this.box.MouseDown += new MouseButtonEventHandler(OnOpen);", "mouse-only")]
+    [InlineData("box.MouseUp += (s, e) => Open();", "mouse-only")]
+    [InlineData("box.MouseDown += (s, e) => DragMove();", "")]
+    [InlineData("box.MouseDown += (s, e) => { box.CaptureMouse(); };", "")]
+    [InlineData("box.MouseDown += OnOpen; box.MouseMove += OnMove;", "NotJudged")]
+    [InlineData("box.MouseDown += OnOpen; box.KeyDown += OnKey;", "Blocked")]
+    [InlineData("box.MouseEnter += OnOpen;", "")]
+    [InlineData("box.MouseDown += OnOpen; button.Click += OnOpen;", "")]
+    [InlineData("child.box.MouseDown += OnOpen;", "")]
+    [InlineData("var box = new Border(); box.MouseDown += OnOpen;", "")]
+    [InlineData("foreach (Border box in all) box.MouseDown += OnOpen;", "")]
+    [InlineData("box.MouseDown += (s, e) => e.Handled = true;", "")]
+    [InlineData("box.MouseDown += (s, e) => { e.Handled = true; };", "")]
+    [InlineData("box.MouseDown += (s, e) => { e.Handled = true; Open(); };", "mouse-only")]
+    [InlineData("other.MouseDown += OnOpen;", "")]
+    [InlineData("// box.MouseDown += OnOpen;", "")]
+    [InlineData("box.MouseDown -= OnOpen;", "")]
+    public void Added_in_the_code_behind(string code, string expected)
+    {
+        using var p = Kit.Files("<Border x:Name=\"box\"/>", $"partial class Main {{ void L() {{ {code} }} void OnOpen(object s, MouseButtonEventArgs e) {{ Open(); }} }}");
+        Assert.Equal(expected, Kit.Verdicts(p.Audit(), "mouse"));
+    }
+
+    [Fact]
+    public void Added_in_the_code_behind_to_drag_the_window()
+    {
+        using var p = Kit.Files("<Border x:Name=\"box\"/>", "partial class Main { void L() { box.MouseDown += OnDown; } void OnDown(object s, MouseButtonEventArgs e) { DragMove(); } }");
+        Assert.Equal("NotJudged", Kit.Verdicts(p.Audit(), "mouse"));
+    }
 }

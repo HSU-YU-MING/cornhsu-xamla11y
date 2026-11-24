@@ -38,7 +38,8 @@ public sealed partial class Project
     private readonly Dictionary<string, string> _codeBehind = new(StringComparer.Ordinal);
     private readonly Dictionary<string, HashSet<string>> _versions = new(StringComparer.OrdinalIgnoreCase);
 
-    public static Project Load(string root, IReadOnlyList<string> exclude, IReadOnlyDictionary<string, string>? treatAs = null)
+    /// <param name="replaced">這些檔案（相對路徑）用這個內容，不讀硬碟上的（自動修先在記憶體裡驗）。</param>
+    public static Project Load(string root, IReadOnlyList<string> exclude, IReadOnlyDictionary<string, string>? treatAs = null, IReadOnlyDictionary<string, string>? replaced = null)
     {
         var gaps = new ScanGaps();
         var files = XamlFiles.Enumerate(root, ".xaml", exclude, gaps);
@@ -51,7 +52,7 @@ public sealed partial class Project
 
         for (var i = 0; i < files.Count; i++)
         {
-            try { docs[i] = SafeXml.Load(files[i]); }
+            try { docs[i] = replaced is not null && replaced.TryGetValue(rels[i], out var text) ? SafeXml.Parse(text) : SafeXml.Load(files[i]); }
             catch (Exception e) { errors.Add(rels[i]); why[rels[i]] = e.Message.ReplaceLineEndings(" "); continue; }
             if (docs[i]!.Root is { } r) (dialects[i], marked[i]) = XamlFiles.DialectOf(r);
         }
@@ -292,6 +293,7 @@ public sealed partial class Project
     private HashSet<string> ReadClasses(string root, IReadOnlyList<string> exclude)
     {
         var mentioned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var built = new List<(string File, string Code)>();
         foreach (var file in XamlFiles.Enumerate(root, ".cs", exclude))
         {
             string text;
@@ -307,10 +309,17 @@ public sealed partial class Project
             {
                 if (text.Contains(".xaml", StringComparison.OrdinalIgnoreCase))
                     foreach (Match m in XamlNameRegex().Matches(text)) mentioned.Add(m.Value);
+                foreach (Match m in NameStringRegex().Matches(text)) _codeStrings.Add(m.Groups["n"].Value);
                 if (text.Contains("XmlnsDefinition", StringComparison.Ordinal))
                     foreach (Match m in XmlnsRegex().Matches(text)) _ownXmlns.Add(m.Groups["uri"].Value);
 
                 var code = CSharp.Strip(text, keepStrings: false);
+                if (code.Contains("IsEnabled", StringComparison.Ordinal) || code.Contains("Visibility", StringComparison.Ordinal))
+                    foreach (Match m in OpensRegex().Matches(code)) _codeOpens.Add((m.Groups["n"].Value, m.Groups["p"].Value));
+                if (code.Contains("abel", StringComparison.Ordinal))
+                    foreach (Match m in LabelNameRegex().Matches(code)) _labelNames.Add(m.Value);
+                built.Add((file, code));
+                _wpfGlobalUsing |= code.Contains("global using System.Windows", StringComparison.Ordinal) && !code.Contains("global using System.Windows.Forms", StringComparison.Ordinal);
                 try { Code.Read(code); }
                 catch (RegexMatchTimeoutException) { }      // 型別當成沒看到；下面讀控制項的照讀
                 if (!text.Contains("class ", StringComparison.Ordinal)) continue;
@@ -327,6 +336,9 @@ public sealed partial class Project
             }
             catch (RegexMatchTimeoutException) { }       // 這個檔案的類別當成沒看到：用到的控制項會是「不認得」
         }
+        foreach (var (file, code) in built)
+            try { CountCodeBuilt(file, code); }
+            catch (RegexMatchTimeoutException) { }
         return mentioned;
     }
 
@@ -414,6 +426,10 @@ public sealed partial class Project
     [GeneratedRegex(@"(?:(?<![\w.])(?:this\s{0,5}\.\s{0,5}|base\s{0,5}\.\s{0,5})?(?<p>Content|Header|Text)\s{0,10}(?:\?\?|\+)?=(?![=>])|\b(?:SetBinding|SetResourceReference|SetCurrentValue|OverrideMetadata)\s{0,5}\(\s{0,5}(?:\w{1,60}\.){0,6}(?<p>Content|Header|Text)Property\b|(?<![\w.])(?:this\s{0,5}\.\s{0,5})?(?<p>Inlines)\s{0,5}\.\s{0,5}Add|\b(?<p>Content|Header|Text)Property\s{0,5}\.\s{0,5}OverrideMetadata\b)", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
     private static partial Regex ContentSetRegex();
 
+    /// <summary>GetTemplateChild("PART_Close")、FindName("Play")、[TemplatePart(Name = "…")]、const string X = "…"。</summary>
+    [GeneratedRegex(@"""(?<n>[A-Za-z_]\w{0,100})""", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex NameStringRegex();
+
     [GeneratedRegex(@"XmlnsDefinition(?:Attribute)?\s{0,5}\(\s{0,5}""(?<uri>[^""\r\n]{1,300})""", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
     private static partial Regex XmlnsRegex();
 
@@ -474,6 +490,170 @@ public sealed partial class Project
         // 讀的是別人的程式碼：跑太久就當成「它動了這個控制項」（不知道），不是「沒動」
         catch (RegexMatchTimeoutException) { return true; }
     }
+
+    private readonly HashSet<string> _codeStrings = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// 寫死的 Visibility、IsEnabled 之後會不會被改：範本觸發器（TargetName）、動畫、程式碼提到這個名字（連 GetTemplateChild("…") 這種字串）。
+    /// 沒有名字的改不到：本地值贏過樣式的觸發器。
+    /// </summary>
+    public bool ChangesLater(XElement e, string property)
+    {
+        if (CodeLoops(e, property)) return true;
+        if (Markup.NameOf(e) is not { Length: > 0 } name) return false;
+        // 別的類別、partial 的另一半也改得到：m.other.IsEnabled = true
+        if (_codeStrings.Contains(name) || _codeOpens.Contains((name, property))) return true;
+        foreach (var d in e.Document?.Root?.Descendants() ?? [])
+        {
+            // <Setter TargetName>、Storyboard.TargetName／Target、Blend 的 ChangePropertyAction TargetName／TargetObject
+            var aims = false;
+            foreach (var a in d.Attributes())
+                aims |= a.Name.LocalName is "TargetName" or "Storyboard.TargetName" && a.Value == name
+                        || a.Name.LocalName is "Storyboard.Target" or "TargetObject" or "Target" && Markup.ReferencedElement(a.Value) == name;
+            if (!aims) continue;
+            if ((string?)d.Attribute("Property") is { } p) { if (StyleIndex.NormalizeProperty(p) == property) return true; continue; }
+            if ((string?)d.Attribute("PropertyName") is { } pn && pn.Contains(property, StringComparison.Ordinal)) return true;
+            if (d.AncestorsAndSelf().Select(x => x.Attributes().FirstOrDefault(a => a.Name.LocalName == "Storyboard.TargetProperty")?.Value).FirstOrDefault(v => v is not null) is { } path && path.Contains(property, StringComparison.Ordinal)) return true;
+        }
+        if (CodeSets(e, property)) return true;
+        var file = StyleIndex.FileOf(e);
+        // Show(btn)、new[] { btn, … }、var b = btn：交給別人的；btn.FadeIn() 這種擴充方法。btn.Text 這種只讀別的屬性的不算
+        try { return Regex.IsMatch(CodeBehind(file), $@"\b{Regex.Escape(name)}\b(?!\s{{0,5}}[?!]?\.)|\b{Regex.Escape(name)}\s{{0,5}}[?!]?\.\s{{0,20}}\w*(?:Show|Visib|Enabl|Display|Toggle|Fade|Appear|Reveal)\w*\s{{0,5}}\(", CodeOptions(file), RegexLimit); }
+        catch (RegexMatchTimeoutException) { return true; }
+    }
+
+    /// <summary>樣式寫死的（Setter Visibility=Collapsed 加 DataTrigger 打開，最常見的寫法）：樣式的觸發器也會打開。</summary>
+    public bool OpensLater(XElement e, string property) =>
+        ChangesLater(e, property) || !Styles.LocalValue(e, property).IsSet && StyleTriggerSets(e, property);
+
+    /// <summary>樣式的觸發器會設這個屬性。</summary>
+    public bool StyleTriggerSets(XElement e, string property) =>
+        Styles.ChainsOf(e).Any(c => c.Styles.Any(s => s.Triggers.SelectMany(t => t.Descendants()).Any(x =>
+            x.Name.LocalName == "Setter" && x.Attribute("TargetName") is null && (string?)x.Attribute("Property") is { } p && StyleIndex.NormalizeProperty(p) == property)));
+
+    private readonly HashSet<(string, string)> _codeOpens = [];
+    private readonly HashSet<string> _labelNames = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>專案的 C# 裡有叫這個名字的東西（自動修要取的名字一律以 Label 或 Label＋數字結尾）。</summary>
+    public bool CodeNamesLabel(string name) => _labelNames.Contains(name);
+
+    /// <summary>ToolTipService.SetToolTip(btn, …)。</summary>
+    public bool CodeTips(XElement e)
+    {
+        if (Markup.NameOf(e) is not { Length: > 0 } name) return false;
+        var file = StyleIndex.FileOf(e);
+        try { return Regex.IsMatch(CodeBehind(file), $@"\bSetToolTip\s{{0,20}}\(\s{{0,20}}(?:this\.|Me\.)?{Regex.Escape(name)}\b", CodeOptions(file), RegexLimit); }
+        catch (RegexMatchTimeoutException) { return true; }
+    }
+
+    /// <summary>專案自己的控制項（clr-namespace 沒有寫組件、自己的 XmlnsDefinition）。</summary>
+    public bool IsOwn(XElement e)
+    {
+        var ns = e.Name.NamespaceName;
+        return _ownXmlns.Contains(ns) || ns.StartsWith("clr-namespace:", StringComparison.Ordinal) && (!ns.Contains(";assembly=", StringComparison.Ordinal) || _classes.ContainsKey(e.Name.LocalName) || DocOfClass(e) is not null);
+    }
+
+    [GeneratedRegex(@"\b(?<n>[A-Za-z_]\w{0,100})\s{0,5}[?!]?\.\s{0,20}(?:(?<p>IsEnabled|Visibility)\s{0,20}(?:\?\?)?=(?![=>])|(?:BeginAnimation|ClearValue|InvalidateProperty|Set(?:Value|CurrentValue|Binding|ResourceReference))\s{0,5}\(\s{0,20}(?:\w{1,60}\.){0,6}(?<p>IsEnabled|Visibility)Property\b)", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex OpensRegex();
+
+    [GeneratedRegex(@"\b[A-Za-z_]\w{0,100}[Ll]abel[0-9]{0,4}\b", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex LabelNameRegex();
+
+    /// <summary>
+    /// 迴圈設的：foreach (ComboBoxItem item in List.Items) item.Content = …（Text-Grab）。只看自己的 code-behind、往上三層。
+    /// </summary>
+    public bool CodeLoops(XElement e, string property)
+    {
+        var file = StyleIndex.FileOf(e);
+        var code = CodeBehind(file);
+        if (!code.Contains("each", StringComparison.OrdinalIgnoreCase)) return false;
+        foreach (var holder in e.Ancestors().Where(a => !Markup.IsPropertyElement(a)).Take(3))
+        {
+            if (Markup.NameOf(holder) is not { Length: > 0 } name) continue;
+            try
+            {
+                foreach (Match m in Regex.Matches(code, $@"(?:\bforeach|\b[Ee]ach)\b[^;{{}}]{{0,200}}?\b(?<v>[A-Za-z_]\w{{0,60}})(?:\s{{1,20}}As\s{{1,20}}[\w.]{{1,60}})?\s{{1,20}}[Ii]n\s{{1,20}}(?:this\.|Me\.)?{Regex.Escape(name)}\s{{0,5}}[?!]?\.\s{{0,20}}(?:Items|Children)\b", CodeOptions(file), RegexLimit))
+                {
+                    var body = LoopBody(code, m.Index + m.Length, _visualBasic.Contains(file));
+                    // 迴圈的變數，與「child is Button b」換的名字
+                    var names = Regex.Matches(body, $@"\b{m.Groups["v"].Value}\s{{1,20}}is\s{{1,20}}[\w.]{{1,60}}\s{{1,20}}(?<n>[A-Za-z_]\w{{0,60}})", CodeOptions(file), RegexLimit).Select(x => x.Groups["n"].Value).Append(m.Groups["v"].Value);
+                    foreach (var v in names)
+                        if (Regex.IsMatch(body, $@"\b{v}\s{{0,5}}[?!]?\.\s{{0,20}}{property}\s{{0,20}}=(?![=>])|\bSetName\s{{0,5}}\(\s{{0,20}}{v}\b|\b{v}\s{{0,5}}\.\s{{0,20}}Set\w{{1,20}}\s{{0,5}}\(\s{{0,20}}(?:\w{{1,60}}\.){{0,6}}{property}Property\b", CodeOptions(file), RegexLimit)) return true;
+                }
+            }
+            catch (RegexMatchTimeoutException) { return true; }
+        }
+        return false;
+    }
+
+    /// <summary>迴圈的內容：大括號配對，或到分號；VB 到 Next。</summary>
+    private static string LoopBody(string code, int from, bool vb)
+    {
+        if (vb) return code[from..(code.IndexOf("Next", from, StringComparison.OrdinalIgnoreCase) is > 0 and var next ? next : code.Length)];
+        // 先走完 foreach (…) 的括號
+        var depth = 1;
+        while (from < code.Length && depth > 0) { if (code[from] == '(') depth++; else if (code[from] == ')') depth--; from++; }
+        for (int i = from, braces = 0; i < code.Length; i++)
+        {
+            if (code[i] == '{') braces++;
+            else if (code[i] == '}' && --braces <= 0) return code[from..i];
+            else if (code[i] == ';' && braces == 0) return code[from..i];
+        }
+        return code[Math.Min(from, code.Length)..];
+    }
+
+    /// <summary>code-behind 對這個元素掛的點按：box.MouseLeftButtonUp += OnOpen;。拖曳、移動視窗的 lambda 不算。</summary>
+    public (string Event, string? Handler)? CodeClick(XElement e, IReadOnlyCollection<string> events)
+    {
+        // 範本裡的名字在 code-behind 是別的東西
+        if (Markup.NameOf(e) is not { Length: > 0 } name || e.Ancestors().Any(a => a.Name.LocalName is "ControlTemplate" or "DataTemplate" or "HierarchicalDataTemplate")) return null;
+        var file = StyleIndex.FileOf(e);
+        var code = CodeBehind(file);
+        if (!code.Contains("+=", StringComparison.Ordinal)) return null;
+        try
+        {
+            // 同名的區域變數（var item = new Border()）、別的物件的成員（child.box.MouseDown）不是這個元素
+            var n = Regex.Escape(name);
+            if (Regex.IsMatch(code, $@"\b(?:var|[A-Z]\w{{0,60}})\s{{1,20}}{n}\s{{0,20}}(?:=|\bin\b|[,)])", CodeOptions(file), RegexLimit)) return null;
+            var m = Regex.Match(code, $@"(?<![\w.])(?:this\s{{0,5}}\.\s{{0,5}}|Me\s{{0,5}}\.\s{{0,5}})?{n}\s{{0,5}}[?!]?\.\s{{0,20}}(?<ev>{string.Join('|', events)})\s{{0,20}}\+=\s{{0,20}}(?:new\s{{1,20}}\w{{1,60}}\s{{0,20}}\(\s{{0,20}})?(?<h>[A-Za-z_]\w{{0,100}})?(?<rest>\s{{0,20}}[;)]|)", CodeOptions(file), RegexLimit);
+            if (!m.Success) return null;
+            if (m.Groups["h"].Success && m.Groups["rest"].Length > 0)
+                // 同一個處理器也掛在按鈕上：鍵盤本來就有路
+                return Regex.IsMatch(code, $@"\.\s{{0,20}}(?:Click|Checked|Unchecked|KeyDown|KeyUp|PreviewKeyDown)\s{{0,20}}\+=\s{{0,20}}(?:new\s{{1,20}}\w{{1,60}}\s{{0,20}}\(\s{{0,20}})?{m.Groups["h"].Value}\b", CodeOptions(file), RegexLimit) ? null : (m.Groups["ev"].Value, m.Groups["h"].Value);
+            var body = code.Substring(m.Index, Math.Min(800, code.Length - m.Index));
+            // 只是擋住事件：(s, e) => e.Handled = true
+            if (Regex.IsMatch(body, @"^[^;]{0,200}=>\s{0,20}(?:\w{1,40}\.Handled\s{0,10}=\s{0,10}true\s{0,10};|\{\s{0,20}\w{1,40}\.Handled\s{0,10}=\s{0,10}true\s{0,10};\s{0,20}\})", RegexOptions.CultureInvariant, RegexLimit)) return null;
+            return body.Contains("DragMove", StringComparison.Ordinal) || body.Contains("CaptureMouse", StringComparison.Ordinal) || body.Contains("DoDragDrop", StringComparison.Ordinal) ? null : (m.Groups["ev"].Value, null);
+        }
+        catch (RegexMatchTimeoutException) { return null; }
+    }
+
+    /// <summary>C# 裡建的畫面有多少（這支看不到的）。</summary>
+    public CodeBuilt CodeBuilt { get; private set; } = CodeBuilt.None;
+
+    private void CountCodeBuilt(string file, string code)
+    {
+        // 沒碰 WPF 的檔案（WinForms 也有 Button）不算
+        if (!code.Contains("System.Windows", StringComparison.Ordinal) && !_wpfGlobalUsing) return;
+        if (code.Contains("System.Windows.Forms", StringComparison.Ordinal) && !code.Contains("System.Windows.Controls", StringComparison.Ordinal)) return;
+        var controls = NewControlRegex().Count(code);
+        var handlers = 0;
+        if (code.Contains("+=", StringComparison.Ordinal))
+        {
+            var names = file.EndsWith(".xaml.cs", StringComparison.OrdinalIgnoreCase) && Docs.FirstOrDefault(d => string.Equals(d.FullPath, file[..^3], StringComparison.OrdinalIgnoreCase)) is { } doc
+                ? doc.Root.Descendants().Select(Markup.NameOf).OfType<string>().ToHashSet(StringComparer.Ordinal) : [];
+            handlers = MouseAddRegex().Matches(code).Count(m => !names.Contains(m.Groups["n"].Value));
+        }
+        CodeBuilt = new CodeBuilt(CodeBuilt.Controls + controls, CodeBuilt.MouseHandlers + handlers);
+    }
+
+    private bool _wpfGlobalUsing;
+
+    [GeneratedRegex(@"\bnew\s{1,20}(?:System\.Windows\.Controls\.(?:Primitives\.)?)?(?:Button|ToggleButton|RepeatButton|CheckBox|RadioButton|TextBox|PasswordBox|RichTextBox|ComboBox|ComboBoxItem|Slider|DatePicker|ListBox|ListBoxItem|ListView|ListViewItem|TreeView|TreeViewItem|DataGrid|TabItem|MenuItem|Expander|Hyperlink|ProgressBar)\s{0,20}[({]", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex NewControlRegex();
+
+    [GeneratedRegex(@"\b(?<n>[A-Za-z_]\w{0,100})\s{0,5}[?!]?\.\s{0,20}(?:MouseLeftButtonDown|MouseLeftButtonUp|MouseDown|MouseUp|MouseDoubleClick)\s{0,20}\+=", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 2000)]
+    private static partial Regex MouseAddRegex();
 
     /// <summary>code-behind 有沒有設這個名稱的無障礙名稱（AutomationProperties.SetName、SetLabeledBy、SetValue）。</summary>
     public bool CodeNames(XElement e)

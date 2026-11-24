@@ -100,4 +100,54 @@ public sealed class ResolutionTests
         using var json = JsonDocument.Parse(JsonReport.Create(r, r.Findings, 0, "1.0", 3));
         Assert.Equal(["input-names"], json.RootElement.GetProperty("summary").GetProperty("checks").EnumerateArray().Where(x => x.GetProperty("off").GetBoolean()).Select(x => x.GetProperty("check").GetString()));
     }
+
+    /// <summary>百分比旁邊的數字要算得出那個百分比。</summary>
+    [Fact]
+    public void The_numbers_next_to_the_percentage_give_it()
+    {
+        using var f = new Folder().Add("M.xaml", Kit.Window("<Button Content=\"a\"/><Button Content=\"b\" IsTabStop=\"True\"/><TextBox/><local:FancyButton/><ProgressBar/><ContentControl/>"));
+        var r = f.Audit();
+        Assert.Equal((3, 1, 75.0), (r.GateJudged, r.GateBlocked, r.Resolution));
+        var text = f.Run("audit", f.Root).Out;
+        Assert.Contains("resolution 75.0%: 3 of 4 names, inputs, focus and mouse places could be judged", text, StringComparison.Ordinal);
+        Assert.Contains("all checks: 6 judged, 1 unknown, 0 left out", text, StringComparison.Ordinal);
+        Assert.Contains("可解析率 75.0%：名稱、輸入框、焦點、滑鼠共 4 處，判得出 3 處", f.Run("audit", f.Root, "--lang", "zh-Hant").Out, StringComparison.Ordinal);
+    }
+
+    /// <summary>C# 建的畫面看不到，100% 不能看起來像全部看過了。</summary>
+    [Theory]
+    [InlineData("using System.Windows.Controls; class A { void F() { var b = new Button(); var t = new TextBox { Text = \"x\" }; new System.Windows.Controls.CheckBox(); } }", 3, 0)]
+    [InlineData("using System.Windows; class A { void F() { var b = new Border(); b.MouseLeftButtonUp += X; b.MouseMove += Y; } }", 0, 1)]
+    [InlineData("using System.Windows.Forms; class A { void F() { var b = new Button(); } }", 0, 0)]
+    [InlineData("class A { void F() { var b = new Button(); } }", 0, 0)]
+    [InlineData("using System.Windows.Controls; class A { void F() { /* new Button() */ var s = \"new Button()\"; new ButtonInfo(); } }", 0, 0)]
+    public void What_is_built_in_code_is_counted(string code, int controls, int handlers)
+    {
+        using var f = new Folder().Add("M.xaml", Kit.Window("<Button Content=\"a\"/>")).Add("A.cs", code);
+        Assert.Equal(new CodeBuilt(controls, handlers), f.Audit().CodeBuilt);
+    }
+
+    [Fact]
+    public void What_is_built_in_code_is_in_every_report()
+    {
+        using var f = new Folder().Add("M.xaml", Kit.Window("<Border x:Name=\"named\"/><Button Content=\"a\"/>")).Add("M.xaml.cs", "using System.Windows.Controls; partial class Main { void F() { named.MouseUp += A; x.MouseUp += B; new Button(); } }");
+        Assert.Equal(new CodeBuilt(1, 1), f.Audit().CodeBuilt);
+        var r = f.Run("audit", f.Root, "--json", f.At("r.json"), "--md", f.At("r.md"), "--html", f.At("r.html"));
+        foreach (var text in (string[])[r.Out, File.ReadAllText(f.At("r.md")), File.ReadAllText(f.At("r.html"))]) Assert.Contains("built in C#, not checked: 1 control(s), 1 mouse handler(s)", text, StringComparison.Ordinal);
+        using var json = JsonDocument.Parse(File.ReadAllText(f.At("r.json")));
+        Assert.Equal(1, json.RootElement.GetProperty("summary").GetProperty("builtInCode").GetProperty("controls").GetInt32());
+    }
+
+    [Fact]
+    public void The_reason_is_in_the_language_of_the_report()
+    {
+        using var f = new Folder().Add("M.xaml", Kit.Window("<TextBox/><local:FancyButton/><local:FooButton/>"));
+        var r = f.Run("audit", f.Root, "--lang", "zh-Hant", "--html", f.At("r.html"), "--md", f.At("r.md"));
+        Assert.Equal(3, r.Exit);
+        foreach (var text in (string[])[r.Err, File.ReadAllText(f.At("r.html")), File.ReadAllText(f.At("r.md"))])
+        {
+            Assert.Contains("可解析率 33.3% 低於 --min-coverage 60%，結果不可信", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("not trustworthy", text, StringComparison.Ordinal);
+        }
+    }
 }

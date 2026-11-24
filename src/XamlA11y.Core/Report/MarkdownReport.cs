@@ -24,8 +24,8 @@ public static class MarkdownReport
         sb.AppendLine(lang.T("## XamlA11y — accessibility audit", "## XamlA11y 無障礙稽核")).AppendLine();
         var verdict = exitCode switch { 0 => lang.T("✅ **PASS**", "✅ **通過**"), 1 => lang.T("❌ **FAIL**", "❌ **沒通過**"), 3 => lang.T("⚠️ **NOT TRUSTWORTHY** (exit 3)", "⚠️ **結果不可信**（exit 3）"), _ => $"exit {exitCode.ToString(inv)}" };
         sb.AppendLine(lang.IsZh
-            ? string.Create(inv, $"{verdict} · **{Count(Severity.Fail)} fail**、{Count(Severity.Warn)} warn、{Count(Severity.Info)} info · {r.Files} 個 XAML 檔、判了 {r.Judged} 處 · 可解析率 {r.Resolution:F1}% · {r.Scope.Title}")
-            : string.Create(inv, $"{verdict} · **{Count(Severity.Fail)} fail**, {Count(Severity.Warn)} warn, {Count(Severity.Info)} info · {r.Judged} check(s) in {r.Files} XAML file(s) · resolution {r.Resolution:F1}% · {r.Scope.Title}")).AppendLine();
+            ? string.Create(inv, $"{verdict} · **{Count(Severity.Fail)} fail**、{Count(Severity.Warn)} warn、{Count(Severity.Info)} info · {r.Files} 個 XAML 檔、判了 {r.Judged} 處 · {Summary.Resolution(r, lang)} · {r.Scope.Title}")
+            : string.Create(inv, $"{verdict} · **{Count(Severity.Fail)} fail**, {Count(Severity.Warn)} warn, {Count(Severity.Info)} info · {r.Judged} check(s) in {r.Files} XAML file(s) · {Summary.Resolution(r, lang)} · {r.Scope.Title}")).AppendLine();
 
         if (reported.Count > 0) sb.AppendLine(string.Join(" · ", Summary.Groups(reported, lang).Select(g => string.Create(inv, $"{g.Title} **{g.Count}**")))).AppendLine();
         if (Summary.KnownDebt(known, exitCode, lang) is { } debt) sb.AppendLine($"> {debt}").AppendLine();
@@ -66,11 +66,21 @@ public static class MarkdownReport
         var notes = new List<string>();
         if (baselined > 0) notes.Add(string.Create(inv, $"{baselined} {lang.T("in the baseline", "筆在 baseline 裡")}"));
         if (r.NotJudged > 0) notes.Add(string.Create(inv, $"{r.NotJudged} {lang.T("not judged (data-bound names, template parts, list items…)", "處不判（名稱來自資料、範本零件、清單項目…）")}"));
-        if (r.Suppressed > 0) notes.Add(string.Create(inv, $"{r.Suppressed} {lang.T("suppressed via xamla11y-ignore", "筆用 xamla11y-ignore 壓掉")}"));
+        if (r.Suppressed > 0) notes.Add(string.Create(inv, $"{r.Suppressed} {lang.T("accepted with xamla11y-ignore", "筆用 xamla11y-ignore 放過")}"));
+        if (r.CodeBuilt.Any) notes.Add(Summary.CodeBuilt(r.CodeBuilt, lang));
         if (r.Foreign.Count > 0) notes.Add(string.Create(inv, $"{r.Foreign.Count} {lang.T("non-WPF XAML file(s)", "個不是 WPF 的 XAML")}"));
         if (r.Gaps.Excluded > 0) notes.Add(string.Create(inv, $"{r.Gaps.Excluded} {lang.T("file(s) excluded", "個檔案排除")}"));
         if (r.Gaps.Unreadable.Count > 0) notes.Add(string.Create(inv, $"{r.Gaps.Unreadable.Count} {lang.T("unreadable folder(s)", "個資料夾讀不到")}"));
         if (notes.Count > 0) sb.AppendLine($"**{lang.T("Not in the list above:", "上面沒列的：")}** {string.Join(" · ", notes)}").AppendLine();
+
+        if (r.Suppressions.Count > 0)
+        {
+            sb.AppendLine(string.Create(inv, $"<details><summary>{lang.T($"{r.Suppressions.Count} accepted with xamla11y-ignore", $"用 xamla11y-ignore 放過的 {r.Suppressions.Count} 筆")}</summary>")).AppendLine();
+            sb.AppendLine(lang.T("| Location | Kind | Reason |", "| 位置 | 種類 | 理由 |")).AppendLine("|---|---|---|");
+            foreach (var s in r.Suppressions.Take(RowsPerSection)) sb.AppendLine(string.Create(inv, $"| {Code($"{s.File}:{s.Line}")} | {s.Kind.Slug} | {Code(Trunc(s.Reason, 160))} |"));
+            if (r.Suppressions.Count > RowsPerSection) sb.AppendLine().AppendLine(string.Create(inv, $"<sub>{lang.T($"… and {r.Suppressions.Count - RowsPerSection} more — see the JSON report artifact.", $"… 還有 {r.Suppressions.Count - RowsPerSection} 筆，看 JSON 報告。")}</sub>"));
+            sb.AppendLine().AppendLine("</details>").AppendLine();
+        }
 
         // 工具查不到的要跟結果放在一起，不然「通過」看起來像全部查過了
         var manual = ManualCheck.In(r.Scope);

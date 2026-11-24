@@ -20,11 +20,14 @@ public static class JsonReport
 {
     public const int SchemaVersion = 1;
 
-    public static string Create(AuditResult r, IReadOnlyList<Finding> reported, int baselined, string toolVersion, int exitCode) => JsonSerializer.Serialize(new
+    public static string Create(AuditResult r, IReadOnlyList<Finding> reported, int baselined, string toolVersion, int exitCode, ReportInfo? info = null) => JsonSerializer.Serialize(new
     {
         schemaVersion = SchemaVersion,
         toolVersion,
         mode = "audit",
+        project = info?.Name,
+        date = info?.DateText,
+        commit = info?.Commit,
         exitCode,
         summary = new
         {
@@ -38,6 +41,8 @@ public static class JsonReport
             notJudged = r.NotJudged,
             suppressed = r.Suppressed,
             resolution = Math.Round(r.Resolution, 1),
+            resolutionJudged = r.GateJudged,
+            resolutionUnknown = r.GateBlocked,
             checks = r.Checks.Select(s => new
             {
                 check = s.Check,
@@ -58,6 +63,8 @@ public static class JsonReport
             excludedFiles = r.Gaps.Excluded,
             unreadableFolders = r.Gaps.Unreadable,
             invalidIgnores = r.InvalidIgnores,
+            unusedIgnores = r.UnusedIgnores,
+            builtInCode = new { controls = r.CodeBuilt.Controls, mouseHandlers = r.CodeBuilt.MouseHandlers },
             groups = Kinds.Groups.ToDictionary(g => g.Id, g => r.Findings.Count(f => f.Kind.Group == g.Id), StringComparer.Ordinal),
             counts = Kinds.All.ToDictionary(k => k.Slug, k => r.Findings.Count(f => f.Kind == k), StringComparer.Ordinal),
             severities = new
@@ -78,6 +85,7 @@ public static class JsonReport
             criteria = m.Criteria.Select(c => new { number = c.Number, level = c.Level, name = c.Name }),
             check = m.Check.En,
         }),
+        suppressed = r.Suppressions.Select(s => new { kind = s.Kind.Slug, site = $"{s.File}:{s.Line}", file = s.File, line = s.Line, element = s.Element, reason = s.Reason }),
         findings = reported.Select(f => new
         {
             kind = f.Kind.Slug,

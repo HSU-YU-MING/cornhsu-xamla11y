@@ -21,7 +21,11 @@ public static class Program
             case "-h" or "--help" or "help": Usage.Print(stdout); return 0;
             case "--version": stdout.WriteLine(Version()); return 0;
             case "audit" when args.Contains("--help") || args.Contains("-h"): Usage.Print(stdout); return 0;
+            case "walk" when args.Contains("--help") || args.Contains("-h"): Usage.Print(stdout); return 0;
+            case "walk": return WalkCommand.Run(args[1..], stdout, stderr);
+            case "fix" when args.Contains("--help") || args.Contains("-h"): Usage.Print(stdout); return 0;
             case "audit": return AuditCommand.Run(args[1..], stdout, stderr);
+            case "fix": return FixCommand.Run(args[1..], stdout, stderr);
             case "rules": return Usage.Rules(args[1..], stdout, stderr);
             default:
                 stderr.WriteLine($"unknown command: {Text.Safe(args[0])}");

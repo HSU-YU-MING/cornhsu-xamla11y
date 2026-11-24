@@ -3,9 +3,9 @@
 **Static accessibility audit for WPF XAML. Finds controls a screen reader cannot name and things a keyboard cannot reach — without launching the app — and fails CI on new ones.**
 
 [![NuGet](https://img.shields.io/nuget/v/Cornhsu.XamlA11y)](https://www.nuget.org/packages/Cornhsu.XamlA11y)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/LICENSE)
 
-[繁體中文](README.zh-Hant.md)
+[繁體中文](https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/README.zh-Hant.md)
 
 ```bash
 dotnet tool install -g Cornhsu.XamlA11y
@@ -13,6 +13,9 @@ dotnet tool install -g Cornhsu.XamlA11y
 xamla11y audit ./src                                    # look at what is there
 xamla11y audit ./src --write-baseline a11y-baseline.json   # accept today's findings
 xamla11y audit ./src --baseline a11y-baseline.json         # from now on, fail only on new ones
+
+xamla11y fix ./src                                      # what it can name for you (--write does it)
+xamla11y walk ./src/Views/Main.xaml                     # where Tab stops, in order, and what is read there
 ```
 
 > Requires the **.NET 10 runtime**. Reads XML, not WPF: it runs on Linux, Windows and macOS.
@@ -33,13 +36,14 @@ lets you stop the number from growing and pay it down when you touch each view.
 | Finding | WCAG 2.2 (level) | Default | |
 |---|---|---|---|
 | `missing-name` | 4.1.2 (A), 1.1.1 (A) | fail | A button, check box, tab, menu item… that has no name for a screen reader to say. **A ToolTip is not a name** — WPF exposes it as the help text. |
-| `text-not-in-name` | 4.1.2 (A), 2.5.3 (A) | fail | It *shows* text, but the text is inside a `StackPanel`, `Border` or `AccessText`. WPF only takes the name from a string, a `TextBlock` or a `ContentControl`. |
+| `text-not-in-name` | 4.1.2 (A), 2.5.3 (A) | fail | It *shows* text, but the text is inside a `StackPanel`, `Border` or `AccessText`. WPF only takes the name from a string, a `TextBlock` or a `ContentControl`. A tab or list item is read as its type name, a hyperlink as nothing. |
 | `meaningless-name` | 4.1.2 (A), 1.1.1 (A) | fail | The name is an icon-font character, white space, `System.Windows.Controls.TabItem`, or geometry path data. |
 | `input-no-name` | 4.1.2 (A), 1.3.1 (A) | fail | A `TextBox`, `PasswordBox`, `RichTextBox`, `ComboBox`, `Slider` or `DatePicker` nothing names. **`<Label Target=…>` does not name it** — see below. |
 | `list-no-name` | 4.1.2 (A), 1.3.1 (A) | warn | A `ListBox`, `ListView`, `TreeView` or `DataGrid` nothing names. The `GroupBox` around it does not. |
 | `widget-no-name` | 4.1.2 (A) | warn | The same for a `ProgressBar` or a `Calendar` (a `Menu` or `ToolBar`: info). |
 | `item-type-name` | 4.1.2 (A) | warn | Items made from data are read as `MyApp.Models.Note`: the class has no `ToString()` and no container style sets the name. **`DisplayMemberPath` does not name them.** |
 | `silent-tab-stop` | 4.1.2 (A) | warn | Tab stops there and a screen reader says nothing: a `ContentControl` without `Focusable="False"`, or your own control without an AutomationPeer. |
+| `name-differs` | 2.5.3 (A) | warn | It shows "Save" and is named "Store the document". People who use speech say what they see. |
 | `symbol-name` | 1.1.1 (A) | info | Named only `×`, `…` or an emoji. |
 | `same-name` | 2.4.6 (AA) | info | Controls side by side with the same name that do different things. |
 
@@ -47,7 +51,7 @@ lets you stop the number from growing and pay it down when you touch each view.
 
 | Finding | WCAG 2.2 (level) | Default | |
 |---|---|---|---|
-| `mouse-only` | 2.1.1 (A) | fail | A `Border`, `Image`, `TextBlock`… with a click handler and no keyboard way in. |
+| `mouse-only` | 2.1.1 (A) | fail | A `Border`, `Image`, `TextBlock`… with a click handler (in the XAML, or added in its code-behind) and no keyboard way in. |
 | `not-in-tab-order` | 2.1.1 (A) | warn | `IsTabStop="False"` or `Focusable="False"` on a control with no access key, `IsDefault`/`IsCancel` or other visible way in. |
 
 ### Focus not visible
@@ -62,12 +66,12 @@ lets you stop the number from growing and pay it down when you touch each view.
 |---|---|---|---|
 | `small-target` | 2.5.8 (AA) | warn | A size *you set* under 24 DIP, too close to its neighbour for the spacing exception. |
 
-`xamla11y rules` prints the same list with the fix for each; before and after for every one: [docs/fixes.md](docs/fixes.md).
+`xamla11y rules` prints the same list with the fix for each; before and after for every one: [docs/fixes.md](https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/fixes.md).
 
 The standard is **WCAG 2.2, levels A and AA**: eight of its 55 criteria, read for desktop software as
 [WCAG2ICT](https://www.w3.org/TR/wcag2ict-22/) says. Why each finding is that criterion, when it is not a violation, how
 EN 301 549, Section 508 and Taiwan's rules differ, and what a person still has to check:
-[docs/standards.md](docs/standards.md). `--standard` and `--level` choose another one (WCAG 2.1 or 2.0, EN 301 549, Section 508); the
+[docs/standards.md](https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/standards.md). `--standard` and `--level` choose another one (WCAG 2.1 or 2.0, EN 301 549, Section 508); the
 HTML, JSON and SARIF reports also carry the clause numbers of EN 301 549 and Section 508.
 
 This is **not** a claim of WCAG, EN 301 549 or European Accessibility Act conformance. A static tool
@@ -99,28 +103,47 @@ exception: MaterialDesignThemes 5.3 turns `HintAssist.Hint` into the name, and t
 
 ```
 xamla11y audit — 1 XAML file(s), WCAG 2.2 A + AA
-  6 fail, 7 warn, 2 info
-    not read out: 10 (missing-name 1, text-not-in-name 1, meaningless-name 1, input-no-name 1, list-no-name 1, widget-no-name 1, item-type-name 1, silent-tab-stop 1, symbol-name 1, same-name 1)
+  6 fail, 8 warn, 2 info
+    not read out: 11 (missing-name 1, text-not-in-name 1, meaningless-name 1, input-no-name 1, list-no-name 1, widget-no-name 1, item-type-name 1, silent-tab-stop 1, name-differs 1, symbol-name 1, same-name 1)
     out of reach of the keyboard: 2 (mouse-only 1, not-in-tab-order 1)
     focus not visible: 1 (focus-not-visible 1)
     too small: 2 (small-target 2)
-  resolution 93.8% (24 judged, 1 unknown; 1 left out)
-  suppressed: 1
+  resolution 94.1%: 16 of 17 names, inputs, focus and mouse places could be judged
+  all checks: 26 judged, 1 unknown, 1 left out
+  accepted with xamla11y-ignore: 1
 
   fail focus-not-visible  MainWindow.xaml:11
        The style 'FlatButton' removes FocusVisualStyle and nothing else shows keyboard focus: its template has no focus trigger and no Focused state
-  fail missing-name       MainWindow.xaml:26   NVDA: "button, Delete"
+  fail missing-name       MainWindow.xaml:26   NVDA: button, Delete
        <Button> has no accessible name: its content is <Path>, which gives no text; its ToolTip is the help text, not the name
-  fail text-not-in-name   MainWindow.xaml:31   NVDA: "button"
+  fail text-not-in-name   MainWindow.xaml:31   NVDA: button
        <Button> shows "Save" but has no accessible name: the text is inside <StackPanel>; WPF only takes the name from a string, a TextBlock or a ContentControl
   fail meaningless-name   MainWindow.xaml:39
        <Button> has an unreadable accessible name (U+E74D): its name is an icon-font character from the private use area
-  fail input-no-name      MainWindow.xaml:46   NVDA: "edit"
+  fail input-no-name      MainWindow.xaml:46   NVDA: edit
        <TextBox> has no accessible name; <Label Target> at line 45 does not give it one (use AutomationProperties.LabeledBy)
   fail mouse-only         MainWindow.xaml:49
        <Border> reacts to MouseLeftButtonUp (OnOpen) but the keyboard cannot reach it
   … then warn, info, what it could not judge and the checks a person has to do
 ```
+
+## Fixing what already has a name
+
+```bash
+xamla11y fix ./src            # shows the changes, writes nothing
+xamla11y fix ./src --write    # makes them: commit first, then read the diff
+```
+
+It connects what is already there: the `Label` that points at the field (`LabeledBy`), the one text the button shows, its short
+`ToolTip`. Only attributes are added; formatting, encoding and line ends stay. Every change is audited again in memory first, and one that does not
+help, or causes something else, is dropped. What it is not sure of it leaves alone: a text that code or a trigger changes, two texts, a sentence, a shortcut.
+`--guess` also takes the text in front of a field and bound texts: read the diff.
+
+## Walking a window
+
+`xamla11y walk Views/Main.xaml` lists where Tab stops, in order: the line, the name, what NVDA reads, what is wrong there, and
+where Tab goes in and does not come out. The order was compared with real WPF windows, case by case. What templates, code and data add
+is not in it; what depends on them is marked `?`.
 
 ## How far to trust it
 
@@ -129,15 +152,15 @@ xamla11y audit — 1 XAML file(s), WCAG 2.2 A + AA
 - **It says how much it could see.** *Resolution* is the share of elements it could judge, of those that should get an answer. Below `--min-coverage`
   (60) the run exits 3, *not trustworthy*, rather than 0. Of 49 public projects and 3 apps, 38 are above 85% without
   any configuration; controls of a library nobody has told it about stay unknown until you declare them with
-  [`treatAs`](docs/config-schema.md).
+  [`treatAs`](https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/config-schema.md).
 - **"NVDA says" is only written for what was run.** Narrator and JAWS were not.
 
-The numbers, project by project: [docs/verification.md](docs/verification.md).
+The numbers, project by project: [docs/verification.md](https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/verification.md).
 
 **What it cannot see**
 
-- Names, content and handlers set in code. It reads a XAML file's *own* code-behind, only to notice that
-  it sets a control's name or content (the control is then unknown, not missing) and that a handler just drags the window.
+- Controls built in C#, and handlers added to them: they are counted and reported, not checked. It reads a XAML file's *own* code-behind, only to notice that
+  it sets a control's name or content (the control is then unknown, not missing), opens something hidden, or adds a click to a named element.
 - Implicit styles that reach into a `UserControl` from the resources of the window that hosts it.
 - Names from data. Of items generated from `ItemsSource` it sees whether anything names them, not what the name is.
 - Reading order, live regions, high contrast, whether a name is a *good* name, whether an image is decorative.
@@ -151,21 +174,24 @@ The numbers, project by project: [docs/verification.md](docs/verification.md).
 |---|---|
 | `--html <file>` | one page for people, without scripts or external files: what, why, how to fix, what NVDA says, the clause numbers, and the checks a person has to do |
 | `--json`, `--sarif`, `--md <file>` | full report, code scanning, Markdown for a PR comment |
-| `--standard <id>`, `--level A\|AA` | `wcag22` (default), `wcag21`, `wcag20`, `en301549` (V3.2.1), `en301549-v4`, `section508` — [what changes](docs/standards.md#choosing-one) |
-| `--lang en\|zh-Hant` | language of the console, Markdown and HTML reports. JSON, SARIF and MSBuild stay English |
+| `--standard <id>`, `--level A\|AA` | `wcag22` (default), `wcag21`, `wcag20`, `en301549` (V3.2.1), `en301549-v4`, `section508` — [what changes](https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/standards.md#choosing-one) |
+| `--lang en\|zh-Hant` | language of the console, Markdown and HTML reports. JSON, SARIF, MSBuild and messages about a wrong option stay English |
+| `--title <text>` | heading of the HTML report; the default is the name of the folder |
+| `--only <file\|folder>` | report only these; a `.xaml` in place of the folder does the same. Styles and resources are still read from the whole project |
 | `--msbuild` | MSBuild diagnostics for the Visual Studio error list: `XA0001` gated, `XA0002` not gated, `XA0003` not trustworthy |
 | `--baseline`, `--write-baseline <file>` | only fail on new findings. Keys contain no line numbers |
+| `--prune-baseline` | drop what is no longer found from the baseline. Writing it again would also accept what is new |
 | `--fail-on fail\|warn` | lowest severity that fails the run |
 | `--min-coverage <0-100>` | exit 3 below this resolution |
-| `--config <file>` | default `xamla11y.config.json` in the root — [schema](docs/config-schema.md) |
+| `--config <file>` | default `xamla11y.config.json` in the root — [schema](https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/config-schema.md) |
 | `--exclude <text>` | skip paths that contain this |
 
 Exit codes: **0** pass · **1** findings at or above `--fail-on` · **2** usage, config or input error ·
 **3** result not trustworthy.
 
-To accept one element, put a comment with a reason right before it. Other comments may sit in
+To accept one element, put a comment with a reason right before it. The reason is in the reports. Other comments may sit in
 between; another element or text may not. Without a reason, or in front of text or a commented-out element, it
-does nothing and the run says so:
+does nothing and the run says so; so does one with nothing left to accept:
 
 ```xml
 <!-- xamla11y-ignore: the whole row is the control, this check box only mirrors it -->
@@ -190,7 +216,7 @@ steps:
 ```
 
 Findings are annotated on their lines (GitHub shows the first ten or so per step; the report has all of them), the Markdown report becomes one PR comment that is updated in
-place, the JSON report is uploaded as an artifact, and the job fails last, after all of that is out.
+place, the JSON, Markdown and HTML reports are uploaded as an artifact, and the job fails last, after all of that is out.
 
 | Input | Default | |
 |---|---|---|
@@ -202,7 +228,7 @@ place, the JSON report is uploaded as an artifact, and the job fails last, after
 | `fail-on` | `fail` | `fail` or `warn` |
 | `min-coverage` | config, else `60` | |
 | `comment` | `true` | post the report on the PR |
-| `upload-report` | `true` | upload JSON and Markdown as an artifact |
+| `upload-report` | `true` | upload JSON, Markdown and HTML as an artifact |
 | `sarif` | `false` | upload to code scanning |
 | `artifact-name` | `xamla11y-report` | also keys the PR comment |
 
@@ -216,7 +242,7 @@ place, the JSON report is uploaded as an artifact, and the job fails last, after
 | **XamlA11y** | can you reach it, and can it be read out? |
 
 Same exit codes, same action inputs, separate report files, artifacts, PR comments and SARIF tools, so the
-four can run in one job: [docs/four-tools.md](docs/four-tools.md). A missing `{StaticResource}` behind an
+four can run in one job: [docs/four-tools.md](https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/four-tools.md). A missing `{StaticResource}` behind an
 `AutomationProperties.Name` is XamlKeys' finding; XamlA11y treats the name as present.
 
 ## Compared with
@@ -230,4 +256,4 @@ four can run in one job: [docs/four-tools.md](docs/four-tools.md). A missing `{S
 
 ## License
 
-MIT. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+MIT. See [THIRD-PARTY-NOTICES.md](https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/THIRD-PARTY-NOTICES.md).

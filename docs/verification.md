@@ -20,6 +20,8 @@ Insights and of Visual Studio's checker.
 | names under MahApps, MaterialDesign, HandyControl, WPF-UI, Fluent | 97 | 74 | 23 | **0** |
 | focus visible (pixels), default theme and the five themes | 107 | 84 | 23 | **0** |
 | tab order | 29 | 27 | 2 | **0** |
+| the order of all Tab stops in a window (`walk`) | 88 | 84 | 4 | **0** |
+| whether the name contains the visible text (`name-differs`) | 27 | 22 | 5 | **0** |
 | items made from data (UI Automation name) | 39 | 39 | 0 | **0** |
 | Tab stops that are not in the UI Automation tree | 56 | 55 | 1 | **0** |
 | target size (bounding rectangle) | 17 | 10 | 7 | **0** |
@@ -54,7 +56,7 @@ Out of the box, no configuration:
 | dnSpy | 124 | **99.3%** | 139 | 1365 | 0 | 1 | 94 | 54 | 2 |
 | Dopamine | 150 | **38.5%** | 67 | 38 | 4 | 2 | 0 | 11 | 20 |
 | EarTrumpet | 12 | **71.9%** | 11 | 9 | 0 | 0 | 8 | 10 | 7 |
-| Flow.Launcher | 393 | **80.6%** | 28 | 107 | 0 | 3 | 4 | 20 | 25 |
+| Flow.Launcher | 393 | **80.7%** | 28 | 107 | 0 | 5 | 4 | 20 | 25 |
 | GeekDesk | 33 | **89.1%** | 14 | 23 | 0 | 2 | 0 | 7 | 5 |
 | HandBrake | 58 | **100.0%** | 30 | 85 | 0 | 3 | 3 | 30 | 18 |
 | MAA | 89 | **89.1%** | 68 | 165 | 0 | 4 | 1 | 32 | 18 |
@@ -62,10 +64,10 @@ Out of the box, no configuration:
 | NuGet Package Explorer | 52 | **99.6%** | 40 | 55 | 0 | 0 | 0 | 16 | 20 |
 | Playnite | 275 | **100.0%** | 142 | 228 | 0 | 0 | 5 | 46 | 38 |
 | QuickLook | 56 | **89.6%** | 23 | 20 | 1 | 0 | 22 | 12 | 1 |
-| ScreenToGif | 121 | **99.6%** | 368 | 347 | 0 | 2 | 0 | 47 | 11 |
+| ScreenToGif | 121 | **99.6%** | 368 | 347 | 0 | 6 | 0 | 47 | 11 |
 | Snoop | 63 | **98.5%** | 23 | 41 | 0 | 0 | 8 | 13 | 7 |
 | SyncTrayzor | 25 | **100.0%** | 17 | 12 | 0 | 1 | 0 | 6 | 11 |
-| Text-Grab | 54 | **96.8%** | 179 | 59 | 1 | 1 | 26 | 12 | 2 |
+| Text-Grab | 54 | **94.4%** | 159 | 59 | 1 | 1 | 26 | 12 | 2 |
 | TwitchDownloader | 16 | **89.9%** | 44 | 56 | 0 | 26 | 0 | 7 | 1 |
 | v2rayN | 24 | **89.5%** | 82 | 167 | 0 | 0 | 0 | 21 | 4 |
 | VisualHFT | 49 | **100.0%** | 14 | 96 | 0 | 0 | 0 | 13 | 7 |
@@ -73,12 +75,12 @@ Out of the box, no configuration:
 | AvalonDock (library) | 73 | **100.0%** | 19 | 18 | 0 | 0 | 4 | 9 | 5 |
 | Fluent.Ribbon (library) | 70 | **29.2%** | 15 | 5 | 0 | 0 | 0 | 10 | 6 |
 | HandyControl (library) | 342 | **91.5%** | 390 | 205 | 0 | 0 | 0 | 48 | 5 |
-| MahApps.Metro (library) | 312 | **87.6%** | 161 | 379 | 1 | 0 | 0 | 104 | 26 |
+| MahApps.Metro (library) | 312 | **87.6%** | 161 | 379 | 1 | 0 | 0 | 104 | 27 |
 | MaterialDesignInXaml (library) | 368 | **95.3%** | 444 | 239 | 0 | 0 | 0 | 163 | 165 |
-| ModernWpf (library) | 298 | **81.2%** | 47 | 111 | 0 | 0 | 11 | 14 | 3 |
+| ModernWpf (library) | 298 | **81.2%** | 47 | 111 | 0 | 1 | 11 | 14 | 3 |
 | WPF-UI (library) | 229 | **99.0%** | 70 | 34 | 0 | 0 | 0 | 12 | 3 |
 
-The columns are findings, in pinned commits ([docs/corpus.tsv](corpus.tsv)), read with their C#: without it
+Of the 49 public projects, 46 have WPF XAML (one has none and two are WinUI: exit 3). The columns are findings, in pinned commits ([docs/corpus.tsv](corpus.tsv)), read with their C#: without it
 ScreenToGif is 36% instead of 99%, because `class ExtendedButton : Button` is not followed. Controls from a library nobody has told it about stay unknown until you declare them with
 [`treatAs`](config-schema.md). Resolution counts the four checks that can fail a build (names, inputs, focus,
 mouse-only); the others do not fail a build and would only flatter the number.

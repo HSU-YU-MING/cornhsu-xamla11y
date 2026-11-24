@@ -46,4 +46,4 @@ dotnet tool install --tool-path ./artifacts/tool --add-source ./artifacts Cornhs
 
 ## 發完之後
 
-作品集網站（`portfolio-release-update`）；`D:\擴充功能\nuget\Xaml三件套-下一步.md` 與 `nuget-packages` skill 的版本表。
+作品集網站（`portfolio-release-update`）；頁面上線之後把 `Directory.Build.props` 的 `PackageProjectUrl` 與 SARIF 的 `informationUri` 換成 `https://cornhsu.com/xamla11y`（現在指 GitHub，因為頁面還沒有）；`D:\擴充功能\nuget\Xaml三件套-下一步.md` 與 `nuget-packages` skill 的版本表。

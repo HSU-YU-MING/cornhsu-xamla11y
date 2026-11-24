@@ -11,11 +11,16 @@ public static partial class Zh
     public const string ScopeText =
         "靜態檢查：讀 XAML，什麼都沒有執行；程式碼只看型別與屬性的宣告、每個 XAML 自己的 code-behind（有沒有設名稱、內容、鍵盤處理器）。沒有問題不等於符合 WCAG 或任何法規。";
 
+    /// <summary>訊息最長 600 字、原因 200 字；比這個長的不是規則寫的，一段一段剝會是平方。</summary>
+    private const int Longest = 2000;
+
     /// <summary>一筆 finding 的訊息。</summary>
     public static string Message(string m) => TryMessage(m, out var zh) ? zh : m;
 
     public static bool TryMessage(string m, out string zh)
     {
+        zh = m;
+        if (m.Length > Longest) return false;
         foreach (var (regex, make) in Messages)
             if (regex.Match(m) is { Success: true } match)
             {
@@ -32,6 +37,8 @@ public static partial class Zh
 
     public static bool TryReason(string r, out string zh)
     {
+        zh = r;
+        if (r.Length > Longest) return false;
         if (Plain.TryGetValue(r, out var plain)) { zh = plain; return true; }
         // 接在後面的補充一段一段翻：「…; its name becomes the type name」「…; its ToolTip is the help text, not the name」
         foreach (var (regex, tail) in Tails)
@@ -59,6 +66,9 @@ public static partial class Zh
     [
         (R($"{E} shows bound text but has no accessible name: (?<why>.+)"), (m, why) => $"<{m.Groups["e"]}> 畫面上有綁定的文字，名稱卻是空的：{why(m.Groups["why"].Value)}"),
         (R($"{E} shows \"(?<t>.*)\" but has no accessible name: (?<why>.+)"), (m, why) => $"<{m.Groups["e"]}> 畫面上有「{m.Groups["t"]}」，名稱卻是空的：{why(m.Groups["why"].Value)}"),
+        (R($"{E} shows bound text but has an unreadable accessible name: (?<why>.+)"), (m, why) => $"<{m.Groups["e"]}> 畫面上有綁定的文字，名稱卻念不出意思：{why(m.Groups["why"].Value)}"),
+        (R($"{E} shows \"(?<t>.*)\" but has an unreadable accessible name: (?<why>.+)"), (m, why) => $"<{m.Groups["e"]}> 畫面上有「{m.Groups["t"]}」，名稱卻念不出意思：{why(m.Groups["why"].Value)}"),
+        (R($"{E} shows \"(?<t>.*)\" but its accessible name is \"(?<n>.*)\", which does not contain it"), (m, _) => $"<{m.Groups["e"]}> 畫面上是「{m.Groups["t"]}」，名稱是「{m.Groups["n"]}」，沒有包含它"),
         (R($"{E} has no accessible name"), (m, _) => $"<{m.Groups["e"]}> 沒有名稱"),
         (R($"{E} has no accessible name; (?<hint>.+)"), (m, why) => $"<{m.Groups["e"]}> 沒有名稱；{why(m.Groups["hint"].Value)}"),
         (R($"{E} has no accessible name: (?<why>.+)"), (m, why) => $"<{m.Groups["e"]}> 沒有名稱：{why(m.Groups["why"].Value)}"),
@@ -92,6 +102,9 @@ public static partial class Zh
         (R("(?<head>.+); a warning because it cannot take focus"), "不能聚焦，所以只算警告"),
         (R("(?<head>.+); a warning because it is disabled"), "停用的，所以只算警告"),
         (R("(?<head>.+); a warning because it is hidden"), "藏起來的，所以只算警告"),
+        (R("(?<head>.+); only an info because it cannot take focus"), "不能聚焦，所以只算 info"),
+        (R("(?<head>.+); only an info because it is disabled"), "停用的，所以只算 info"),
+        (R("(?<head>.+); only an info because it is hidden"), "藏起來的，所以只算 info"),
         (R("(?<head>.+); its name becomes the type name"), "名稱會變成型別名"),
         (R("(?<head>.+); its ToolTip is the help text, not the name"), "ToolTip 是說明文字，不是名稱"),
         (R("(?<head>.+); its (?<p>\\w+) property belongs to the class and is not the name"), "${p} 是它自己的屬性，不是名稱"),
@@ -109,6 +122,10 @@ public static partial class Zh
         ["a warning because it cannot take focus"] = "不能聚焦，所以只算警告",
         ["a warning because it is disabled"] = "停用的，所以只算警告",
         ["a warning because it is hidden"] = "藏起來的，所以只算警告",
+        ["only an info because it cannot take focus"] = "不能聚焦，所以只算 info",
+        ["only an info because it is disabled"] = "停用的，所以只算 info",
+        ["only an info because it is hidden"] = "藏起來的，所以只算 info",
+        ["only an info because one menu or tool bar in a window needs no name"] = "一個視窗一個選單或工具列，不用名稱也分得出來，所以只算 info",
         ["it has no AutomationProperties.Name and nothing labels it"] = "沒有 AutomationProperties.Name，也沒有東西標示它",
         ["its content is an empty string"] = "內容是空字串",
         ["its content is only white space"] = "內容只有空白",

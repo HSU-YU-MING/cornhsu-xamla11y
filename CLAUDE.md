@@ -9,15 +9,18 @@
 |---|---|
 | 改一種問題的標題、說明、修法、嚴重度、準則、分組 | `data/findings.json`（一種一列，中英文在一起；主控台、報告、`rules`、SARIF 都讀它）。README ×2 與 `docs/standards.md`、`標準對照.md` 的表、`docs/fixes.md`、`修法.md` 的順序由測試核對 |
 | 改某一種怎麼判 | `src/XamlA11y.Core/Rules/`，一個檔一項；名稱怎麼算在 `Analysis/NameResolver.cs` |
-| 加一種問題 | `findings.json` 加一列 → `Kinds.cs` 加一行 → 規則 → `Zh.cs` 加訊息的中文 → 上面那幾份文件 → `samples/demo` 與 `verify-demo.sh` |
+| 加一種問題 | 見下面「加一種問題」 |
 | 每一筆訊息的中文 | `Report/Zh.cs`（照英文句型翻） |
 | 報告 | `Report/`，一種格式一個檔；共用的句子在 `Summary.cs`、語言在 `Lang.cs` |
-| 指令列 | `src/XamlA11y.Cli/`：`Options`（旗標）、`AuditCommand`（流程與退出碼）、`Usage`（說明） |
+| 指令列 | `src/XamlA11y.Cli/`：`Options`（旗標）、`Setup`（設定檔、標準、語言）、`Target`（看哪裡、`--only`）、`AuditCommand`／`FixCommand`／`WalkCommand`、`Usage`（說明） |
+| 自動修 | `src/XamlA11y.Core/Fix/`：`Fixer`（修什麼、改完重新稽核）、`XamlSource`（只插屬性，其他位元組不動） |
+| Tab 走訪 | `src/XamlA11y.Core/Walk/TabWalk.cs`，真值在 `facts/walk.txt` |
+| 能不能信（exit 3） | `Report/Trust.cs` |
 | 第三方控制項與佈景 | `data/known-controls.json` |
 | 測試 | `tests/XamlA11y.Tests/`，一個主題一個檔；共用的在 `Kit.cs` |
 | 跟真的 WPF、NVDA 比 | `prototype/UiaOracle/` |
 
-**名字只有一套**：一種問題一個 slug（`missing-name`…，14 種），收成四組（念不出來、鍵盤到不了、看不到焦點、太小）。
+**名字只有一套**：一種問題一個 slug（`missing-name`…，15 種），收成四組（念不出來、鍵盤到不了、看不到焦點、太小）。
 統計與可解析率另外分「檢查」（`control-names`…，見 `findings.json` 的 `checks`，`gate` 的四項才算可解析率）。**沒有 R1、R2 這種編號**，不要加回來。
 
 ## 憲法
@@ -27,9 +30,20 @@
 3. **每條規則都拿真的 WPF 對照過。** 加規則、改規則之前先在 `prototype/UiaOracle/facts/` 加案例。
 4. **永遠開火的閘門會被關掉。** 預設只擋確定的；哪些擋、哪些警告看 `findings.json` 的 severity。
 
+### 加一種問題
+
+1. `data/findings.json` 加一列（同一組裡先嚴重的）；要新的統計就在 `checks` 也加一項。
+2. `Kinds.cs`：`Kinds` 一行，新的檢查再加 `Checks` 一行。
+3. 規則寫在 `Rules/`，**在 `Auditor.Run` 接一行（沒接不會報錯）**。先在 `facts/` 加案例。
+4. 訊息的中文加進 `Zh.cs`（`ChineseTests` 會擋）。
+5. 用到新的準則：`Standards.cs` 的 `Criteria`、`En3`／`En4`／`S508`，與兩份標準文件的條號表。
+6. 文件：README ×2 的表、`standards.md`／`標準對照.md` 的表、`fixes.md`／`修法.md` 一節（順序跟表一樣，範例由測試跑）、issue 表單、CHANGELOG 與 README 的數字（`FindingsTableTests` 會擋）。
+7. `samples/demo` 與 `verify-demo.sh`，然後 `verify-readme-sample.sh --update`。
+8. 測試裡寫死的：`Kit.Everything`、`FindingsTableTests` 的 fail／info／空名稱清單與修法範例、`StandardsTests` 的 `missing` 與準則、`CliTests` 的分組筆數。
+
 ## 改規則的流程
 
-1. 在 `prototype/UiaOracle/facts/*.txt` 加案例（項目名稱 `items.txt`、沒聲音的停留點 `silent.txt` 用 `check-items` 單獨跑）（一行一案，引號寫單引號）。
+1. 在 `prototype/UiaOracle/facts/*.txt` 加案例（項目名稱 `items.txt`、沒聲音的停留點 `silent.txt` 用 `check-items` 單獨跑；走訪 `walk.txt`、畫面的字 `labels.txt` 用 `check-walk`）（一行一案，引號寫單引號）。
 2. `dotnet build prototype/UiaOracle -c Release`，跑 `uiaoracle check`（約 4 分鐘，會在螢幕左上角開小視窗、搶焦點）。**任何一個 WRONG 都不能放過。**
 3. `uiaoracle check-corpus <專案資料夾…>`：真實專案的形狀。`uiaoracle check-windows <專案資料夾…>`：整個檔案連樣式、資源載進真的 WPF（視窗在螢幕外，不搶焦點；49 個專案約 40 分鐘，開四個平行約 15 分鐘）。
    別人的 XAML 一律過 `SafeMarkup`（白名單）才交給 XamlReader；改它之後跑 `uiaoracle check-hostile`。
@@ -83,7 +97,7 @@
 | 28 | 降過級的 finding 變嚴重了，baseline 還是蓋住 | 鍵加「~」 | 獨立審查 |
 | 29 | MaterialDesign 的 Hint 名稱來自**樣式** | 樣式被換掉、佈景沒合併就沒有。光看套件版本不夠 | 獨立審查 → Oracle 確認 |
 | 30 | 疊在按鈕上的 TextBlock 做同一個動作 | 鍵盤本來就有路。同檔有鍵盤控制項綁同一個命令／處理器就不報 | MAA |
-| 31 | xunit 的字串 Assert 預設用文化比對 | 軟連字號是可忽略字元，`DoesNotContain` 永遠失敗。要 `StringComparison.Ordinal` | ReviewTests |
+| 31 | xunit 的字串 Assert 預設用文化比對 | 軟連字號是可忽略字元，`DoesNotContain` 永遠失敗。要 `StringComparison.Ordinal` | 獨立審查 |
 | 32 | 被註解掉的元素在 XML 裡也是註解 | 「註解都跳過、元素才停」會讓前面的 ignore 改壓下一個元素。註解以 `<` 開頭就停，文字也停（處理指令跳過），而且要警告（四件套一致，使用者 2026-11-24 定） | 四支對照實跑 |
 | 33 | ToolBar 把直接子元素的隱含樣式換掉 | 隱含樣式給的名稱在工具列裡沒有 —— 偏偏圖示按鈕都在那裡（假通過） | 第二輪審查 → Oracle 確認 |
 | 34 | `ItemContainerStyle` 沒算 | 名稱寫在那裡的 TabItem、ListBoxItem 被報「念不出來」 | 第二輪審查 → Oracle 確認 |
@@ -114,6 +128,20 @@
 | 59 | 同一件事好幾套名字（slug、R 編號、英文標題散在 C#、中文在 Zh.cs） | 加一種要改五個地方，報告、文件、程式各講各的。現在一張表（`findings.json`），照 Ramp 的 rules-map | 2026-11-24 整理 |
 | 60 | 整理（搬檔、改名）也會改壞 | 每一步都有對照：52 個專案 11,946 筆逐筆逐欄比、測試案例逐一比、搬測試時字串逐一比（抓到把字串裡的 `Note` 也改名） | 2026-11-24 整理 |
 | 61 | OpenACR 草稿做了又拿掉 | 55 條只填得了 8 條，格式用的人極少，而且合規聲明寫錯的代價在使用者身上。條號 JSON、SARIF、HTML 都有，夠用 | 2026-11-24 整理 |
+
+| 62 | 「藏起來、停用」就降一級 | 65 筆裡 36 筆同一個檔案就有觸發器會打開：有問題的專案過關。`Project.ChangesLater`：範本觸發器、動畫、程式碼提到名字（連字串）都算會；沒名字的改不到 | 第三次審查 |
+| 63 | 教人「重寫一次 baseline」 | 新的問題一起變成已知。`--prune-baseline` 只拿掉沒有的；沒看到不等於修好（關掉的種類、讀不懂的檔案、不可信都不動） | 第三次審查 |
+| 64 | 百分比旁邊印別的數字 | 可解析率只算四項，括號印了十項的：93.8% 旁邊寫 24 與 1。`GateJudged`／`GateBlocked` | 第三次審查 |
+| 65 | 標的準則只查了一半 | 2.5.3 寫著有查，其實只查名稱是空的。補 `name-differs` | 第三次審查 |
+| 66 | 字在面板裡的頁籤報成「圖示字元」 | 條文標成 1.1.1。名稱不是空的（型別名、空白）也是 `text-not-in-name`，但 `NameIsEmpty` 是 false（11.5.2.5 不標） | 第三次審查 |
+| 67 | 自動修只看「改了會有名稱」 | 整句的說明當名稱、專案自己的控制項裡取 x:Name 會 MC3093、跟 code-behind 的欄位撞名、範本裡外是兩個名稱範圍。改完在記憶體裡重新稽核，真的專案改完建置過。**接錯比沒名稱糟**（閘門變綠，以後查不出來）：不確定的一律不接 | QuillNest、Kindling、6 個公開專案、對抗式審查 |
+| 70 | 重新稽核過了就當修好 | 「變成看資料」也會讓問題消失。綁定的要 `--guess`，而且印「執行時才知道」 | 對抗式審查 |
+| 71 | 寫檔只驗字串 | 宣告 us-ascii 的檔案加中文變「??」。寫之前把位元組解回來比（`XamlSource.ToBytes`） | 對抗式審查 |
+| 72 | 記憶路徑只限深度 | 控制項包自己 40 次，843 位元組跑不完。記住走在哪些檔案裡，站數也有上限 | 對抗式審查 |
+| 73 | 讀 `.git` 也是讀別人的檔案 | `gitdir: \\\\server\\share` 會替他連線、`ref: ../../x` 讀到外面。只認 refs/、不碰網路、只讀一小段 | 對抗式審查 |
+| 74 | 資源比值 | 好幾種語言的資源，看到的只是其中一份。`SameNameRule` 早就寫了，`name-differs` 又犯 | 對抗式審查 |
+| 68 | 文件裡手寫的「幾種、幾條」沒人守 | 加一種要改的地方漏一半。`The_numbers_in_the_documents_are_right`、`Links_lead_somewhere` | 第三次審查 |
+| 69 | README 的相對連結 | nuget.org 不解析。README.md 一律寫完整網址（測試守） | 第三次審查 |
 
 ## 沒做的、知道的
 

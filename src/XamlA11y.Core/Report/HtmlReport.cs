@@ -16,14 +16,14 @@ public static class HtmlReport
     private const int RowsPerKind = 500;
     private const int ListMax = 50;
 
-    public static string Create(AuditResult r, IReadOnlyList<Finding> reported, int exitCode, int baselined, string? why, string toolVersion, Lang? lang = null, int stale = 0, IReadOnlyList<Finding>? known = null)
+    public static string Create(AuditResult r, IReadOnlyList<Finding> reported, int exitCode, int baselined, string? why, string toolVersion, Lang? lang = null, int stale = 0, IReadOnlyList<Finding>? known = null, ReportInfo? info = null)
     {
         lang ??= Lang.En;
         var inv = CultureInfo.InvariantCulture;
         var sb = new StringBuilder();
         int Count(Severity s) => reported.Count(f => f.Severity == s);
 
-        var title = lang.T("XamlA11y accessibility audit", "XamlA11y 無障礙稽核");
+        var title = info is null ? lang.T("XamlA11y accessibility audit", "XamlA11y 無障礙稽核") : lang.T($"{info.Name}: accessibility audit", $"{info.Name}：無障礙稽核");
         sb.Append($"""
             <!DOCTYPE html>
             <html lang="{lang.Id}">
@@ -51,13 +51,14 @@ public static class HtmlReport
         sb.Append($"<p class=\"verdict v{exitCode.ToString(inv)}\">{H(verdict)}</p>\n<dl>\n");
         Term(lang.T("Standard", "標準"), r.Scope.Title);
         Term(lang.T("Findings", "問題"), string.Create(inv, $"{Count(Severity.Fail)} fail, {Count(Severity.Warn)} warn, {Count(Severity.Info)} info"));
-        Term(lang.T("Resolution", "可解析率"), lang.IsZh
-            ? string.Create(inv, $"{r.Resolution:F1}%（判得出來 {r.Judged}、判不出來 {r.Blocked}、不判 {r.NotJudged}）")
-            : string.Create(inv, $"{r.Resolution:F1}% ({r.Judged} judged, {r.Blocked} unknown, {r.NotJudged} left out)"));
+        if (info is not null) Term(lang.T("Date", "日期"), info.DateText);
+        if (info?.Commit is { } commit) Term("commit", commit);
+        Term(lang.T("Resolution", "可解析率"), string.Create(inv, $"{r.Resolution:F1}%{lang.T($" ({r.GateJudged} of {r.GateJudged + r.GateBlocked})", $"（{r.GateJudged + r.GateBlocked} 處判得出 {r.GateJudged} 處）")}"));
+        Term(lang.T("All checks", "全部的檢查"), lang.T($"{r.Judged} judged, {r.Blocked} unknown, {r.NotJudged} left out", $"判得出來 {r.Judged}、判不出來 {r.Blocked}、不判 {r.NotJudged}"));
         Term(lang.T("XAML files", "XAML 檔"), r.Files.ToString(inv));
         if (baselined > 0) Term(lang.T("In the baseline", "在 baseline 裡"), baselined.ToString(inv));
         if (stale > 0) Term(lang.T("In the baseline, not found this time", "在 baseline 裡、這次沒有的"), stale.ToString(inv));
-        if (r.Suppressed > 0) Term(lang.T("Suppressed", "壓掉的"), r.Suppressed.ToString(inv));
+        if (r.Suppressed > 0) Term(lang.T("Accepted with xamla11y-ignore", "用 xamla11y-ignore 放過的"), r.Suppressed.ToString(inv));
         if (r.Gaps.Excluded > 0) Term(lang.T("Excluded files", "排除的檔案"), r.Gaps.Excluded.ToString(inv));
         if (r.Foreign.Count > 0) Term(lang.T("XAML that is not WPF", "不是 WPF 的 XAML"), r.Foreign.Count.ToString(inv));
         sb.Append("</dl>\n");
@@ -67,15 +68,18 @@ public static class HtmlReport
         Notes(lang.T("Files that could not be parsed — they are missing from the audit:", "讀不懂的檔案，沒有稽核到："), [.. r.ParseErrors.Select(f => r.ParseWhy.TryGetValue(f, out var p) ? $"{f}: {p}" : f)]);
         Notes(lang.T("Folders that could not be read:", "讀不到的資料夾："), r.Gaps.Unreadable);
         Notes(lang.T("xamla11y-ignore comments that do nothing:", "沒作用的 xamla11y-ignore："), [.. r.InvalidIgnores.Select(lang.Ignore)]);
+        Notes(lang.T("xamla11y-ignore comments with nothing to accept (remove them, or a later problem stays hidden):", "沒有東西要放過的 xamla11y-ignore（拿掉，不然之後再壞也看不到）："), r.UnusedIgnores);
+        if (r.CodeBuilt.Any) sb.Append($"<p class=\"note\"><strong>{H(Summary.CodeBuilt(r.CodeBuilt, lang))}</strong></p>\n");
         Notes(lang.T("Controls it does not know (say what they are with treatAs in xamla11y.config.json):", "不認得的控制項（在 xamla11y.config.json 用 treatAs 說明它是什麼）："), [.. r.UnknownControls.Select(u => string.Create(inv, $"{u.Element} ×{u.Count}"))]);
 
         // ── 每一項檢查 ──
-        var checks = r.Checks.Where(s => s.Candidates > 0).ToList();
+        // 一處都沒有的也列：看的人要分得出「沒有東西可查」跟「沒查」
+        var checks = r.Checks;
         if (checks.Count > 0)
         {
             Open(lang.T("What was checked", "查了什麼"), lang.T("Check", "檢查"), lang.T("Findings", "問題"), lang.T("OK", "沒問題"), lang.T("Unknown", "判不出來"), lang.T("Left out", "不判"));
             foreach (var s in checks)
-                sb.Append(string.Create(inv, $"<tr><th scope=\"row\">{H(lang.CheckTitle(s.Check))}{(s.Off ? H(lang.T(" (off)", "（關）")) : "")}</th><td>{s.Findings}</td><td>{s.Pass}</td><td>{s.Blocked}</td><td>{s.NotJudged}</td></tr>\n"));
+                sb.Append(string.Create(inv, $"<tr><th scope=\"row\">{H(lang.CheckTitle(s.Check))}{(s.Off ? H(lang.T(" (off)", "（關）")) : s.Candidates == 0 ? H(lang.T(" (nothing to check)", "（沒有東西可查）")) : "")}</th><td>{s.Findings}</td><td>{s.Pass}</td><td>{s.Blocked}</td><td>{s.NotJudged}</td></tr>\n"));
             Close();
         }
 
@@ -110,7 +114,7 @@ public static class HtmlReport
             foreach (var f in list.Take(RowsPerKind))
             {
                 sb.Append($"<li><code>{Path(f.Site)}</code><br/>{H(lang.Message(f.Message))}");
-                if (Nvda.Says(f, lang) is { } says) sb.Append($"<br/><span class=\"says\">{H(lang.T("NVDA says: ", "NVDA 會念："))}<q>{H(says)}</q></span>");
+                if (Nvda.Says(f, lang) is { } says) sb.Append($"<br/><span class=\"says\">{H(lang.T("NVDA reads: ", "NVDA 會念："))}{H(says)}</span>");
                 sb.Append("</li>\n");
             }
             sb.Append("</ol>\n");
@@ -120,6 +124,17 @@ public static class HtmlReport
                 : $"<p class=\"refs\">{H(lang.T($"Not in {r.Scope.Title}; the config file turns it on.", $"{r.Scope.Title} 沒有這一條，是設定檔打開的。"))}</p>\n");
             if (list.Count > RowsPerKind)
                 sb.Append($"<p>{H(lang.T($"… and {(list.Count - RowsPerKind).ToString(inv)} more — the JSON report has all of them.", $"… 還有 {(list.Count - RowsPerKind).ToString(inv)} 筆，JSON 報告裡有全部。"))}</p>\n");
+        }
+
+        // ── 放過的 ──：誰、為什麼
+        if (r.Suppressions.Count > 0)
+        {
+            sb.Append($"<h2>{H(lang.T("Accepted with xamla11y-ignore", "用 xamla11y-ignore 放過的"))}</h2>\n");
+            Open(lang.T("Accepted findings and why", "放過的問題與理由"), lang.T("Finding", "問題"), lang.T("Where", "在哪"), lang.T("Reason", "理由"));
+            foreach (var s in r.Suppressions.Take(RowsPerKind))
+                sb.Append($"<tr><td>{H(lang.Title(s.Kind))}</td><td><code>{Path($"{s.File}:{s.Line.ToString(inv)}")}</code></td><td>{H(s.Reason)}</td></tr>\n");
+            Close();
+            if (r.Suppressions.Count > RowsPerKind) sb.Append($"<p>{H(lang.T($"… and {(r.Suppressions.Count - RowsPerKind).ToString(inv)} more — the JSON report has all of them.", $"… 還有 {(r.Suppressions.Count - RowsPerKind).ToString(inv)} 筆，JSON 報告裡有全部。"))}</p>\n");
         }
 
         // ── 看不到的 ──
@@ -199,7 +214,7 @@ public static class HtmlReport
         (lang.T("Accessible name", "名稱"), lang.T("What a screen reader says for a control. Windows hands it out through UI Automation.", "螢幕閱讀器替一個控制項念的字。Windows 透過 UI Automation 提供。")),
         ("AutomationProperties.Name, LabeledBy", lang.T("The XAML properties that set the name, directly or from another element.", "在 XAML 裡設名稱的屬性：直接寫，或拿別的元素的文字。")),
         ("AutomationPeer", lang.T("The class that describes a WPF control to UI Automation. Without one a screen reader does not see the control.", "替 WPF 控制項向 UI Automation 說明自己的類別。沒有它，螢幕閱讀器看不到這個控制項。")),
-        ("NVDA", lang.T("A free screen reader for Windows.", "Windows 上免費的螢幕閱讀器。")),
+        ("NVDA", lang.T("A free screen reader for Windows. What it reads was run with NVDA 2026.2 in English and Traditional Chinese. Shown are the type, the name and the description; states (checked, collapsed, blank) and the group around it are left out.", "Windows 上免費的螢幕閱讀器。念法是用 NVDA 2026.2 的英文與繁體中文跑過的，列的是型別、名稱與描述；狀態（核取、折疊、空白）與外面的群組沒有列。")),
     ];
 
     /// <summary>路徑在斜線後面可以斷行。</summary>

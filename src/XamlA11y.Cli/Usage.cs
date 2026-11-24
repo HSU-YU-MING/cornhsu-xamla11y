@@ -10,24 +10,30 @@ internal static class Usage
         xamla11y — static accessibility audit for WPF XAML
 
         usage:
-          xamla11y audit <root> [options]
+          xamla11y audit <folder | .csproj | .sln | .xaml> [options]
+          xamla11y fix <folder | .csproj | .sln | .xaml> [--write] [--guess]
+                                             name what already has a label, a text or a ToolTip; shows the changes, --write makes them
+          xamla11y walk <file.xaml>          where Tab stops in this file, in order, and what a screen reader says there
           xamla11y rules [--lang zh-Hant]    what it looks for, why, and how to fix it
           xamla11y --version
 
         what to check:
           --standard <id>          wcag22 (default), wcag21, wcag20, en301549, en301549-v4, section508
           --level A|AA             AA (default) includes A
+          --only <file|folder>     only report these; the rest is still read for styles (repeatable)
           --exclude <text>         skip files whose path contains this (repeatable)
           --config <file>          default: xamla11y.config.json in <root>
 
         when to fail:
           --baseline <file>        only report findings that are not in this file
           --write-baseline <file>  record today's findings as known and exit
+          --prune-baseline         drop what is no longer found from --baseline; accepts nothing new
           --fail-on fail|warn      lowest severity that fails the run (default: fail)
           --min-coverage <0-100>   exit 3 when less than this share could be judged (default: 60)
 
         reports:
           --lang en|zh-Hant        language of the console, Markdown and HTML (default: en)
+          --title <text>           heading of the HTML report (default: the name of the folder)
           --html <file>            one page for people: why, how to fix, what NVDA says, manual checks
           --md <file>              Markdown summary (for a PR comment)
           --json <file>            everything

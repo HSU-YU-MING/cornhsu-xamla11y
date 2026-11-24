@@ -18,7 +18,7 @@ internal static class Program
                 case "names": Probe.RunNames(args.Contains("--axe"), args.Skip(1).FirstOrDefault(a => a.EndsWith(".txt", StringComparison.Ordinal)) ?? "names.txt"); break;
                 case "templates": Parts.RunTemplates(); break;
                 case "themes": Parts.RunThemes(); break;
-                case "tabs": Probe.RunTabs(); break;
+                case "tabs": Probe.RunTabs(args.Skip(1).FirstOrDefault() ?? "tabs.txt"); break;
                 case "items": Items.Run(); break;
                 case "silent": Items.Silent(); break;
                 case "focus": Diag.ShowFocusVisuals(); Probe.RunFocus(); break;
@@ -33,6 +33,7 @@ internal static class Program
                 case "record": Check.Record(args[1]); break;
                 case "nvda-window": return NvdaWindow.Run(args[1]);
                 case "check-items": return Check.ItemCases() + Check.SilentCases();
+                case "check-walk": return Check.Walk() + Check.Labels();
                 case "check-hostile": return SafeMarkup.SelfTest();
                 case "axe-pid": Diag.AxePid(int.Parse(args[1])); break;
                 case "label": Diag.LabelTarget(); break;
