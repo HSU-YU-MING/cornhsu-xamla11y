@@ -34,8 +34,8 @@ public sealed class ConfigTests
 
     [Theory]
     [InlineData("{ \"standrad\": \"wcag22\" }", "standrad: is not a field; the fields are")]
-    [InlineData("{ \"rules\": { \"list-names\": \"off\" } }", "is a group; name its findings instead: list-no-name, widget-no-name")]
-    [InlineData("{ \"rules\": { \"keyboard\": \"off\" } }", "is a group; name its findings instead: mouse-only, not-in-tab-order")]
+    [InlineData("{ \"rules\": { \"list-names\": \"off\" } }", "is not one finding but several; name them instead: list-no-name, widget-no-name")]
+    [InlineData("{ \"rules\": { \"keyboard\": \"off\" } }", "is not one finding but several; name them instead: mouse-only, not-in-tab-order")]
     [InlineData("{ \"rules\": { \"missing\": \"off\" } }", "is not a finding; they are missing-name")]
     public void Config_mistakes_in_plain_words(string json, string expected)
     {
@@ -99,5 +99,20 @@ public sealed class ConfigTests
         Assert.Equal(0, p.Run("audit", p.Root).Exit);
         Assert.Equal(1, p.Run("audit", p.Root, "--fail-on", "warn").Exit);
         Assert.Single(Project.Load(p.Root, ["/skip/"]).Docs);
+    }
+
+    /// <summary>值的種類不對：說要什麼，不把 .NET 的型別名給使用者看。</summary>
+    [Theory]
+    [InlineData("{ \"minCoverage\": \"80\" }", "minCoverage: is not the right kind of value: it must be a number, without quotes")]
+    [InlineData("{ \"themeShowsFocus\": \"yes\" }", "themeShowsFocus: is not the right kind of value: it must be true or false, without quotes")]
+    [InlineData("{ \"exclude\": \"a\" }", "exclude: is not the right kind of value: it must be a list of texts")]
+    [InlineData("{ \"rules\": { \"missing-name\": true } }", "it must be an object: \"not-in-tab-order\": \"off\"")]
+    [InlineData("{ \"treatAs\": [] }", "it must be an object: \"MyButton\": \"Button\"")]
+    [InlineData("{ \"level\": 1 }", "level: is not the right kind of value: it must be a text in quotes")]
+    public void A_value_of_the_wrong_kind(string json, string expected)
+    {
+        var problem = Assert.Single(A11yConfig.Parse(json).Problems).ToString();
+        Assert.Contains(expected, problem, StringComparison.Ordinal);
+        Assert.DoesNotContain("System.", problem, StringComparison.Ordinal);
     }
 }

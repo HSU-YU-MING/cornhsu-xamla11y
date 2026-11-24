@@ -11,6 +11,20 @@ public static class Summary
             string.Join(lang.T(", ", "、"), Analysis.Kinds.All.Where(k => k.Group == g.Id).Select(k => (k.Slug, N: findings.Count(f => f.Kind == k))).Where(x => x.N > 0)
                 .Select(x => string.Create(CultureInfo.InvariantCulture, $"{x.Slug} {x.N}"))))).Where(x => x.Item2 > 0)];
 
+    /// <summary>可解析率，跟算出它的兩個數：只有會擋的四項。全部的數字另外一行，不能印在百分比旁邊。</summary>
+    public static string Resolution(AuditResult r, Lang lang) => lang.T(
+        string.Create(CultureInfo.InvariantCulture, $"resolution {r.Resolution:F1}%: {r.GateJudged} of {r.GateJudged + r.GateBlocked} names, inputs, focus and mouse places could be judged"),
+        string.Create(CultureInfo.InvariantCulture, $"可解析率 {r.Resolution:F1}%：名稱、輸入框、焦點、滑鼠共 {r.GateJudged + r.GateBlocked} 處，判得出 {r.GateJudged} 處"));
+
+    public static string Places(AuditResult r, Lang lang) => lang.T(
+        string.Create(CultureInfo.InvariantCulture, $"all checks: {r.Judged} judged, {r.Blocked} unknown, {r.NotJudged} left out"),
+        string.Create(CultureInfo.InvariantCulture, $"全部的檢查：判得出來 {r.Judged}、判不出來 {r.Blocked}、不判 {r.NotJudged}"));
+
+    /// <summary>C# 建的畫面沒有檢查：要說有多少，100% 才不會看起來像全部看過了。</summary>
+    public static string CodeBuilt(CodeBuilt c, Lang lang) => lang.T(
+        string.Create(CultureInfo.InvariantCulture, $"built in C#, not checked: {c.Controls} control(s), {c.MouseHandlers} mouse handler(s)"),
+        string.Create(CultureInfo.InvariantCulture, $"C# 建的，沒有檢查：{c.Controls} 個控制項、{c.MouseHandlers} 個滑鼠事件"));
+
     /// <summary>baseline 蓋住的要跟「通過」放在一起講：通過的是「沒有新的」，不是沒有問題。</summary>
     public static string? KnownDebt(IReadOnlyList<Finding>? known, int exitCode, Lang lang)
     {

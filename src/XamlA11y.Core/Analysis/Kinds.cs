@@ -41,6 +41,7 @@ public static class Checks
     public const string ItemNames = "item-names";
     public const string SilentStops = "silent-stops";
     public const string SameNames = "same-names";
+    public const string VisibleText = "visible-text";
     public const string Mouse = "mouse";
     public const string TabOrder = "tab-order";
     public const string Focus = "focus";
@@ -71,6 +72,7 @@ public static class Kinds
     public static readonly Kind ItemTypeName = Get("item-type-name");
     public static readonly Kind SilentTabStop = Get("silent-tab-stop");
     public static readonly Kind SameName = Get("same-name");
+    public static readonly Kind NameDiffers = Get("name-differs");
 
     public static Kind? BySlug(string slug) => All.FirstOrDefault(k => k.Slug == slug);
 

@@ -141,8 +141,8 @@ public sealed class CliTests
 
     /// <summary>主控台先總結：幾筆、分哪幾組、看得到多少，然後才是清單，最後是看不到的。</summary>
     [Theory]
-    [InlineData("en", "    not read out: 10 (missing-name 1, ", "    out of reach of the keyboard: 2 (mouse-only 1, not-in-tab-order 1)", "  resolution ", "\n  fail ", "  unknown: 1", "    1 × names of controls: a control this tool does not know")]
-    [InlineData("zh-Hant", "    念不出來：10（missing-name 1、", "    鍵盤到不了：2（mouse-only 1、not-in-tab-order 1）", "  可解析率 ", "\n  fail ", "  判不出來：1", "    1 × 控制項的名稱：這支不認得的控制項")]
+    [InlineData("en", "    not read out: 11 (missing-name 1, ", "    out of reach of the keyboard: 2 (mouse-only 1, not-in-tab-order 1)", "  resolution ", "\n  fail ", "  unknown: 1", "    1 × names of controls: a control this tool does not know")]
+    [InlineData("zh-Hant", "    念不出來：11（missing-name 1、", "    鍵盤到不了：2（mouse-only 1、not-in-tab-order 1）", "  可解析率 ", "\n  fail ", "  判不出來：1", "    1 × 控制項的名稱：這支不認得的控制項")]
     public void The_summary_comes_first(string lang, params string[] parts)
     {
         using var f = new Folder().Add("M.xaml", Kit.Window(Kit.Everything + "<local:FancyButton/><ListBox ItemsSource=\"{Binding N}\" AutomationProperties.Name=\"n\"/>", Kit.EverythingTemplate)).Add("N.cs", "class Note { } class V { public List<Note> N { get; } }");
@@ -173,7 +173,7 @@ public sealed class CliTests
         var output = f.Run("audit", f.Root).Out;
         Assert.Contains("  0 fail, 0 warn, 0 info", output, StringComparison.Ordinal);
         foreach (var word in (string[])["not read out", "unknown:", "baseline", "suppressed", "excluded", "!!"]) Assert.DoesNotContain(word, output, StringComparison.Ordinal);
-        Assert.True(output.Trim().Split('\n').Length <= 6, output);
+        Assert.True(output.Trim().Split('\n').Length <= 7, output);
     }
 
     /// <summary>原因很多的時候列五個、說還有幾個。</summary>

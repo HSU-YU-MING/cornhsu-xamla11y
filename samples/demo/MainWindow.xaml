@@ -73,6 +73,9 @@
         <!-- silent-tab-stop (warn): Tab stops here and nothing is said -->
         <ContentControl Content="{Binding Page}"/>
 
+        <!-- name-differs (warn): people who use speech say "Export" -->
+        <Button Content="Export" AutomationProperties.Name="Write the report to disk"/>
+
         <!-- same-name (info) -->
         <StackPanel Orientation="Horizontal">
             <Button Content="Browse" Click="OnBrowseInput"/>

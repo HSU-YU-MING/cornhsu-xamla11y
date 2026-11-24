@@ -22,9 +22,16 @@ public static class ConsoleReport
         o.WriteLine(lang.T($"  {Count(Severity.Fail)} fail, {Count(Severity.Warn)} warn, {Count(Severity.Info)} info", $"  {Count(Severity.Fail)} fail、{Count(Severity.Warn)} warn、{Count(Severity.Info)} info")
             + (known > 0 ? lang.T($" (new; {known} more in the baseline)", $"（新的；baseline 裡另外有 {known} 筆）") : ""));
         foreach (var (title, n, kinds) in Summary.Groups(reported, lang)) o.WriteLine(lang.T($"    {title}: {n} ({kinds})", $"    {title}：{n}（{kinds}）"));
-        o.WriteLine(string.Create(inv, $"  {lang.T("resolution ", "可解析率 ")}{r.Resolution:F1}%") + lang.T($" ({r.Judged} judged, {r.Blocked} unknown; {r.NotJudged} left out)", $"（判得出來 {r.Judged}、判不出來 {r.Blocked}、不判 {r.NotJudged}）"));
-        if (stale > 0) o.WriteLine(lang.T($"  stale baseline: {stale} (fixed since, or not in {r.Scope.Title}; write the baseline again to drop them)", $"  baseline 裡這次沒有的：{stale}（修好了，或不在 {r.Scope.Title} 裡；重寫一次 baseline 就會拿掉）"));
-        if (r.Suppressed > 0) o.WriteLine(lang.T($"  suppressed: {r.Suppressed}", $"  壓掉的：{r.Suppressed}"));
+        o.WriteLine("  " + Summary.Resolution(r, lang));
+        o.WriteLine("  " + Summary.Places(r, lang));
+        if (stale > 0 && known == 0 && reported.Count > 0)
+            o.WriteLine(lang.T($"  !! none of the {stale} entries of the baseline match: was it written for another root folder?", $"  !! baseline 的 {stale} 筆一筆都對不上：是不是在別的資料夾寫的？"));
+        else if (stale > 0)
+            o.WriteLine(lang.T($"  stale baseline: {stale} (not found this time: fixed, ignored, or not in {r.Scope.Title}; --prune-baseline drops them and accepts nothing new)", $"  baseline 裡這次沒有的：{stale}（修好了、放過了，或不在 {r.Scope.Title} 裡；--prune-baseline 只拿掉它們，不會把新的記進去）"));
+        if (r.Suppressed > 0) o.WriteLine(lang.T($"  accepted with xamla11y-ignore: {r.Suppressed}", $"  用 xamla11y-ignore 放過的：{r.Suppressed}"));
+        if (r.UnusedIgnores.Count > 0)
+            o.WriteLine(lang.T("  xamla11y-ignore with nothing to accept (remove it): ", "  沒有東西要放過的 xamla11y-ignore（可以拿掉）：") + string.Join(lang.T(", ", "、"), r.UnusedIgnores.Take(3).Select(Text.Safe)) + (r.UnusedIgnores.Count > 3 ? lang.T($" and {r.UnusedIgnores.Count - 3} more", $" 等 {r.UnusedIgnores.Count} 處") : ""));
+        if (r.CodeBuilt.Any) o.WriteLine("  " + Summary.CodeBuilt(r.CodeBuilt, lang));
         if (r.Checks.Where(c => c.Off).ToList() is { Count: > 0 } off) o.WriteLine(lang.T("  turned off: ", "  關掉的：") + string.Join(lang.T(", ", "、"), off.Select(c => lang.CheckTitle(c.Check))));
         if (r.Gaps.Excluded > 0) o.WriteLine(lang.T($"  excluded: {r.Gaps.Excluded} XAML file(s)", $"  排除 {r.Gaps.Excluded} 個 XAML 檔"));
         foreach (var g in r.Foreign.GroupBy(f => f.Dialect)) o.WriteLine(lang.T($"  not checked: {g.Count()} {g.Key} file(s) (WPF only)", $"  沒有檢查：{g.Count()} 個 {g.Key} 檔（只看 WPF）"));
@@ -79,7 +86,7 @@ public static class ConsoleReport
 
         void One(Finding f, string indent)
         {
-            var says = Nvda.Says(f, lang) is { } x ? lang.T($"   NVDA: \"{Text.Safe(x)}\"", $"　NVDA 會念「{Text.Safe(x)}」") : "";
+            var says = Nvda.Says(f, lang) is { } x ? lang.T("   NVDA: ", "　NVDA：") + Text.Safe(x) : "";
             o.WriteLine(indent.Length > 2 ? $"{indent}{Text.Safe(f.Site)}{says}" : $"{indent}{Text.Slug(f.Severity),-4} {f.Kind.Slug,-18} {Text.Safe(f.Site)}{says}");
             o.WriteLine($"{indent}     {Text.Safe(lang.Message(f.Message))}");
         }

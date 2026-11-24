@@ -97,6 +97,7 @@ internal static class Kit
         <GroupBox Header="Files"><ListBox/></GroupBox>
         <ProgressBar/><ContentControl/>
         <StackPanel><Button Content="Edit" Click="A"/><Button Content="Edit" Click="B"/></StackPanel>
+        <Button Content="Export" AutomationProperties.Name="Write to disk"/>
         <StackPanel Orientation="Horizontal"><Button Content="c" Width="18" Height="30"/><Button Content="d" Width="18" Height="30"/></StackPanel>
         """;
 

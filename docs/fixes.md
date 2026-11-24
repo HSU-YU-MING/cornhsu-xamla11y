@@ -46,7 +46,16 @@ The text is inside a panel, and WPF only takes the name from a string, a `TextBl
 <Button AutomationProperties.Name="Save"><StackPanel Orientation="Horizontal"><Image Source="save.png"/><TextBlock Text="Save"/></StackPanel></Button>
 ```
 
-When the text is bound, bind the name to the same property.
+When the text is bound, bind the name to the same property. `xamla11y fix` does this when there is only one text.
+
+A tab, a list item and a hyperlink do not end up empty: the name is the type name, or a space. Same fix.
+
+```xml
+<!-- before: read as System.Windows.Controls.TabItem … -->
+<TabItem><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="home.png"/><TextBlock Text="Home"/></StackPanel></TabItem.Header></TabItem>
+<!-- after -->
+<TabItem AutomationProperties.Name="Home"><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="home.png"/><TextBlock Text="Home"/></StackPanel></TabItem.Header></TabItem>
+```
 
 ## meaningless-name
 
@@ -162,6 +171,19 @@ sealed class CardAutomationPeer(Card owner) : FrameworkElementAutomationPeer(own
 }
 ```
 
+## name-differs
+
+The name has to contain the text people see. Start with it and add the rest, or drop the name when the text is enough.
+
+```xml
+<!-- before -->
+<Button Content="Browse" AutomationProperties.Name="Choose a folder"/>
+<!-- after -->
+<Button Content="Browse" AutomationProperties.Name="Browse for the input folder"/>
+```
+
+Upper and lower case, punctuation and the access key do not matter. Single letters and symbols (`B`, `×`) are not compared.
+
 ## symbol-name
 
 ```xml
@@ -205,7 +227,7 @@ same thing inside a `DataTemplate`:
 </Button>
 ```
 
-Keep the look by keeping the element with the style inside the Button; keep the focus visual (see above).
+Keep the look by keeping the element with the style inside the Button; keep the focus visual (see [focus-not-visible](#focus-not-visible)).
 
 ## not-in-tab-order
 

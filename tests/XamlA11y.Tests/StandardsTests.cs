@@ -15,12 +15,12 @@ public sealed class StandardsTests
     [Theory]
     [InlineData("wcag22", "AA", "")]
     [InlineData("wcag21", "AA", "small-target")]                     // 2.5.8 是 2.2 才有
-    [InlineData("wcag20", "AA", "small-target")]
+    [InlineData("wcag20", "AA", "name-differs,small-target")]
     [InlineData("en301549", "AA", "small-target")]                   // V3.2.1 用 WCAG 2.1
     [InlineData("en301549-v4", "AA", "")]
-    [InlineData("section508", "AA", "small-target")]
+    [InlineData("section508", "AA", "name-differs,small-target")]
     [InlineData("wcag22", "A", "focus-not-visible,same-name,small-target")]    // 2.4.7、2.4.6、2.5.8 是 AA
-    [InlineData("section508", "A", "focus-not-visible,same-name,small-target")]
+    [InlineData("section508", "A", "focus-not-visible,name-differs,same-name,small-target")]
     public void A_standard_decides_what_is_reported(string id, string level, string missing)
     {
         var found = Kit.Slugs(Kit.AuditEverything(new Scope(Standard.ById(id)!, level)));
@@ -191,6 +191,7 @@ public sealed class StandardsTests
     [InlineData("item-type-name", "4.1.2 (A)")]
     [InlineData("silent-tab-stop", "4.1.2 (A)")]
     [InlineData("same-name", "2.4.6 (AA)")]
+    [InlineData("name-differs", "2.5.3 (A)")]
     public void Each_finding_names_its_criteria(string slug, string expected) => Assert.Equal(expected, Kinds.BySlug(slug)!.WcagWithLevels);
 
     [Theory]

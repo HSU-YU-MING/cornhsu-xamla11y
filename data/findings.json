@@ -13,6 +13,7 @@
     { "id": "item-names", "en": "names of data items", "zh": "資料項目的名稱" },
     { "id": "silent-stops", "en": "silent tab stops", "zh": "沒聲音的停留點" },
     { "id": "same-names", "en": "same names", "zh": "名稱一樣" },
+    { "id": "visible-text", "en": "visible text in the name", "zh": "名稱含畫面的字" },
     { "id": "mouse", "en": "mouse-only elements", "zh": "只能用滑鼠", "gate": true },
     { "id": "tab-order", "en": "tab order", "zh": "Tab 順序" },
     { "id": "focus", "en": "visible focus", "zh": "焦點看得見", "gate": true },
@@ -36,12 +37,12 @@
       "slug": "text-not-in-name", "check": "control-names", "group": "names", "severity": "fail", "wcag": ["4.1.2", "2.5.3"], "emptyName": true,
       "en": {
         "title": "Visible text is not the accessible name",
-        "why": "The control shows text, but the text sits inside a panel, a Border or an AccessText, and WPF only takes the name from a string, a TextBlock or a ContentControl. The accessible name is empty.",
+        "why": "The control shows text, but the text sits inside a panel, a Border or an AccessText, and WPF only takes the name from a string, a TextBlock or a ContentControl. The accessible name is empty; for a tab, a list item or a hyperlink it is a type name or a space.",
         "how": "Set AutomationProperties.Name to the same text."
       },
       "zh": {
-        "title": "畫面有字，名稱卻是空的",
-        "why": "字放在面板、Border 或 AccessText 裡，WPF 只從字串、TextBlock、ContentControl 拿名稱，所以名稱是空的。",
+        "title": "畫面有字，卻沒進名稱",
+        "why": "字放在面板、Border 或 AccessText 裡，WPF 只從字串、TextBlock、ContentControl 拿名稱，所以名稱是空的；頁籤、清單項目、超連結是型別名或一個空白。",
         "how": "把同樣的字設到 AutomationProperties.Name。"
       }
     },
@@ -121,6 +122,19 @@
         "title": "Tab 停得到，螢幕閱讀器卻沒聲音",
         "why": "元素拿得到鍵盤焦點，但沒有 AutomationPeer，不在 UI Automation 的樹上；設 AutomationProperties.Name 也沒用。",
         "how": "只是放別的控制項的，設 Focusable=\"False\"（程式會叫它拿焦點的用 IsTabStop=\"False\"）；自己是一個控制項的，覆寫 OnCreateAutomationPeer，或改成繼承有 peer 的控制項。"
+      }
+    },
+    {
+      "slug": "name-differs", "check": "visible-text", "group": "names", "severity": "warn", "wcag": ["2.5.3"],
+      "en": {
+        "title": "Accessible name does not contain the visible text",
+        "why": "People who control the computer by voice say what they see. The control shows one text and its accessible name is another, so it does not react; people who see the screen and hear a screen reader get two answers.",
+        "how": "Make the name start with the visible text, and add what is missing after it (\"Browse for the input folder\"), or drop AutomationProperties.Name when the text already says it."
+      },
+      "zh": {
+        "title": "名稱沒有包含畫面上的字",
+        "why": "用說的操作電腦的人照畫面念。畫面寫一句、名稱是另一句，念了沒反應；看得到畫面又聽螢幕閱讀器的人聽到的是另一件事。",
+        "how": "名稱以畫面上的字開頭，要補充的接在後面（「瀏覽輸入資料夾」）；畫面的字已經夠清楚，就不用另外寫 AutomationProperties.Name。"
       }
     },
     {

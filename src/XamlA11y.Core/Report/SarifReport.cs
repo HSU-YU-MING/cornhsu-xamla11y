@@ -22,7 +22,7 @@ public static class SarifReport
                         driver = new
                         {
                             name = "XamlA11y",
-                            informationUri = "https://cornhsu.com/xamla11y",
+                            informationUri = "https://github.com/HSU-YU-MING/cornhsu-xamla11y",
                             version = toolVersion,
                             rules = Kinds.All.Select(k => new
                             {

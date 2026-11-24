@@ -180,6 +180,23 @@ internal static class Host
         return stops;
     }
 
+    /// <summary>這個元素底下真的畫出來的文字（視覺樹裡看得到的 TextBlock 與 AccessText）。</summary>
+    public static List<string> ShownTexts(Shown shown, string name)
+    {
+        var texts = new List<string>();
+        void Visit(DependencyObject d, bool inside)
+        {
+            if (d is UIElement { IsVisible: false }) return;
+            inside |= d is FrameworkElement { Name: { } n } && n == name;
+            if (inside && d is System.Windows.Controls.TextBlock { Text.Length: > 0 } tb && tb.FontFamily.Source.Contains("Segoe MDL2", StringComparison.Ordinal) == false) texts.Add(tb.Text);
+            if (inside && d is System.Windows.Controls.AccessText { Text.Length: > 0 } at) { texts.Add(at.Text.Replace("_", "", StringComparison.Ordinal)); return; }
+            for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(d); i++) Visit(System.Windows.Media.VisualTreeHelper.GetChild(d, i), inside);
+        }
+        Pump();
+        Visit(shown.Window, false);
+        return [.. texts.Distinct()];
+    }
+
     public static string NameOf(object? o) => o switch
     {
         FrameworkElement fe => fe.Name.Length > 0 ? fe.Name : fe.GetType().Name,

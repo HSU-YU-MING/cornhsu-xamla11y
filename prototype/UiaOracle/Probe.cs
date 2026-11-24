@@ -48,10 +48,10 @@ internal static class Probe
         }
     }
 
-    public static void RunTabs()
+    public static void RunTabs(string file = "tabs.txt")
     {
         Console.WriteLine("\n== tab stops");
-        foreach (var c in Load("tabs.txt"))
+        foreach (var c in Load(file))
         {
             try
             {

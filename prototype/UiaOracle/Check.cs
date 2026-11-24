@@ -79,6 +79,8 @@ internal static class Check
     internal static bool Agrees(Judgement j, Node node) => j.Kind?.Slug switch
     {
         null or "symbol-name" => Meaningful(node.Name),
+        // 頁籤、清單項目、超連結：名稱不是空的，是型別名或一個空白
+        "text-not-in-name" when j.Reason?.Contains("unreadable", StringComparison.Ordinal) == true => !Meaningful(node.Name),
         "missing-name" or "text-not-in-name" or "input-no-name" => string.IsNullOrWhiteSpace(node.Name),
         "list-no-name" or "widget-no-name" => !Meaningful(node.Name),
         "meaningless-name" => !Meaningful(node.Name) || j.Reason?.Contains("font", StringComparison.Ordinal) == true,
@@ -99,6 +101,8 @@ internal static class Check
         wrong += Sizes();
         wrong += ItemCases();
         wrong += SilentCases();
+        wrong += Walk();
+        wrong += Labels();
         Console.WriteLine(wrong == 0 ? "\nOK — the tool never contradicts WPF" : $"\n{wrong} WRONG");
         return wrong == 0 ? 0 : 1;
     }
@@ -159,6 +163,19 @@ internal static class Check
             using var shown = Host.Show(body, c.Resources);
             tabs.Add(new { title = c.Title, xaml = WindowXaml(body, c.Resources), stops = Host.TabStops(shown) });
         }
+        var walk = new List<object>();
+        foreach (var c in Probe.Load("walk.txt"))
+        {
+            var body = "<Button x:Name=\"a\"/>" + c.Body + "<Button x:Name=\"z\"/>";
+            using var shown = Host.Show(body, c.Resources);
+            walk.Add(new { title = c.Title, xaml = WindowXaml(body, c.Resources), stops = Host.TabStops(shown) });
+        }
+        var labels = new List<object>();
+        foreach (var c in Probe.Load("labels.txt"))
+        {
+            using var shown = Host.Show(c.Body, c.Resources);
+            labels.Add(new { title = c.Title, xaml = WindowXaml(c.Body, c.Resources), name = Host.Tree(shown.Handle).FirstOrDefault(n => n.Id == "p")?.Name, shows = Host.ShownTexts(shown, "p") });
+        }
         var items = new List<object>();
         foreach (var c in Probe.Load("items.txt"))
         {
@@ -177,9 +194,9 @@ internal static class Check
         File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(new
         {
             recordedWith = $".NET {Environment.Version}, Windows {Environment.OSVersion.Version}, UI language {System.Globalization.CultureInfo.CurrentUICulture.Name}",
-            names = list, focus, tabs, code = Items.Code.Replace("\r\n", "\n"), items, silent,
+            names = list, focus, tabs, walk, labels, code = Items.Code.Replace("\r\n", "\n"), items, silent,
         }, options).Replace("\r\n", "\n") + "\n");
-        Console.WriteLine($"recorded {list.Count} names, {focus.Count} focus, {tabs.Count} tab, {items.Count} item, {silent.Count} silent cases → {path}");
+        Console.WriteLine($"recorded {list.Count} names, {focus.Count} focus, {tabs.Count} tab, {walk.Count} walk, {labels.Count} label, {items.Count} item, {silent.Count} silent cases → {path}");
     }
 
     public static int Themes()
@@ -336,6 +353,59 @@ internal static class Check
 
         // 停用、收合、容器的 TabNavigation=None：只判元素自己明寫的 False，這些刻意不管
         static bool NotLive(string body) => body.Contains("IsEnabled=\"False\"") || body.Contains("Collapsed") || body.Contains("TabNavigation=");
+    }
+
+    /// <summary>整個順序：工具列的站 vs. 真的按 Tab。「不確定」的站兩種都算對。</summary>
+    public static int Walk()
+    {
+        var t = new Tally();
+        foreach (var c in Probe.Load("walk.txt"))
+        {
+            try
+            {
+                var body = "<Button x:Name=\"a\"/>" + c.Body + "<Button x:Name=\"z\"/>";
+                var project = Project.FromText(WindowXaml(body, c.Resources));
+                using var shown = Host.Show(body, c.Resources);
+                var real = Host.TabStops(shown).Select(Part).ToList();
+                var walk = XamlA11y.Core.Walk.TabWalk.Of(project, project.Docs[0]);
+                var stops = walk.Stops.Where(s => s.Kind == XamlA11y.Core.Walk.WalkKind.Stop).Select(s => s.Control is "Expander" or "DatePicker" or "Calendar" || s.Control == "ComboBox" && (string?)s.Element.Attribute("IsEditable") == "True" ? "*" : XamlMarkup.NameOf(s.Element) ?? s.Control).ToList();
+                if (walk.Stops.Any(s => s.Kind != XamlA11y.Core.Walk.WalkKind.Stop)) { t.Skip(string.Join(", ", walk.Stops.Select(s => s.Note).OfType<string>().Distinct())); continue; }
+                if (real.SequenceEqual(stops)) t.Ok++;
+                else { t.Wrong++; Console.WriteLine($"  WRONG {c.Title}: Tab {string.Join(" → ", real)}; tool {string.Join(" → ", stops)}"); }
+            }
+            catch (Exception ex) { Console.WriteLine($"  !! {c.Title}: {ex.GetBaseException().Message.Split('\n')[0]}"); t.Wrong++; }
+        }
+        t.Print("tab walk");
+        return t.Wrong;
+
+        static string Part(string s) => s is "HeaderSite" or "PART_TextBox" or "PART_EditableTextBox" or "CalendarDayButton" ? "*" : s;
+    }
+
+    /// <summary>畫面的字與名稱：工具說名稱不包含畫面的字，真的 UIA 名稱也不包含；說有，真的有。比法另外寫一份。</summary>
+    public static int Labels()
+    {
+        var t = new Tally();
+        foreach (var c in Probe.Load("labels.txt"))
+        {
+            try
+            {
+                var result = Audit(WindowXaml(c.Body, c.Resources), null);
+                using var shown = Host.Show(c.Body, c.Resources);
+                var node = Host.Tree(shown.Handle).FirstOrDefault(n => n.Id == "p");
+                var judged = result.Judgements.Where(j => j.Check == "visible-text" && XamlMarkup.NameOf(j.Element) == "p").ToList();
+                var texts = Host.ShownTexts(shown, "p");
+                var contains = node is not null && Words(node.Name).Contains(Words(string.Join(" ", texts)), StringComparison.Ordinal);
+                if (judged.Count == 0 || texts.Count == 0) { t.Skip("not compared"); Console.WriteLine($"    not compared {c.Title}: UIA {node?.NameShown}, shows {string.Join(" | ", texts)}"); continue; }
+                if (judged.Any(j => j.Verdict == Verdict.Finding) == !contains) t.Ok++;
+                else { t.Wrong++; Console.WriteLine($"  WRONG {c.Title}: tool {judged[0].Verdict}; UIA name {node?.NameShown}; shows {string.Join(" | ", texts)}"); }
+            }
+            catch (Exception ex) { Console.WriteLine($"  !! {c.Title}: {ex.GetBaseException().Message.Split('\n')[0]}"); t.Wrong++; }
+        }
+        t.Print("visible text in the name");
+        return t.Wrong;
+
+        // 中文沒有空格：前後不用是字的邊界
+        static string Words(string s) => s.Any(c => c >= 0x2E80) ? string.Concat(s.Where(char.IsLetterOrDigit)) : " " + string.Join(" ", System.Text.RegularExpressions.Regex.Matches(s.ToLowerInvariant(), @"[\p{L}\p{N}]+").Select(m => m.Value)) + " ";
     }
 
     public static int FocusCases(string file, string? theme)

@@ -9,7 +9,7 @@ namespace XamlA11y.Tests;
 /// <summary>繁體中文：每一句訊息都翻得到，給程式讀的不隨語言變。</summary>
 public sealed class ChineseTests
 {
-    /// <summary>規則真的會寫出來的訊息，每一筆都要翻得到（所有錄過的 WPF 案例、示範專案、上面那一組）。</summary>
+    /// <summary>規則真的會寫出來的訊息，每一筆都要翻得到（所有錄過的 WPF 案例、示範專案、Kit.Everything）。</summary>
     [Fact]
     public void Every_message_the_rules_write_has_chinese()
     {

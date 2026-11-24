@@ -127,7 +127,7 @@ public sealed partial class NameResolver(Project project)
         return Judge(literal, null);
     }
 
-    private bool TriggerSets(XElement e, string property)
+    internal bool TriggerSets(XElement e, string property)
     {
         bool Sets(IEnumerable<XElement> triggers) => triggers.SelectMany(t => t.Descendants()).Any(s =>
             s.Name.LocalName == "Setter" && s.Attribute("TargetName") is null
@@ -209,6 +209,89 @@ public sealed partial class NameResolver(Project project)
         return null;
     }
 
+    // ───────────────────────── 名稱與畫面的字（WCAG 2.5.3） ─────────────────────────
+
+    /// <summary>
+    /// 另外寫了名稱、畫面上也有字，而且兩個都看得到是什麼：(名稱, 畫面的字)。其他情況回 null。
+    /// 綁定、觸發器會換的、範本不畫內容的不比。
+    /// </summary>
+    public (string Name, string Shown)? NameAndShown(XElement e, string control)
+    {
+        _steps = 0;
+        if (ExplicitName(e, 0) is null && FromLabel(e, 0) is null) return null;
+        if (Resolve(e, control) is not { Kind: NameKind.Named, Text: { Length: > 0 } name }) return null;
+        _steps = 0;
+        if (TriggerSets(e, NameProperty) || project.CodeNames(e)) return null;
+        var source = Wpf.NameSourceOf(control);
+        if (source is not (NameSource.Content or NameSource.Header or NameSource.Inlines)) return null;
+        var property = source == NameSource.Header ? "Header" : "Content";
+        if (source != NameSource.Inlines)
+        {
+            if (TriggerValues(e, property).Any() || project.CodeSets(e, property)) return null;
+            // 內容畫在哪裡看範本：讀不到的、沒有 ContentPresenter 的不比
+            foreach (var t in _styles.TemplatesOf(e))
+                if (t.Template is null ? t.Kind == TemplateKind.Unknown : !t.Template.Descendants().Any(d => d.Name.LocalName is "ContentPresenter" or "GridViewRowPresenter" || d.Name.LocalName.EndsWith("ContentPresenter", StringComparison.Ordinal))) return null;
+            if (_styles.Resolve(e, property + "Template") is { IsSet: true, Origin: not null }) return null;
+        }
+        var shown = source switch { NameSource.Inlines => InlineText(e, 1), NameSource.Header => ContentName(e, "Header", control, 1), _ => ContentName(e, "Content", control, 1) };
+        // 資源：好幾種語言的資源，這裡看到的只是其中一份，不能比值
+        if (IsResource(e, NameProperty) || source != NameSource.Inlines && IsResource(e, property) || e.Descendants().Any(d => d.Attributes().Any(a => a.Name.LocalName is "Text" or "Content" or "Header" && Markup.IsMarkup(a.Value)))) return null;
+        // 圖示字元、型別名不是畫面上的字；字在面板裡的是
+        var real = shown.Kind is NameKind.Named or NameKind.TextNotUsed || shown is { Kind: NameKind.Meaningless, Why: { } w } && (w.StartsWith("the text is inside <", StringComparison.Ordinal) || w.StartsWith("it only contains an element", StringComparison.Ordinal));
+        if (!real || shown.Text is not { Length: > 0 } text || text == "{…}" || Judge(text, FontOf(e)).Kind != NameKind.Named) return null;
+        // 字在元素裡：好幾段、會藏起來、程式碼會換的不比
+        if (Markup.ContentElements(e).Count > 0 || e.Elements().Any(c => c.Name.LocalName.EndsWith("." + property, StringComparison.Ordinal) && c.HasElements))
+            return SingleShownText(e) is { Literal: true } single && single.Raw.Trim().Length > 0 ? (name, single.Raw.Trim()) : SingleShownText(e) is { } one && !Markup.IsMarkup(one.Raw) ? (name, Markup.Literal(one.Raw)) : null;
+        return (name, text);
+    }
+
+    private bool IsResource(XElement e, string property)
+    {
+        if (e.Attributes().FirstOrDefault(a => a.Name.LocalName == property) is { } a) return Markup.IsMarkup(a.Value);
+        return _styles.ChainsOf(e).Any(c => c.Setter(property) is { } s && Markup.IsMarkup((string?)s.Attribute("Value")));
+    }
+
+    private static readonly string[] ContentHolders = [".Content", ".Header", ".Child", ".Children", ".Inlines"];
+
+    /// <summary>
+    /// 元素裡面唯一一段文字，而且一直看得到、沒有人會換。Raw 是原來寫的（屬性值，或元素裡的字：Literal）。
+    /// 好幾段、會藏起來（Visibility、Opacity、觸發器）、程式碼提到的、放在別的屬性裡的（CheckedElement）回 null。
+    /// </summary>
+    internal (XElement At, string Raw, bool Literal)? SingleShownText(XElement e)
+    {
+        var texts = new List<XElement>();
+        foreach (var d in e.Descendants())
+        {
+            if (project.ControlOf(d) is not ("TextBlock" or "AccessText" or "Label" or "Run")) continue;
+            var holder = d.Ancestors().TakeWhile(a => a != e).FirstOrDefault(a => Markup.IsPropertyElement(a) && !ContentHolders.Any(h => a.Name.LocalName.EndsWith(h, StringComparison.Ordinal)));
+            if (holder is null) texts.Add(d);
+            // 提示、資源、樣式裡的不是畫面上的；其他屬性裡的字什麼時候出現不知道
+            else if (!(holder.Name.LocalName.EndsWith(".ToolTip", StringComparison.Ordinal) || holder.Name.LocalName.EndsWith(".Resources", StringComparison.Ordinal) || holder.Name.LocalName.EndsWith(".ContextMenu", StringComparison.Ordinal) || holder.Name.LocalName.EndsWith(".Style", StringComparison.Ordinal) || holder.Name.LocalName.EndsWith(".Triggers", StringComparison.Ordinal))) return null;
+        }
+        // 圖示字型的字不是文字
+        texts = [.. texts.Where(d => Raw(d) is not { } r || r.Value.Trim().Length == 0 || Markup.IsMarkup(r.Value) || Judge(r.Value, FontOf(d)).Kind is NameKind.Named or NameKind.SymbolOnly)];
+        var said = texts.Where(d => Raw(d) is { } r && r.Value.Trim().Length > 0).ToList();
+        // 有裝了別的東西、或字是程式給的 TextBlock：不知道還有什麼字
+        if (said.Count != 1 || texts.Any(d => d != said[0] && !said[0].Ancestors().Contains(d) && project.ControlOf(d) != "Run" && (Markup.NameOf(d) is not null || d.HasElements))) return null;
+        if (said[0].HasElements && project.ControlOf(said[0]) == "TextBlock") return null;
+        var at = said[0];
+        foreach (var a in at.AncestorsAndSelf().TakeWhile(a => a != e))
+        {
+            if (Markup.IsPropertyElement(a)) continue;
+            if (_styles.Resolve(a, "Visibility") is { IsSet: true, Origin: not null } || _styles.Resolve(a, "Opacity") is { IsSet: true, Origin: not null } || TriggerSets(a, "Visibility") || TriggerSets(a, "Opacity") || TriggerSets(a, "Text")) return null;
+            if (Markup.NameOf(a) is { } n && (project.ChangesLater(a, "Visibility") || project.CodeSets(a, "Text", "Content", "Inlines", "Children", "Child") || e.Document!.Root!.Descendants().Any(d => (string?)d.Attribute("TargetName") == n || d.Attributes().Any(x => x.Name.LocalName == "Storyboard.TargetName" && x.Value == n)))) return null;
+        }
+        return Raw(at) is { } raw ? (at, raw.Value, raw.Literal) : null;
+
+        (string Value, bool Literal)? Raw(XElement d)
+        {
+            if ((string?)d.Attribute(project.ControlOf(d) == "Label" ? "Content" : "Text") is { } attribute)
+                return project.ControlOf(d) is "AccessText" or "Label" && !Markup.IsMarkup(attribute) ? (RemoveAccessKey(Markup.Literal(attribute)), true) : (attribute, false);
+            if (d.HasElements) return null;
+            return project.ControlOf(d) is "AccessText" or "Label" ? (RemoveAccessKey(d.Value.Trim()), true) : (d.Value.Trim(), true);
+        }
+    }
+
     // ───────────────────────── 純文字 ─────────────────────────
 
     /// <summary>ContentControl／HeaderedControl：看 Content 或 Header。</summary>
@@ -240,7 +323,7 @@ public sealed partial class NameResolver(Project project)
             return project.ControlOf(own.Root) is { } c ? PlainText(own.Root, c, depth + 1) : NameResult.Unknown($"the root of {own.File} is not a control this tool knows");
         }
 
-        if (project.CodeSets(e, property)) return NameResult.Unknown($"the code-behind sets its {property}");
+        if (project.CodeSets(e, property) || project.CodeLoops(e, property)) return NameResult.Unknown($"the code-behind sets its {property}");
         if (project.ClassSets(e, property)) return NameResult.Unknown($"its class sets its {property} in code");
 
         // MenuItem 沒有 Header：RoutedUICommand 的文字變成 Header
@@ -551,7 +634,7 @@ public sealed partial class NameResolver(Project project)
             return judged.FirstOrDefault(j => j.Kind == NameKind.Meaningless) is { Kind: NameKind.Meaningless } odd ? odd with { Text = Escape(found) } : Judge(found, FontOf(e));
         if (project.CodeSets(e, "Text", "Inlines")) return NameResult.Unknown("the code-behind sets its text");
         return container
-            ? new NameResult(NameKind.Meaningless, " ", "it only contains an element, and WPF turns that into a single space")
+            ? new NameResult(NameKind.Meaningless, VisibleText(e) ?? " ", "it only contains an element, and WPF turns that into a single space")
             : NameResult.Missing("it has no text");
     }
 

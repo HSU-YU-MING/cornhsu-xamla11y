@@ -30,6 +30,11 @@ body:
         - not-in-tab-order
         - small-target
         - list-no-name
+        - widget-no-name
+        - item-type-name
+        - silent-tab-stop
+        - name-differs
+        - same-name
         - "exit 3 / blocked — it should have been able to read this"
         - Something else
     validations:

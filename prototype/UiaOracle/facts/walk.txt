@@ -1,0 +1,89 @@
+# Tab 走訪的順序：整個視窗（前後自動加按鈕 a 與 z）。標題 | XAML | 資源
+walk | two buttons and a field | <StackPanel><Button x:Name='b1'/><TextBox x:Name='t1'/><Button x:Name='b2'/></StackPanel>
+walk | TabIndex in one panel | <StackPanel><Button x:Name='b1' TabIndex='3'/><Button x:Name='b2' TabIndex='1'/><Button x:Name='b3' TabIndex='2'/></StackPanel>
+walk | TabIndex and none | <StackPanel><Button x:Name='b1'/><Button x:Name='b2' TabIndex='5'/></StackPanel>
+walk | TabIndex across panels | <StackPanel><StackPanel><Button x:Name='b1' TabIndex='2'/></StackPanel><StackPanel><Button x:Name='b2' TabIndex='1'/></StackPanel></StackPanel>
+walk | Local keeps TabIndex inside | <StackPanel><StackPanel KeyboardNavigation.TabNavigation='Local'><Button x:Name='b1' TabIndex='2'/><Button x:Name='b2' TabIndex='1'/></StackPanel><Button x:Name='b3' TabIndex='0'/></StackPanel>
+walk | Local container with its own TabIndex | <StackPanel><StackPanel KeyboardNavigation.TabNavigation='Local' KeyboardNavigation.TabIndex='5'><Button x:Name='b1'/></StackPanel><StackPanel KeyboardNavigation.TabNavigation='Local' KeyboardNavigation.TabIndex='4'><Button x:Name='b2'/></StackPanel></StackPanel>
+walk | Once | <StackPanel><StackPanel KeyboardNavigation.TabNavigation='Once'><Button x:Name='b1'/><Button x:Name='b2'/></StackPanel><Button x:Name='b3'/></StackPanel>
+walk | Once with TabIndex inside | <StackPanel><StackPanel KeyboardNavigation.TabNavigation='Once'><Button x:Name='b1' TabIndex='2'/><Button x:Name='b2' TabIndex='1'/></StackPanel></StackPanel>
+walk | None | <StackPanel><StackPanel KeyboardNavigation.TabNavigation='None'><Button x:Name='b1'/></StackPanel><Button x:Name='b3'/></StackPanel>
+walk | DockPanel keeps the document order | <DockPanel><Button x:Name='b1' DockPanel.Dock='Bottom'/><Button x:Name='b2' DockPanel.Dock='Top'/></DockPanel>
+walk | Grid keeps the document order | <Grid><Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions><Button x:Name='b1' Grid.Row='1'/><Button x:Name='b2'/></Grid>
+walk | Border, Viewbox, ScrollViewer are passed through | <Border><Viewbox Height='30'><ScrollViewer><Button x:Name='b1'/></ScrollViewer></Viewbox></Border>
+walk | GroupBox | <GroupBox Header='g'><TextBox x:Name='t1'/></GroupBox>
+walk | GroupBox with a CheckBox header | <GroupBox><TextBox x:Name='t1'/><GroupBox.Header><CheckBox x:Name='c1'/></GroupBox.Header></GroupBox>
+walk | Expander closed | <Expander Header='h'><Button x:Name='b1'/></Expander>
+walk | Expander open | <Expander Header='h' IsExpanded='True'><Button x:Name='b1'/></Expander>
+walk | ListBox with items | <ListBox x:Name='l'><ListBoxItem x:Name='i1' Content='1'/><ListBoxItem x:Name='i2' Content='2'/></ListBox>
+walk | ListBox with a selected item | <ListBox x:Name='l'><ListBoxItem x:Name='i1' Content='1'/><ListBoxItem x:Name='i2' Content='2' IsSelected='True'/></ListBox>
+walk | ListBox empty | <ListBox x:Name='l' Height='20'/>
+walk | ListView with items | <ListView x:Name='l'><ListViewItem x:Name='i1' Content='1'/><ListViewItem x:Name='i2' Content='2'/></ListView>
+walk | ListBox item with a button in it | <ListBox x:Name='l'><ListBoxItem x:Name='i1'><Button x:Name='b1'/></ListBoxItem><ListBoxItem x:Name='i2'><Button x:Name='b2'/></ListBoxItem></ListBox>
+walk | ComboBox | <ComboBox x:Name='c'><ComboBoxItem x:Name='i1' Content='1'/></ComboBox>
+walk | ComboBox editable | <ComboBox x:Name='c' IsEditable='True'/>
+walk | TreeView | <TreeView x:Name='tv'><TreeViewItem x:Name='n1' Header='1'><TreeViewItem x:Name='n2' Header='2'/></TreeViewItem></TreeView>
+walk | TreeView expanded | <TreeView x:Name='tv'><TreeViewItem x:Name='n1' Header='1' IsExpanded='True'><TreeViewItem x:Name='n2' Header='2'/></TreeViewItem><TreeViewItem x:Name='n3' Header='3'/></TreeView>
+walk | TreeView empty | <TreeView x:Name='tv' Height='20'/>
+walk | TabControl | <TabControl x:Name='tc'><TabItem x:Name='h1' Header='1'><Button x:Name='b1'/></TabItem><TabItem x:Name='h2' Header='2'><Button x:Name='b2'/></TabItem></TabControl>
+walk | TabControl second selected | <TabControl x:Name='tc'><TabItem x:Name='h1' Header='1'><Button x:Name='b1'/></TabItem><TabItem x:Name='h2' Header='2' IsSelected='True'><Button x:Name='b2'/></TabItem></TabControl>
+walk | TabControl SelectedIndex | <TabControl x:Name='tc' SelectedIndex='1'><TabItem x:Name='h1' Header='1'><Button x:Name='b1'/></TabItem><TabItem x:Name='h2' Header='2'><Button x:Name='b2'/></TabItem></TabControl>
+walk | TabControl content TabIndex | <TabControl x:Name='tc'><TabItem x:Name='h1' Header='1'><StackPanel><Button x:Name='b1' TabIndex='2'/><Button x:Name='b2' TabIndex='1'/></StackPanel></TabItem></TabControl>
+walk | Menu | <Menu x:Name='m'><MenuItem x:Name='m1' Header='File'/><MenuItem x:Name='m2' Header='Edit'/></Menu>
+walk | StatusBar | <StatusBar x:Name='s'><StatusBarItem x:Name='s1' Content='x'/><Button x:Name='b1'/></StatusBar>
+walk | ItemsControl with buttons | <ItemsControl x:Name='ic'><Button x:Name='b1'/><Button x:Name='b2'/></ItemsControl>
+walk | ItemsControl IsTabStop False | <ItemsControl x:Name='ic' IsTabStop='False'><Button x:Name='b1'/></ItemsControl>
+walk | ItemsControl Focusable False | <ItemsControl x:Name='ic' Focusable='False'><Button x:Name='b1'/></ItemsControl>
+walk | ContentControl around a button | <ContentControl x:Name='cc'><Button x:Name='b1'/></ContentControl>
+walk | UserControl around a button | <UserControl x:Name='uc'><Button x:Name='b1'/></UserControl>
+walk | Slider, ProgressBar, Separator | <StackPanel><Slider x:Name='sl'/><ProgressBar x:Name='pb' Height='5'/><Separator x:Name='se'/></StackPanel>
+walk | DatePicker | <DatePicker x:Name='dp'/>
+walk | RadioButtons | <StackPanel><RadioButton x:Name='r1' Content='1'/><RadioButton x:Name='r2' Content='2'/></StackPanel>
+walk | Hyperlink in text | <TextBlock>See <Hyperlink x:Name='h1'>this</Hyperlink> and <Hyperlink x:Name='h2'>that</Hyperlink></TextBlock>
+walk | Hyperlink with a button after | <StackPanel><TextBlock><Hyperlink x:Name='h1'>this</Hyperlink></TextBlock><Button x:Name='b1'/></StackPanel>
+walk | InlineUIContainer | <TextBlock><InlineUIContainer><Button x:Name='b1'/></InlineUIContainer></TextBlock>
+walk | Collapsed and disabled are left out | <StackPanel><Button x:Name='b1' Visibility='Collapsed'/><Button x:Name='b2' IsEnabled='False'/><StackPanel IsEnabled='False'><Button x:Name='b3'/></StackPanel><StackPanel Visibility='Hidden'><Button x:Name='b4'/></StackPanel><Button x:Name='b5'/></StackPanel>
+walk | Label and TextBlock and Image | <StackPanel><Label x:Name='la' Content='x'/><TextBlock x:Name='tb' Text='x'/><Image x:Name='im' Width='5' Height='5'/><TextBox x:Name='t1'/></StackPanel>
+walk | Focusable Border and plain ones | <StackPanel><Border x:Name='bo' Focusable='True' Height='5' Background='Red'/><Border x:Name='bp' Height='5' Background='Red'/></StackPanel>
+walk | Popup closed | <StackPanel><Popup><Button x:Name='b1'/></Popup><Button x:Name='b2'/></StackPanel>
+walk | ContextMenu and ToolTip | <Button x:Name='b1'><Button.ContextMenu><ContextMenu><MenuItem x:Name='mi' Header='x'/></ContextMenu></Button.ContextMenu></Button>
+walk | button content with a button | <Button x:Name='b1'><Button x:Name='b2'/></Button>
+walk | GridSplitter between | <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width='5'/><ColumnDefinition/></Grid.ColumnDefinitions><TextBox x:Name='t1'/><GridSplitter x:Name='gs' Grid.Column='1' Width='5'/><TextBox x:Name='t2' Grid.Column='2'/></Grid>
+walk | style makes it not a stop | <StackPanel><Button x:Name='b1' Style='{StaticResource S}'/><Button x:Name='b2'/></StackPanel> | <Style x:Key='S' TargetType='Button'><Setter Property='IsTabStop' Value='False'/></Style>
+walk | style gives a TabIndex | <StackPanel><Button x:Name='b1'/><Button x:Name='b2' Style='{StaticResource S}'/></StackPanel> | <Style x:Key='S' TargetType='Button'><Setter Property='TabIndex' Value='1'/></Style>
+walk | panel with TabIndex in Continue | <StackPanel><StackPanel KeyboardNavigation.TabIndex='9'><Button x:Name='b1'/></StackPanel><StackPanel KeyboardNavigation.TabIndex='1'><Button x:Name='b2'/></StackPanel></StackPanel>
+walk | nested Local in Local | <StackPanel KeyboardNavigation.TabNavigation='Local'><Button x:Name='b1' TabIndex='2'/><StackPanel KeyboardNavigation.TabNavigation='Local' KeyboardNavigation.TabIndex='1'><Button x:Name='b2'/><Button x:Name='b3' TabIndex='0'/></StackPanel></StackPanel>
+walk | Contained keeps Tab in | <StackPanel><StackPanel KeyboardNavigation.TabNavigation='Contained'><Button x:Name='b1'/><Button x:Name='b2'/></StackPanel><Button x:Name='b3'/></StackPanel>
+walk | Cycle keeps Tab in | <StackPanel><StackPanel KeyboardNavigation.TabNavigation='Cycle'><Button x:Name='b1'/><Button x:Name='b2'/></StackPanel><Button x:Name='b3'/></StackPanel>
+walk | ToolBar | <ToolBar><Button x:Name='b1' Content='x'/><Button x:Name='b2' Content='y'/></ToolBar>
+walk | DataGrid empty | <DataGrid x:Name='dg' Height='40'/>
+walk | Calendar | <Calendar x:Name='ca'/>
+walk | RichTextBox and PasswordBox | <StackPanel><RichTextBox x:Name='rt' Height='20'/><PasswordBox x:Name='pw'/></StackPanel>
+walk | Frame | <StackPanel><Frame x:Name='fr' Height='10'/></StackPanel>
+walk | HeaderedContentControl | <HeaderedContentControl x:Name='hc' Header='h'><Button x:Name='b1'/></HeaderedContentControl>
+walk | ListBox Continue | <ListBox x:Name='l' KeyboardNavigation.TabNavigation='Continue'><ListBoxItem x:Name='i1' Content='1'/><ListBoxItem x:Name='i2' Content='2'/></ListBox>
+walk | RepeatButton, ToggleButton, Thumb | <StackPanel><RepeatButton x:Name='rb'/><ToggleButton x:Name='tg'/><Thumb x:Name='th' Height='5'/></StackPanel>
+walk | Menu with a disabled item | <Menu x:Name='m'><MenuItem x:Name='m1' Header='File' IsEnabled='False'/><MenuItem x:Name='m2' Header='Edit'/></Menu>
+walk | MenuItem IsTabStop False | <Menu x:Name='m'><MenuItem x:Name='m1' Header='File' IsTabStop='False'/><MenuItem x:Name='m2' Header='Edit'/></Menu>
+walk | TabControl first tab collapsed | <TabControl x:Name='tc'><TabItem x:Name='h1' Header='1' Visibility='Collapsed'><Button x:Name='b1'/></TabItem><TabItem x:Name='h2' Header='2'><Button x:Name='b2'/></TabItem></TabControl>
+walk | TabControl first tab disabled | <TabControl x:Name='tc'><TabItem x:Name='h1' Header='1' IsEnabled='False'><Button x:Name='b1'/></TabItem><TabItem x:Name='h2' Header='2'><Button x:Name='b2'/></TabItem></TabControl>
+walk | TabControl SelectedIndex counts collapsed tabs | <TabControl x:Name='tc' SelectedIndex='1'><TabItem x:Name='h1' Header='1' Visibility='Collapsed'><Button x:Name='b1'/></TabItem><TabItem x:Name='h2' Header='2'><Button x:Name='b2'/></TabItem><TabItem x:Name='h3' Header='3'><Button x:Name='b3'/></TabItem></TabControl>
+walk | TabControl selected tab collapsed | <TabControl x:Name='tc' SelectedIndex='0'><TabItem x:Name='h1' Header='1' Visibility='Collapsed'><Button x:Name='b1'/></TabItem><TabItem x:Name='h2' Header='2'><Button x:Name='b2'/></TabItem></TabControl>
+walk | TabControl selected tab disabled | <TabControl x:Name='tc' SelectedIndex='0'><TabItem x:Name='h1' Header='1' IsEnabled='False'><Button x:Name='b1'/></TabItem><TabItem x:Name='h2' Header='2'><Button x:Name='b2'/></TabItem></TabControl>
+walk | TabControl SelectedIndex minus one | <TabControl x:Name='tc' SelectedIndex='-1'><TabItem x:Name='h1' Header='1'><Button x:Name='b1'/></TabItem><TabItem x:Name='h2' Header='2'><Button x:Name='b2'/></TabItem></TabControl>
+walk | TabControl inside a TabItem | <TabControl x:Name='tc'><TabItem x:Name='h1' Header='1'><TabControl><TabItem x:Name='i1' Header='a'><Button x:Name='b1'/></TabItem></TabControl></TabItem></TabControl>
+walk | ListBox SelectedIndex | <ListBox x:Name='l' SelectedIndex='1'><ListBoxItem x:Name='i1' Content='1'/><ListBoxItem x:Name='i2' Content='2'/></ListBox>
+walk | ListBox first item disabled | <ListBox x:Name='l'><ListBoxItem x:Name='i1' Content='1' IsEnabled='False'/><ListBoxItem x:Name='i2' Content='2'/></ListBox>
+walk | FlowDocumentScrollViewer | <FlowDocumentScrollViewer x:Name='fd' Height='30'><FlowDocument><Paragraph>text</Paragraph></FlowDocument></FlowDocumentScrollViewer>
+walk | InkCanvas | <InkCanvas x:Name='ink' Height='20'/>
+walk | MediaElement | <MediaElement x:Name='me' Height='5'/>
+walk | ToolBarTray with two tool bars | <ToolBarTray><ToolBar><Button x:Name='b1' Content='x'/></ToolBar><ToolBar><Button x:Name='b2' Content='y'/></ToolBar></ToolBarTray>
+walk | a trigger of the style hides it | <StackPanel><Button x:Name='b1' Style='{StaticResource S}'/><Button x:Name='b2'/></StackPanel> | <Style x:Key='S' TargetType='Button'><Style.Triggers><Trigger Property='IsEnabled' Value='True'><Setter Property='Visibility' Value='Collapsed'/></Trigger></Style.Triggers></Style>
+walk | a trigger of the style shows it | <StackPanel><Button x:Name='b1' Style='{StaticResource S}'/><Button x:Name='b2'/></StackPanel> | <Style x:Key='S' TargetType='Button'><Setter Property='Visibility' Value='Collapsed'/><Style.Triggers><Trigger Property='IsEnabled' Value='True'><Setter Property='Visibility' Value='Visible'/></Trigger></Style.Triggers></Style>
+walk | a trigger of the style disables it | <StackPanel><Button x:Name='b1' Style='{StaticResource S}'/><Button x:Name='b2'/></StackPanel> | <Style x:Key='S' TargetType='Button'><Style.Triggers><Trigger Property='IsVisible' Value='True'><Setter Property='IsEnabled' Value='False'/></Trigger></Style.Triggers></Style>
+walk | bound IsEnabled | <StackPanel><CheckBox x:Name='c1' Content='on'/><Button x:Name='b1' IsEnabled='{Binding IsChecked, ElementName=c1}'/></StackPanel>
+walk | Expander inside an Expander | <Expander Header='h' IsExpanded='True'><Expander Header='i'><Button x:Name='b1'/></Expander></Expander>
+walk | Button in a DataGrid header area | <StackPanel><DataGrid x:Name='dg' Height='40'/><Button x:Name='b1'/></StackPanel>
+walk | GroupBox in a Border with TabIndex | <Border KeyboardNavigation.TabIndex='1'><GroupBox Header='g'><TextBox x:Name='t1'/></GroupBox></Border>
+walk | ContentControl IsTabStop False | <ContentControl x:Name='cc' IsTabStop='False'><Button x:Name='b1'/></ContentControl>
+walk | Hidden panel | <StackPanel Visibility='Hidden'><Button x:Name='b1'/></StackPanel>

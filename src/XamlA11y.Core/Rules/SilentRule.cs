@@ -71,7 +71,7 @@ internal static class SilentRule
 
     /// <summary>自己或外層寫死看不到、不能用（樣式寫死的也算）。</summary>
     private static bool Hidden(Context ctx, XElement e) =>
-        ctx.Project.Styles.Resolve(e, "Visibility") is { IsValue: true, Value: "Collapsed" or "Hidden" } && !ctx.Project.CodeSets(e, "Visibility")
+        ctx.Project.Styles.Resolve(e, "Visibility") is { IsValue: true, Value: "Collapsed" or "Hidden" } && !ctx.Project.OpensLater(e, "Visibility")
         || e.AncestorsAndSelf().Any(a => string.Equals((string?)a.Attribute("IsEnabled"), "False", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>不在 Tab 走得到的畫面上：提示、畫成筆刷的、放在資源裡等人拿的、DataGrid 的展開列（Tab 從儲存格直接離開表格）。</summary>

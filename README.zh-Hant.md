@@ -10,6 +10,9 @@ dotnet tool install -g Cornhsu.XamlA11y
 xamla11y audit ./src                                    # 先看有什麼
 xamla11y audit ./src --write-baseline a11y-baseline.json   # 把今天的記成已知
 xamla11y audit ./src --baseline a11y-baseline.json         # 之後只擋新增的
+
+xamla11y fix ./src                                      # 能替你接上名稱的（--write 才會改）
+xamla11y walk ./src/Views/Main.xaml                     # 按 Tab 依序停在哪裡、念什麼
 ```
 
 > 需要 **.NET 10 runtime**。只讀 XML、不相依 WPF，Linux、Windows、macOS 都能跑。
@@ -29,13 +32,14 @@ xamla11y audit ./src --baseline a11y-baseline.json         # 之後只擋新增�
 | 種類 | WCAG 2.2（等級） | 預設 | |
 |---|---|---|---|
 | `missing-name` | 4.1.2 (A), 1.1.1 (A) | fail | 按鈕、核取方塊、頁籤、選單…，螢幕閱讀器沒有名稱可以念。**ToolTip 不是名稱**，WPF 把它當說明文字。 |
-| `text-not-in-name` | 4.1.2 (A), 2.5.3 (A) | fail | 畫面上**有**字，但字在 `StackPanel`、`Border`、`AccessText` 裡。WPF 只從字串、`TextBlock`、`ContentControl` 取名稱。 |
+| `text-not-in-name` | 4.1.2 (A), 2.5.3 (A) | fail | 畫面上**有**字，但字在 `StackPanel`、`Border`、`AccessText` 裡。WPF 只從字串、`TextBlock`、`ContentControl` 取名稱。頁籤、清單項目念成型別名，超連結什麼都不念。 |
 | `meaningless-name` | 4.1.2 (A), 1.1.1 (A) | fail | 名稱是圖示字型的字元、空白、`System.Windows.Controls.TabItem`、或 Geometry 路徑。 |
 | `input-no-name` | 4.1.2 (A), 1.3.1 (A) | fail | `TextBox`、`PasswordBox`、`RichTextBox`、`ComboBox`、`Slider`、`DatePicker` 沒有名稱。**`<Label Target=…>` 不會給名稱**（見下）。 |
 | `list-no-name` | 4.1.2 (A), 1.3.1 (A) | warn | `ListBox`、`ListView`、`TreeView`、`DataGrid` 沒有名稱。外面包的 `GroupBox` 不算。 |
 | `widget-no-name` | 4.1.2 (A) | warn | `ProgressBar`、`Calendar` 沒有名稱（`Menu`、`ToolBar` 是 info）。 |
 | `item-type-name` | 4.1.2 (A) | warn | 資料產生的項目念成 `MyApp.Models.Note`：類別沒覆寫 `ToString()`，容器樣式也沒設名稱。**`DisplayMemberPath` 不會給名稱。** |
 | `silent-tab-stop` | 4.1.2 (A) | warn | Tab 停得到、螢幕閱讀器沒聲音：沒設 `Focusable="False"` 的 `ContentControl`、沒有 AutomationPeer 的自訂控制項。 |
+| `name-differs` | 2.5.3 (A) | warn | 畫面寫「儲存」，名稱卻是「保留這份文件」。用說的操作的人照畫面念。 |
 | `symbol-name` | 1.1.1 (A) | info | 名稱只有 `×`、`…` 或表情符號。 |
 | `same-name` | 2.4.6 (AA) | info | 並排的控制項名稱一樣、做的事不同。 |
 
@@ -43,7 +47,7 @@ xamla11y audit ./src --baseline a11y-baseline.json         # 之後只擋新增�
 
 | 種類 | WCAG 2.2（等級） | 預設 | |
 |---|---|---|---|
-| `mouse-only` | 2.1.1 (A) | fail | `Border`、`Image`、`TextBlock`… 掛了點按，鍵盤沒有路。 |
+| `mouse-only` | 2.1.1 (A) | fail | `Border`、`Image`、`TextBlock`… 掛了點按（寫在 XAML，或在它的 code-behind 加的），鍵盤沒有路。 |
 | `not-in-tab-order` | 2.1.1 (A) | warn | `IsTabStop="False"` 或 `Focusable="False"`，又沒有存取鍵、`IsDefault`／`IsCancel` 這些看得到的入口。 |
 
 ### 看不到焦點
@@ -85,6 +89,22 @@ xamla11y audit ./src --baseline a11y-baseline.json         # 之後只擋新增�
 浮水印也不會變成名稱（MahApps.Metro 2.4、HandyControl 3.5、WPF-UI 4.3）；唯一的例外是
 MaterialDesignThemes 5.3 會把 `HintAssist.Hint` 當名稱，工具認得。
 
+## 自動接上已經有的名稱
+
+```bash
+xamla11y fix ./src            # 只說會改什麼，不寫
+xamla11y fix ./src --write    # 真的改：先 commit，改完看 diff
+```
+
+接的是已經在那裡的：指到輸入框的 `Label`（用 `LabeledBy`）、按鈕畫面上唯一的那段字、短的 `ToolTip`。只加屬性，縮排、編碼、換行都不動。
+每一處先在記憶體裡重新稽核，沒有用的、弄出別的問題的就不改。不確定的不接：程式碼或觸發器會換的字、兩段字、一整句說明、快速鍵。
+`--guess` 連欄位前面那段字、綁定的字也接：那是猜的，要看過 diff。
+
+## 走一遍畫面
+
+`xamla11y walk Views/Main.xaml` 照順序列出按 Tab 停在哪裡：第幾行、名稱、NVDA 怎麼念、那裡有什麼問題、哪裡 Tab 進去就出不來。
+順序跟真的 WPF 視窗逐案比過。範本、程式碼、資料加進來的不在裡面，要看它們的標成 `?`。
+
 ## 能信到什麼程度
 
 - **每條規則都跟真的比過。** 大約 21,000 個答案，對照真的 WPF 視窗、UI Automation client、像素、Axe-Windows、NVDA，沒有一個說錯。
@@ -97,7 +117,7 @@ MaterialDesignThemes 5.3 會把 `HintAssist.Hint` 當名稱，工具認得。
 
 **看不到的**
 
-- 程式碼裡設的名稱、內容、事件。只讀 XAML 檔自己的 code-behind，用來發現「它設了這個控制項的名稱或內容」（→ 不知道）與「這個處理器只是在拖視窗」。
+- C# 建的控制項與掛在上面的事件：會數出來寫在報告上，沒有檢查。只讀 XAML 檔自己的 code-behind，用來發現「它設了這個控制項的名稱或內容」（→ 不知道）、「它會把藏起來的打開」、「它對有名字的元素掛了點按」。
 - 視窗資源裡的隱含樣式，套進它裡面放的 `UserControl`。
 - 資料給的名稱。`ItemsSource` 產生的項目看得到有沒有東西給名稱，看不到名稱是什麼。
 - 讀取順序、即時區域、高對比、名稱**好不好**、圖片是不是裝飾。
@@ -111,9 +131,12 @@ MaterialDesignThemes 5.3 會把 `HintAssist.Hint` 當名稱，工具認得。
 | `--html <檔>` | 給人看的一頁，沒有指令碼、不連外：是什麼、為什麼、怎麼修、NVDA 會怎麼念、條號、要人檢查的清單 |
 | `--json`、`--sarif`、`--md <檔>` | 完整報告、code scanning、PR 留言用的 Markdown |
 | `--standard <標準>`、`--level A\|AA` | `wcag22`（預設）、`wcag21`、`wcag20`、`en301549`（V3.2.1）、`en301549-v4`、`section508` —— [會變什麼](docs/標準對照.md#選一個標準) |
-| `--lang en\|zh-Hant` | 主控台、Markdown、HTML 報告的語言。JSON、SARIF、MSBuild 一律英文 |
+| `--lang en\|zh-Hant` | 主控台、Markdown、HTML 報告的語言。JSON、SARIF、MSBuild 與選項打錯的訊息一律英文 |
+| `--title <字>` | HTML 報告的標題，預設是資料夾的名字 |
+| `--only <檔\|資料夾>` | 只報這些；直接給 `.xaml` 也一樣。樣式與資源照樣從整個專案讀 |
 | `--msbuild` | MSBuild 診斷：`XA0001` 擋下的、`XA0002` 不擋的、`XA0003` 結果不可信 |
 | `--baseline`、`--write-baseline <檔>` | 只擋新增的。鍵不含行號 |
+| `--prune-baseline` | 把 baseline 裡已經沒有的拿掉。重寫一次會連新的一起記成已知 |
 | `--fail-on fail\|warn` | 擋到哪個嚴重度 |
 | `--min-coverage <0-100>` | 可解析率低於它就 exit 3 |
 | `--config <檔>` | 預設 root 裡的 `xamla11y.config.json`（[欄位](docs/config-schema.md)） |
@@ -122,7 +145,7 @@ MaterialDesignThemes 5.3 會把 `HintAssist.Hint` 當名稱，工具認得。
 退出碼：**0** 通過 · **1** 有 `--fail-on` 以上的 · **2** 用法、設定或輸入錯誤 · **3** 結果不可信。
 
 要放過一個元素，在它前面寫註解，**理由必填**，沒寫理由等於沒寫。中間可以隔別的註解，不能隔別的元素或文字。
-沒寫理由、或停在文字、被註解掉的元素前面的沒有作用，執行時會講出來：
+理由會列在報告上。沒寫理由、或停在文字、被註解掉的元素前面的沒有作用，執行時會講出來；已經沒有東西要放過的也會講：
 
 ```xml
 <!-- xamla11y-ignore: 整列才是控制項，這個核取方塊只是顯示狀態 -->
@@ -146,7 +169,7 @@ steps:
       baseline: a11y-baseline.json
 ```
 
-每一筆標在那一行、Markdown 報告變成一則會原地更新的 PR 留言、JSON 上傳成 artifact，全部出去之後最後才擋。
+每一筆標在那一行、Markdown 報告變成一則會原地更新的 PR 留言、JSON、Markdown、HTML 上傳成 artifact，全部出去之後最後才擋。
 
 | 輸入 | 預設 | |
 |---|---|---|
@@ -158,7 +181,7 @@ steps:
 | `fail-on` | `fail` | `fail` 或 `warn` |
 | `min-coverage` | 設定檔，沒有就 `60` | |
 | `comment` | `true` | 貼 PR 留言 |
-| `upload-report` | `true` | 上傳 JSON 與 Markdown |
+| `upload-report` | `true` | 上傳 JSON、Markdown、HTML |
 | `sarif` | `false` | 上傳 code scanning |
 | `artifact-name` | `xamla11y-report` | 也決定 PR 留言是哪一則 |
 

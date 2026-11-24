@@ -46,7 +46,7 @@
 - ScrollBar、Slider 範本裡的 RepeatButton：在樹上，Axe 不報 → 不判。
 - Expander、TreeViewItem、TabItem、ListBoxItem、MenuItem、TextBox、Window… 範本裡的按鈕：在樹上、Axe 會報 → 照判。
 - `Focusable="False"` 的無名按鈕：在樹上，Axe **不報**（它只看鍵盤可聚焦的）→ 範本裡的不判、內容裡的降一級。
-- `Visibility` 收合、隱藏：不在 control view。靜態的 Collapsed 通常是程式之後打開 → 照判。
+- `Visibility` 收合、隱藏：不在 control view。靜態的 Collapsed 通常是之後打開 → 照判；範本觸發器、動畫、程式碼都沒有提到它的，才降一級。
 
 ## 4. 鍵盤（Tab）
 
@@ -111,9 +111,27 @@
 `OnCreateAutomationPeer` 的類別。**有** peer 的：`UserControl`、`ItemsControl`（停得到，是沒名稱的 List）、`Selector`、`Thumb`、`Frame`、`GroupBox`。
 `Popup` 設 `Focusable` 也停不到；自己的 `TabNavigation="None"` 不影響自己。
 
+## 5c-4. 整個視窗的 Tab 順序（facts/walk.txt）
+
+88 案，逐案比順序（前後各一顆按鈕）：
+
+- 先 `TabIndex`，再照視覺樹（DockPanel、Grid 是文件順序，不是畫面位置）。`Continue`（預設）的容器不分組：兩個面板裡的 `TabIndex` 混在一起排。
+- `Local`、`Once`、`None`、`Cycle`、`Contained` 各自一組，組跟組之間看容器自己的 `TabIndex`（`KeyboardNavigation.TabIndex`）；`Continue` 容器的 `TabIndex` 沒有作用。
+- `Cycle`、`Contained` 進去就出不來；**`ToolBar` 預設是 `Cycle`**，後面的站 Tab 到不了（要 Ctrl+Tab）。
+- 停：`ItemsControl`、`ContentControl`、`Frame`、`TreeView`（自己）、`Calendar`（一天）。不停：空的 `ListBox`、空的 `DataGrid`、`ScrollViewer`、`StatusBarItem`、`Thumb`。
+- `ListBox` 一站（選到的或第一項），項目裡還有按鈕的話接著停。`Menu` 的每個頂層項目都停。`TabControl`：選到的頁籤，再來是那一頁的內容（自己一組）。
+- 內容按鈕裡面還有按鈕，兩個都停。
+- **收起來、停用的頁籤照樣會被選到**（沒寫 `SelectedIndex` 就是第 0 個，`-1` 也是）：標題停不到，內容照樣在。
+- 停：`FlowDocumentScrollViewer`、`InkCanvas`。不停：`MediaElement`、停用或 `IsTabStop="False"` 的頂層 `MenuItem`。`ToolBarTray` 裡兩條工具列，Tab 只在第一條裡繞。
+- 樣式的觸發器（藏起來、打開、停用）、綁定的 `IsEnabled`：工具說不確定。
+
+## 5c-5. 名稱與畫面的字（facts/labels.txt）
+
+27 案，比 UIA 的名稱與視覺樹裡畫出來的字。`LabeledBy` 贏過自己的字，所以標籤寫「輸入資料夾」、按鈕寫「瀏覽」的也是不包含。
+
 ## 5d. NVDA 怎麼念
 
-2026-11-24，NVDA 2026.2，繁體中文與英文各一遍，用 Tab 走過 87 種寫法的真視窗（`prototype/UiaOracle/nvda.mjs` + `facts/nvda.txt`，逐句記在
+2026-11-24，NVDA 2026.2，繁體中文與英文各一遍，用 Tab 走過 87 種寫法的真視窗（86 種拿得到念法；一種停用，Tab 停不到）（`prototype/UiaOracle/nvda.mjs` + `facts/nvda.txt`，逐句記在
 `tests/XamlA11y.Tests/nvda-facts.json`）。工具判得出來的 81 案跟 NVDA 念的沒有一案矛盾，兩種語言一樣；報告上的「NVDA 會念」也逐案比過。第一次跑抓到一個判錯種類的：按鈕內容是 EllipseGeometry
 時念的是型別名，工具說「沒有名稱」（已修，同類的漸層筆刷、Color 一起）。
 
@@ -146,7 +164,7 @@
 | DataGrid 的一列 | System dot Windows dot Controls dot Text Block, 資料項目（列的名稱是資料的 ToString()） |
 
 - **GroupBox 的標題聽得到**（當成群組念），只是不是清單的名稱 —— `list-no-name` 放在 warn 的另一個理由。
-- **DataGrid 的列念的是資料物件的 `ToString()`**：沒覆寫就是型別名。資料的事，XAML 看不到，這支不判。
+- **DataGrid 的列念的是資料物件的 `ToString()`**：沒覆寫就是型別名。`item-type-name` 會報（看得到資料型別的時候）。
 - 停用的命令按鈕 Tab 停不到，沒有比。Narrator 與 JAWS 沒跑過。
 
 ## 6. .NET Framework 4.8

@@ -5,7 +5,7 @@ namespace XamlA11y.Core.Report;
 
 /// <summary>
 /// NVDA 會怎麼念：「button, Delete」。只寫真的用 NVDA 2026.2（英文與繁體中文）跑過的控制項與情況
-/// （tests/XamlA11y.Tests/nvda-facts*.json），不確定就不寫：自己的類別、停用或不能聚焦的、有快速鍵的、綁定的提示、
+/// （tests/XamlA11y.Tests/nvda-facts.json），不確定就不寫：自己的類別、停用或不能聚焦的、有快速鍵的、綁定的提示、
 /// 提示裡有符號的（怎麼念看 NVDA 的符號字典）。狀態（沒勾選、折疊、空白…）不寫，執行時才知道。
 /// </summary>
 public static partial class Nvda
@@ -50,6 +50,25 @@ public static partial class Nvda
             return $"{type}, {description}";
         }
         return f.SpokenName is { } item ? $"System dot Windows dot Controls dot {CamelRegex().Replace(item, " ")}…, {type}" : type;
+    }
+
+    /// <summary>有名稱的：「Save, button」；沒有的只念型別。名稱裡有符號、有快速鍵的不猜。</summary>
+    public static string? Reads(string control, NameResult name, string? description, Lang lang)
+    {
+        // 清單、頁籤一站會連項目與位置一起念，不是這個樣子
+        if (!Roles.TryGetValue(control, out var role) || control is "TabItem" or "ListBox" or "ListView" or "DataGrid" or "MenuItem" || description is null) return null;
+        var type = lang.T(role.En, role.Zh);
+        if (description.Length > 0)
+        {
+            if (!Described.Contains(control) || !PlainRegex().IsMatch(description) || description == name.Text) return null;
+            type += ", " + description;
+        }
+        return name.Kind switch
+        {
+            NameKind.Missing or NameKind.TextNotUsed => type,
+            NameKind.Named when name.Text is { } t && PlainRegex().IsMatch(t) => $"{t}, {type}",
+            _ => null,
+        };
     }
 
     /// <summary>照原樣念的文字：字母、數字、單一空白、NVDA 預設不念的標點。</summary>

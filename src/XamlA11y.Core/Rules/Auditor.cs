@@ -40,6 +40,7 @@ public static class Auditor
                 ItemsRule.Check(ctx, e);
                 SilentRule.Check(ctx, e);
                 SameNameRule.Check(ctx, e);
+                LabelRule.Check(ctx, e);
             }
         FocusRule.Check(ctx);
         ctx.RunLater();
@@ -70,7 +71,7 @@ public sealed class Context(Project project, AuditOptions options)
     public void Later(string key, XElement e, Action report)
     {
         // 壓掉的是這一個用法，不是整個類別
-        if (IgnoreOf(e).Reason is { Length: > 0 } reason) { Record(key[..key.IndexOf(':')], Verdict.Suppressed, e, reason, null); return; }
+        if (IgnoreOf(e).Reason is { Length: > 0 } reason) { Suppress(Kinds.SilentTabStop, key[..key.IndexOf(':')], e, e, reason); return; }
         if (!_later.TryGetValue(key, out var first)) { _later[key] = (e, report); return; }
         var (keep, drop, action) = Before(e, first.First) ? (e, first.First, report) : (first.First, e, first.Report);
         _later[key] = (keep, action);
@@ -101,7 +102,17 @@ public sealed class Context(Project project, AuditOptions options)
     public void Blocked(string check, XElement e, string reason, string? control = null)
     {
         if (control is not null) _unknown[control] = _unknown.GetValueOrDefault(control) + 1;
-        Record(check, Verdict.Blocked, e, reason, null);
+        Record(check, Verdict.Blocked, e, reason, null, control);
+    }
+
+    private readonly List<Suppression> _suppressions = [];
+    private readonly HashSet<XElement> _ignored = new(ReferenceEqualityComparer.Instance);
+
+    private void Suppress(Kind kind, string check, XElement e, XElement site, string reason)
+    {
+        Record(check, Verdict.Suppressed, e, reason, kind);
+        _ignored.Add(site);
+        _suppressions.Add(new Suppression(kind, StyleIndex.FileOf(site), LineOf(site), site.Name.LocalName, CutMiddle(XamlA11y.Core.Report.Text.Visible(reason), 300)));
     }
 
     public void NotJudged(string check, XElement e, string reason) => Record(check, Verdict.NotJudged, e, reason, null);
@@ -119,7 +130,7 @@ public sealed class Context(Project project, AuditOptions options)
         if (severity == Severity.Off) { Record(check, Verdict.NotJudged, e, Options.Severities.ContainsKey(kind.Slug) ? $"{kind.Slug} is turned off" : $"{kind.Slug} is not in {Options.Scope.Title}", null); return; }
 
         var (reason, stranded) = IgnoreOf(site);
-        if (reason is { Length: > 0 }) { Record(check, Verdict.Suppressed, e, reason, kind); return; }
+        if (reason is { Length: > 0 }) { Suppress(kind, check, e, site, reason); return; }
         if (stranded || reason is not null)
             _invalidIgnores.Add($"{StyleIndex.FileOf(site)}:{LineOf(site)}: xamla11y-ignore " + (stranded
                 ? "has a commented-out element or text after it, so it does nothing (put it right before the element it is for)"
@@ -131,7 +142,7 @@ public sealed class Context(Project project, AuditOptions options)
     }
 
     /// <summary>沒有是 ""，不確定是 null。UIA 的 HelpText：AutomationProperties.HelpText，空的話是字串 ToolTip（WPF 原始碼，NVDA 實跑）。</summary>
-    private string? DescriptionOf(XElement e)
+    internal string? DescriptionOf(XElement e)
     {
         foreach (var property in (ReadOnlySpan<string>)["AutomationProperties.HelpText", "ToolTip"])
         {
@@ -148,25 +159,22 @@ public sealed class Context(Project project, AuditOptions options)
         return "";
     }
 
-    private void Record(string check, Verdict verdict, XElement e, string? reason, Kind? kind)
+    private void Record(string check, Verdict verdict, XElement e, string? reason, Kind? kind, string? control = null)
     {
-        var s = _stats[check];
-        switch (verdict)
-        {
-            case Verdict.Pass: s.Pass++; break;
-            case Verdict.Finding: s.Findings++; break;
-            case Verdict.Suppressed: s.Suppressed++; break;
-            case Verdict.Blocked: s.Blocked++; Count(s.BlockedReasons, reason); break;
-            case Verdict.NotJudged: s.NotJudged++; Count(s.NotJudgedReasons, reason); break;
-        }
-        _judgements.Add(new Judgement(check, verdict, e, StyleIndex.FileOf(e), LineOf(e), reason, kind));
+        _stats[check].Add(verdict, reason);
+        _judgements.Add(new Judgement(check, verdict, e, StyleIndex.FileOf(e), LineOf(e), reason, kind) { Control = control });
+    }
 
-        // 原因裡夾了 repo 的字（資源鍵、綁定），一個二十萬字的鍵不能把報告撐爆
-        static void Count(Dictionary<string, int> map, string? reason)
-        {
-            var r = CutMiddle(reason ?? "", 200);
-            map[r] = map.GetValueOrDefault(r) + 1;
-        }
+    /// <summary>
+    /// 用不到的 ignore：它管的元素一項問題都沒有，也沒有「不知道」「不判」（那種說不準）。
+    /// </summary>
+    private IEnumerable<string> UnusedIgnores()
+    {
+        var unsure = _judgements.Where(j => j.Verdict is Verdict.Blocked or Verdict.NotJudged or Verdict.Finding).Select(j => j.Element).ToHashSet(ReferenceEqualityComparer.Instance);
+        foreach (var doc in Project.Docs)
+            foreach (var e in doc.Root.DescendantsAndSelf())
+                if (!_ignored.Contains(e) && !unsure.Contains(e) && IgnoreOf(e) is { Reason.Length: > 0, Stranded: false })
+                    yield return $"{doc.File}:{LineOf(e)}";
     }
 
     public AuditResult Finish()
@@ -193,6 +201,9 @@ public sealed class Context(Project project, AuditOptions options)
             UnknownControls = [.. _unknown.OrderByDescending(p => p.Value).ThenBy(p => p.Key, StringComparer.Ordinal).Select(p => (p.Key, p.Value))],
             InvalidIgnores = [.. _invalidIgnores],
             Judgements = _judgements,
+            Suppressions = [.. _suppressions.OrderBy(s => s.File, StringComparer.Ordinal).ThenBy(s => s.Line).ThenBy(s => s.Kind.Slug, StringComparer.Ordinal)],
+            UnusedIgnores = [.. UnusedIgnores()],
+            CodeBuilt = Project.CodeBuilt,
         };
     }
 

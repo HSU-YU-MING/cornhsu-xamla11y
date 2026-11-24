@@ -54,7 +54,7 @@ public sealed class HtmlReportTests
             var columns = table.Descendants("thead").Single().Descendants("th").Count();
             Assert.All(table.Element("tbody")!.Elements("tr"), tr => Assert.Equal(columns, tr.Elements().Count()));
         }
-        Assert.DoesNotContain("tabindex", html, StringComparison.Ordinal);
+        Assert.DoesNotContain(" tabindex", html, StringComparison.Ordinal);
         Assert.DoesNotContain("<script", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("http://", html, StringComparison.Ordinal);
         // 連結只有「寫法範例」；沒有任何東西會自己載入
@@ -115,5 +115,96 @@ public sealed class HtmlReportTests
         Assert.Contains("<html lang=\"zh-Hant\">", File.ReadAllText(f.At("r.html")), StringComparison.Ordinal);
         Assert.Equal(2, f.Run("audit", f.Root, "--html", f.At("nowhere/r.html")).Exit);
         Assert.Equal(2, f.Run("audit", f.Root, "--html", f.At("r.html"), "--write-baseline", f.At("b.json")).Exit);
+    }
+
+    /// <summary>交給別人看的：哪個專案、哪一天、哪個 commit。</summary>
+    [Fact]
+    public void The_html_says_whose_and_when()
+    {
+        using var f = Kit.Bad();
+        var root = Path.Combine(f.Root, "MyApp", "src");
+        f.Add("MyApp/src/M.xaml", Kit.Window("<TextBox/>")).Add(".git/HEAD", "ref: refs/heads/main").Add(".git/refs/heads/main", "0123456789abcdef0123456789abcdef01234567\n");
+        f.Run("audit", root, "--html", f.At("r.html"), "--json", f.At("r.json"));
+        var html = File.ReadAllText(f.At("r.html"));
+        Assert.Contains("<h1>MyApp/src: accessibility audit</h1>", html, StringComparison.Ordinal);
+        Assert.Contains("<dt>commit</dt><dd>0123456</dd>", html, StringComparison.Ordinal);
+        Assert.Matches("<dt>Date</dt><dd>20[0-9]{2}-[0-9]{2}-[0-9]{2}</dd>", html);
+        Assert.DoesNotContain(f.Root, html, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("\"project\": \"MyApp/src\"", File.ReadAllText(f.At("r.json")), StringComparison.Ordinal);
+        f.Run("audit", root, "--html", f.At("r.html"), "--title", "Client <X>");
+        Assert.Contains("<h1>Client &lt;X&gt;: accessibility audit</h1>", File.ReadAllText(f.At("r.html")), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("0123456789abcdef", "0123456")]
+    [InlineData("ref: refs/heads/gone", null)]
+    [InlineData("not a commit", null)]
+    public void The_commit(string head, string? expected)
+    {
+        using var f = new Folder().Add(".git/HEAD", head);
+        Assert.Equal(expected, ReportInfo.For(f.Root, null).Commit);
+    }
+
+    [Fact]
+    public void The_commit_of_a_worktree_and_of_packed_refs()
+    {
+        using var f = new Folder().Add("repo/.git/packed-refs", "# pack-refs\nabcdef0123456789 refs/heads/x\n").Add("repo/.git/worktrees/w/HEAD", "ref: refs/heads/x").Add("repo/.git/worktrees/w/commondir", "../..\n").Add("w/.git", "gitdir: ../repo/.git/worktrees/w\n");
+        Assert.Equal("abcdef0", ReportInfo.For(f.At("w"), null).Commit);
+    }
+
+    /// <summary>一處都沒有的檢查也列：分得出「沒有東西可查」跟「沒查」。</summary>
+    [Fact]
+    public void Checks_with_nothing_to_check_are_listed()
+    {
+        var html = Kit.Html(Kit.Audit("<Button Content=\"a\"/>"));
+        foreach (var c in Kinds.Checks) Assert.Contains($"<th scope=\"row\">{c.En}", html, StringComparison.Ordinal);
+        Assert.Contains("<th scope=\"row\">visible focus (nothing to check)</th>", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void What_NVDA_reads_is_explained_and_not_quoted()
+    {
+        var html = Kit.Html(Kit.Audit("<TextBox/>"));
+        Assert.Contains("NVDA reads: edit</span>", html, StringComparison.Ordinal);
+        Assert.Contains("run with NVDA 2026.2", html, StringComparison.Ordinal);
+        Assert.Contains("states (checked, collapsed, blank) and the group around it are left out", html, StringComparison.Ordinal);
+    }
+
+    /// <summary>別人給的資料夾：不連網路、不讀 repo 外面的檔案、不讀大檔。</summary>
+    [Theory]
+    [InlineData("gitdir: \\\\192.0.2.1\\share\\x", null)]
+    [InlineData("gitdir: //192.0.2.1/share/x", null)]
+    [InlineData("gitdir:", null)]
+    public void A_git_file_that_points_at_the_network(string git, string? expected)
+    {
+        using var f = new Folder().Add(".git", git);
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        Assert.Equal(expected, ReportInfo.For(f.Root, null).Commit);
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), clock.Elapsed.ToString());
+    }
+
+    [Theory]
+    [InlineData("ref: ../../secret.txt")]
+    [InlineData("ref: refs/../../secret.txt")]
+    [InlineData("ref: C:/secret.txt")]
+    [InlineData("ref: /dev/zero")]
+    public void A_ref_outside_the_repository(string head)
+    {
+        using var f = new Folder().Add("secret.txt", "deadbeefdeadbeef").Add("a/b/.git/HEAD", head);
+        Assert.Null(ReportInfo.For(f.At("a/b"), null).Commit);
+    }
+
+    /// <summary>沒有要寫報告就不讀 .git；「src」這種看不出是誰的名字帶上一層。</summary>
+    [Theory]
+    [InlineData("Shop", "Shop")]
+    [InlineData("Shop/app", "Shop/app")]
+    [InlineData("Shop/Source", "Shop/Source")]
+    [InlineData("Shop/Views", "Views")]
+    public void The_name(string folder, string expected)
+    {
+        using var f = new Folder().Add(folder + "/x.txt", "");
+        Assert.Equal(expected, ReportInfo.For(f.At(folder), null).Name);
+        Assert.Equal("T", ReportInfo.For(f.At(folder), " T ").Name);
+        Assert.Equal(expected, ReportInfo.For(f.At(folder), " ").Name);
     }
 }

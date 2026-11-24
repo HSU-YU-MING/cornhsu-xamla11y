@@ -52,6 +52,7 @@ public class UiaFactsTests
             {
                 null or "symbol-name" => Meaningful(name),
                 "list-no-name" or "widget-no-name" => !Meaningful(name),
+                "text-not-in-name" when j.Reason!.Contains("unreadable", StringComparison.Ordinal) => !Meaningful(name),
                 "meaningless-name" => !Meaningful(name) || j.Reason!.Contains("font", StringComparison.Ordinal),
                 _ => string.IsNullOrWhiteSpace(name),
             };

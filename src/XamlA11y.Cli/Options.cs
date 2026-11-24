@@ -6,11 +6,14 @@ namespace XamlA11y.Cli;
 
 internal sealed class Options
 {
-    public string? Root, Json, Sarif, Md, Html, Baseline, WriteBaseline, Config, Standard, Level, Language;
+    public string? Root, Json, Sarif, Md, Html, Baseline, WriteBaseline, Config, Standard, Level, Language, Title;
     public Severity FailOn = Severity.Fail;
     public double MinCoverage = 60;
-    public bool MsBuild;
+    public bool MsBuild, PruneBaseline, Write, Guess;
     public readonly List<string> Exclude = [];
+
+    /// <summary>只看這些檔案或資料夾（相對於現在的位置）。空的是全部。</summary>
+    public readonly List<string> Only = [];
     public readonly HashSet<string> Given = new(StringComparer.Ordinal);
 
     public static (Options Options, string? Error) Parse(string[] args)
@@ -29,9 +32,9 @@ internal sealed class Options
                 continue;
             }
 
-            if (!o.Given.Add(a) && a is not "--exclude") return (o, $"{a} was given twice");
+            if (!o.Given.Add(a) && a is not ("--exclude" or "--only")) return (o, $"{a} was given twice");
             string? value = null;
-            if (a is "--json" or "--sarif" or "--md" or "--html" or "--standard" or "--level" or "--lang" or "--baseline" or "--write-baseline" or "--config" or "--fail-on" or "--min-coverage" or "--exclude")
+            if (a is "--json" or "--sarif" or "--md" or "--html" or "--standard" or "--level" or "--lang" or "--baseline" or "--write-baseline" or "--config" or "--fail-on" or "--min-coverage" or "--exclude" or "--only" or "--title")
             {
                 if (i + 1 >= args.Length || args[i + 1].StartsWith("--", StringComparison.Ordinal) || args[i + 1].Length == 0) return (o, $"{a} needs a value");
                 value = args[++i];
@@ -59,6 +62,11 @@ internal sealed class Options
                 case "--write-baseline": o.WriteBaseline = value; break;
                 case "--config": o.Config = value; break;
                 case "--exclude": o.Exclude.Add(value!); break;
+                case "--only": o.Only.Add(value!); break;
+                case "--title": o.Title = value; break;
+                case "--prune-baseline": o.PruneBaseline = true; break;
+                case "--write": o.Write = true; break;
+                case "--guess": o.Guess = true; break;
                 case "--msbuild": o.MsBuild = true; break;
                 case "--fail-on":
                     if (value is not ("fail" or "warn")) return (o, "--fail-on takes 'fail' or 'warn'");
