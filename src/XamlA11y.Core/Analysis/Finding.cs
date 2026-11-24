@@ -14,8 +14,11 @@ public sealed record Kind(string Slug, string Rule, Severity Default, string Wca
 
     public IReadOnlyList<string> Criteria => Wcag.Split(", ");
 
+    /// <summary>怎麼修（GitHub 上的一節）：SARIF 的 helpUri、HTML 的連結。</summary>
+    public string Uri(bool zh = false) => $"https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/{(zh ? "%E4%BF%AE%E6%B3%95" : "fixes")}.md#{Slug}";
+
     /// <summary>這一種是「名稱是空的」：EN 301 549 11.5.2.5、Section 508 502.3.1（名稱要能由程式判定）。亂碼名稱不是空的。</summary>
-    public bool NameIsEmpty => Slug is "missing-name" or "text-not-in-name" or "input-no-name" or "list-no-name";
+    public bool NameIsEmpty => Slug is "missing-name" or "text-not-in-name" or "input-no-name" or "list-no-name" or "widget-no-name";
 }
 
 public static class Kinds
@@ -60,10 +63,26 @@ public static class Kinds
         "List, grid or tree has no accessible name",
         "A screen reader announces this as just \"list\", \"data grid\" or \"tree\" when focus enters it, so two of them in one window sound the same. Set AutomationProperties.LabeledBy to the heading above it, or AutomationProperties.Name. A GroupBox around it and a <Label Target=…> do not name it.");
 
-    public static readonly IReadOnlyList<Kind> All =
-        [MissingName, TextNotName, MeaninglessName, SymbolName, InputNoName, FocusNotVisible, MouseOnly, NotInTabOrder, SmallTarget, ListNoName];
+    public static readonly Kind WidgetNoName = new("widget-no-name", "R7", Severity.Warn, "4.1.2",
+        "Progress bar, calendar, menu or tool bar has no accessible name",
+        "A screen reader announces this as just \"progress bar\" or \"tool bar\". Set AutomationProperties.LabeledBy to the text next to it, or AutomationProperties.Name. A menu or tool bar is only an info: one main menu per window needs no name.");
 
-    public static readonly IReadOnlyList<string> Rules = ["R1", "R2", "R3", "R4", "R5", "R6", "R7"];
+    public static readonly Kind ItemTypeName = new("item-type-name", "R8", Severity.Warn, "4.1.2",
+        "List items are read as their type name",
+        "An item made from data is named by the object's ToString(), and a class without one gives MyApp.Models.Note for every item. DisplayMemberPath and ItemTemplate only change what is shown. Override ToString() in the class, or add a Setter for AutomationProperties.Name to the style of the items (ItemContainerStyle, RowStyle for a DataGrid; add it to the one that is there, a second one replaces it).");
+
+    public static readonly Kind SilentTabStop = new("silent-tab-stop", "R9", Severity.Warn, "4.1.2",
+        "Tab stops here and a screen reader says nothing",
+        "The element takes keyboard focus but has no AutomationPeer, so it is not in the UI Automation tree; AutomationProperties.Name does not help. When it only holds other controls, set Focusable=\"False\" (IsTabStop=\"False\" when your code focuses it). When it is a control of its own, override OnCreateAutomationPeer, or derive from a control that has a peer.");
+
+    public static readonly Kind SameName = new("same-name", "R10", Severity.Info, "2.4.6",
+        "Controls side by side may sound alike",
+        "They have the same accessible name and do different things. Fine when something that is announced tells them apart (a group, a label). Otherwise add what each one is for to AutomationProperties.Name (\"Browse for the input folder\").");
+
+    public static readonly IReadOnlyList<Kind> All =
+        [MissingName, TextNotName, MeaninglessName, SymbolName, InputNoName, FocusNotVisible, MouseOnly, NotInTabOrder, SmallTarget, ListNoName, WidgetNoName, ItemTypeName, SilentTabStop, SameName];
+
+    public static readonly IReadOnlyList<string> Rules = ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10"];
 
     /// <summary>會算在這條規則裡的種類：輸入框的亂碼名稱、只有符號的名稱算 R2。</summary>
     public static IEnumerable<Kind> CountedIn(string rule) => All.Where(k => k.Rule == rule || rule == "R2" && (k == MeaninglessName || k == SymbolName));
@@ -77,6 +96,9 @@ public static class Kinds
         "R5" => "tab order",
         "R6" => "target size",
         "R7" => "names of lists",
+        "R8" => "names of data items",
+        "R9" => "silent tab stops",
+        "R10" => "same names",
         _ => rule,
     };
 
@@ -93,7 +115,7 @@ public sealed record Finding(Kind Kind, Severity Severity, string File, int Line
 
     /// <summary>baseline 的鍵：不含行號 —— 行號會隨無關的編輯漂移，一次格式化就讓整份 baseline 失效。</summary>
     /// <remarks>降過級的（不能聚焦、停用）記「~」：之後變成能聚焦、升回 fail，就是新的一筆，不能被舊的蓋住。</remarks>
-    public string BaselineKey => $"{Kind.Slug}{(Lowered ? "~" : "")}|{Escape(File)}|{Element}|{Escape(Identity)}{(Ordinal > 1 ? "|#" + Ordinal : "")}";
+    public string BaselineKey => $"{Kind.Slug}{(Lowered ? "~" : "")}|{Escape(KeyFile ?? File)}|{(KeyFile is null ? Element : "")}|{Escape(Identity)}{(Ordinal > 1 ? "|#" + Ordinal : "")}";
 
     private static string Escape(string s) => s.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("|", "\\|", StringComparison.Ordinal);
 
@@ -105,6 +127,9 @@ public sealed record Finding(Kind Kind, Severity Severity, string File, int Line
 
     /// <summary>NVDA 會念的名稱（只有確定的：項目容器的型別名）；空名稱是 null。</summary>
     public string? SpokenName { get; init; }
+
+    /// <summary>baseline 的鍵用這個、不用檔名：報在類別上的，多一個用它的檔案不能變成新的一筆。</summary>
+    public string? KeyFile { get; init; }
 
     /// <summary>因為元素不能聚焦而降了一級。</summary>
     public bool Lowered { get; init; }
@@ -177,7 +202,7 @@ public sealed class AuditResult
 
     /// <summary>
     /// 可解析率：判得出來的 ÷（判得出來的 + 卡住的）。「靜態不可能知道」的不在分母。
-    /// 只看預設會擋的四條（R1～R4）：R5～R7 預設不擋，也幾乎不會卡住，算進來會把名稱整批看不到的專案墊高過關。
+    /// 只看預設會擋的四條（R1～R4）：其他的預設不擋，也幾乎不會卡住，算進來會把名稱整批看不到的專案墊高過關。
     /// 關掉的規則不算：不看的東西看不到，不是結果不可信。
     /// </summary>
     public double Resolution

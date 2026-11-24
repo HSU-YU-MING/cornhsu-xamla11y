@@ -25,9 +25,7 @@ public class ListRuleTests
     [Theory]
     [InlineData("<TabControl/>")]
     [InlineData("<ItemsControl/>")]
-    [InlineData("<Menu/>")]
     [InlineData("<StatusBar/>")]
-    [InlineData("<ProgressBar/>")]
     public void Other_containers_are_not(string xaml) => Assert.Equal("", Audit(xaml));
 
     [Fact]
@@ -63,8 +61,8 @@ public class ListRuleTests
     [InlineData("<GroupBox><ListBox/></GroupBox>", "has no accessible name")]
     [InlineData("<GroupBox Header=\"{Binding H}\"><ListBox/></GroupBox>", "has no accessible name")]
     [InlineData("<ListBox ToolTip=\"Files\"/>", "its ToolTip is the help text")]
-    [InlineData("<TextBlock Text=\"Files\"/><ListBox/>", "the TextBlock \"Files\" before it")]
-    [InlineData("<TextBlock Text=\"{Binding Title}\"/><ListBox/>", "; the TextBlock before it could label it")]
+    [InlineData("<TextBlock Text=\"Files\"/><ListBox/>", "if the TextBlock \"Files\" at line 1 is its label")]
+    [InlineData("<TextBlock Text=\"{Binding Title}\"/><ListBox/>", "; if the TextBlock at line 1 is its label")]
     [InlineData("<ListBox AutomationProperties.Name=\" \"/>", "unreadable accessible name")]
     public void The_message_says_what_is_nearby(string xaml, string expected) =>
         Assert.Contains(expected, Kit.Audit(xaml).Findings.Single(f => f.Kind.Slug == "list-no-name").Message, StringComparison.Ordinal);

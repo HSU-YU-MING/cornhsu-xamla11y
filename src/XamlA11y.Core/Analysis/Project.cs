@@ -176,6 +176,9 @@ public sealed partial class Project
 
     // ───────────────────────── 控制項是什麼 ─────────────────────────
 
+    /// <summary>專案 C# 的型別（清單項目念出來是什麼）。</summary>
+    public CodeTypes Code { get; } = new();
+
     /// <summary>專案原始碼裡的一個類別。</summary>
     /// <param name="Bases">寫過的基底（不同檔案的同名類別可能不一樣）。</param>
     /// <param name="OwnName">類別自己換了 AutomationPeer 或在程式裡設名稱：名稱規則不能照基底套。</param>
@@ -307,8 +310,10 @@ public sealed partial class Project
                 if (text.Contains("XmlnsDefinition", StringComparison.Ordinal))
                     foreach (Match m in XmlnsRegex().Matches(text)) _ownXmlns.Add(m.Groups["uri"].Value);
 
-                if (!text.Contains("class ", StringComparison.Ordinal)) continue;
                 var code = CSharp.Strip(text, keepStrings: false);
+                try { Code.Read(code); }
+                catch (RegexMatchTimeoutException) { }      // 型別當成沒看到；下面讀控制項的照讀
+                if (!text.Contains("class ", StringComparison.Ordinal)) continue;
                 if (code.Contains("Command", StringComparison.Ordinal)) ReadCommands(code);
                 var matches = ClassRegex().Matches(code).Cast<Match>().ToList();
                 for (var i = 0; i < matches.Count; i++)

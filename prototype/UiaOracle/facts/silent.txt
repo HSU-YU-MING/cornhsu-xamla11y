@@ -1,0 +1,57 @@
+# Tab 停得到、UIA 樹上卻沒有（螢幕閱讀器什麼都不念）。[O] 是 xmlns:o，類別在 Items.cs。
+silent | ContentControl | <ContentControl x:Name='p' Content='x'/>
+silent | ContentControl around a Button | <ContentControl x:Name='p'><Button x:Name='i' Content='x'/></ContentControl>
+silent | ContentControl Focusable=False | <ContentControl x:Name='p' Focusable='False' Content='x'/>
+silent | ContentControl IsTabStop=False | <ContentControl x:Name='p' IsTabStop='False' Content='x'/>
+silent | ContentControl with Name | <ContentControl x:Name='p' AutomationProperties.Name='Card' Content='x'/>
+silent | ContentControl empty | <ContentControl x:Name='p'/>
+silent | ContentControl Collapsed | <ContentControl x:Name='p' Visibility='Collapsed' Content='x'/>
+silent | ContentControl disabled | <ContentControl x:Name='p' IsEnabled='False' Content='x'/>
+silent | ContentControl implicit style | <ContentControl x:Name='p' Content='x'/> | <Style TargetType='ContentControl'><Setter Property='Focusable' Value='False'/></Style>
+silent | ContentControl in a template | <Button x:Name='b' Template='{StaticResource t}'/> | <ControlTemplate x:Key='t' TargetType='Button'><ContentControl x:Name='p' Content='x'/></ControlTemplate>
+silent | Control | <Control x:Name='p' Height='20'/>
+silent | HeaderedContentControl | <HeaderedContentControl x:Name='p' Header='h' Content='x'/>
+silent | HeaderedItemsControl | <HeaderedItemsControl x:Name='p' Header='h'/>
+silent | ItemsControl | <ItemsControl x:Name='p'><TextBlock Text='x'/></ItemsControl>
+silent | ItemsControl IsTabStop=False | <ItemsControl x:Name='p' IsTabStop='False'><TextBlock Text='x'/></ItemsControl>
+silent | GroupBox | <GroupBox x:Name='p' Header='h'><TextBlock Text='x'/></GroupBox>
+silent | Frame | <Frame x:Name='p' Height='20'/>
+silent | Label | <Label x:Name='p' Content='x'/>
+silent | UserControl | <UserControl x:Name='p'><TextBlock Text='x'/></UserControl>
+silent | UserControl IsTabStop | <UserControl x:Name='p' IsTabStop='True' Focusable='True'><TextBlock Text='x'/></UserControl>
+silent | StatusBarItem | <StatusBar><StatusBarItem x:Name='p' Content='x'/></StatusBar>
+silent | StatusBar | <StatusBar x:Name='p'><TextBlock Text='x'/></StatusBar>
+silent | ScrollViewer | <ScrollViewer x:Name='p' Height='20'><TextBlock Text='x'/></ScrollViewer>
+silent | ToolBarTray | <ToolBarTray x:Name='p'><ToolBar><Button Content='x'/></ToolBar></ToolBarTray>
+silent | Border Focusable | <Border x:Name='p' Focusable='True' Height='20' Background='Red'/>
+silent | Grid Focusable | <Grid x:Name='p' Focusable='True' Height='20' Background='Red'/>
+silent | Border Focusable around a Button | <Border x:Name='p' Focusable='True'><Button x:Name='i' Content='x'/></Border>
+silent | Canvas Focusable IsTabStop=False | <Canvas x:Name='p' Focusable='True' KeyboardNavigation.IsTabStop='False' Height='20'/>
+silent | TextBlock Focusable | <TextBlock x:Name='p' Focusable='True' Text='x'/>
+silent | Image Focusable | <Image x:Name='p' Focusable='True' Width='10' Height='10'/>
+silent | Path Focusable | <Path x:Name='p' Focusable='True' Data='M0,0 L9,9 Z' Fill='Red'/>
+silent | ContentPresenter Focusable | <ContentPresenter x:Name='p' Focusable='True' Content='x'/>
+silent | class : Control | <o:MyControl x:Name='p' [O] Height='20'/>
+silent | class : ContentControl | <o:MyContent x:Name='p' [O] Content='x'/>
+silent | class : ButtonBase | <o:MyButtonBase x:Name='p' [O] Content='x'/>
+silent | class : Button | <o:MyButton x:Name='p' [O] Content='x'/>
+silent | class : RangeBase | <o:MyRange x:Name='p' [O] Height='20'/>
+silent | class : Selector | <o:MySelector x:Name='p' [O]/>
+silent | class : ItemsControl | <o:MyItems x:Name='p' [O]/>
+silent | class : UserControl | <o:MyUser x:Name='p' [O] Focusable='True' IsTabStop='True'/>
+silent | class : TextBoxBase | <o:MyTextBase x:Name='p' [O] Height='20'/>
+silent | class : Thumb | <o:MyThumb x:Name='p' [O] Focusable='True' Height='20'/>
+silent | class : FrameworkElement | <o:MyElement x:Name='p' [O] Focusable='True' Height='20'/>
+silent | class with a peer | <o:MyPeered x:Name='p' [O] Height='20'/>
+silent | class : HeaderedItemsControl | <o:MyHeadered x:Name='p' [O] Height='20'/>
+silent | class : MultiSelector | <o:MyMulti x:Name='p' [O] Height='20'/>
+silent | class : Panel | <o:MyPanel x:Name='p' [O] Focusable='True' Height='20'/>
+silent | Button content of class : FrameworkElement | <Button x:Name='p'><o:MyElement [O] Height='9' Width='9'/></Button>
+silent | the Card of docs/fixes.md | <o:Card x:Name='p' [O] Content='x'/>
+silent | Popup Focusable | <Popup x:Name='p' Focusable='True'><TextBlock Text='x'/></Popup>
+silent | ContentControl in a ToolTip | <Button Content='b'><Button.ToolTip><ContentControl x:Name='p' Content='x'/></Button.ToolTip></Button>
+silent | ContentControl in a disabled panel | <StackPanel IsEnabled='False'><ContentControl x:Name='p' Content='x'/></StackPanel>
+silent | ContentControl collapsed by its style | <ContentControl x:Name='p' Content='x'/> | <Style TargetType='ContentControl'><Setter Property='Visibility' Value='Collapsed'/></Style>
+silent | ContentControl in a container that limits Tab by style | <StackPanel Style='{StaticResource s}'><ContentControl x:Name='p' Content='x'/></StackPanel> | <Style x:Key='s' TargetType='StackPanel'><Setter Property='KeyboardNavigation.TabNavigation' Value='None'/></Style>
+silent | ContentControl with its own TabNavigation=None | <ContentControl x:Name='p' KeyboardNavigation.TabNavigation='None' Content='x'/>
+silent | Border focus scope | <Border x:Name='p' Focusable='True' FocusManager.IsFocusScope='True' Height='9' Background='Red'/>

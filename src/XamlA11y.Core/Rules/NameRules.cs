@@ -36,7 +36,7 @@ internal static class NameRules
         // NVDA 把有欄位的 ListView 念成資料格（實跑）
         var spoken = SpokenAs(ctx, e, control);
 
-        var rule = Wpf.Interactive.Contains(control) ? "R1" : Wpf.Inputs.Contains(control) ? "R2" : Wpf.Lists.Contains(control) ? "R7" : null;
+        var rule = Wpf.Interactive.Contains(control) ? "R1" : Wpf.Inputs.Contains(control) ? "R2" : Wpf.Lists.Contains(control) || Wpf.Widgets.Contains(control) ? "R7" : null;
         if (rule is null)
         {
             // WPF 命名空間裡沒量過的控制項（RibbonButton、RibbonTextBox…）：不知道，不是沒事
@@ -100,7 +100,22 @@ internal static class NameRules
         }
 
         // 鍵盤到不了的（Focusable=False、明寫停用）：Axe-Windows 不報，螢幕閱讀器還是碰得到 → 降一級
-        Severity? lowered = ctx.IsFalse(e, "Focusable") || string.Equals((string?)e.Attribute("IsEnabled"), "False", StringComparison.OrdinalIgnoreCase) ? Severity.Warn : null;
+        // 寫死收合、程式碼也沒有打開它的：現在沒有人看得到
+        var note = ctx.IsFalse(e, "Focusable") ? "; a warning because it cannot take focus"
+            : string.Equals((string?)e.Attribute("IsEnabled"), "False", StringComparison.OrdinalIgnoreCase) ? "; a warning because it is disabled"
+            : (string?)e.Attribute("Visibility") is "Collapsed" or "Hidden" && !ctx.Project.CodeSets(e, "Visibility") ? "; a warning because it is hidden"
+            : "";
+        Severity? lowered = note.Length > 0 ? Severity.Warn : null;
+        // 警告的種類降下來是 info，不用說「是警告」
+        if (rule == "R7") note = "";
+
+        if (Wpf.Widgets.Contains(control))
+        {
+            // 範本裡的進度條：控制項的一部分；ContextMenu 不在這裡
+            if (Context.ControlTemplateOf(e) is not null) { ctx.NotJudged(rule, e, "a template part"); return; }
+            ctx.Report(Kinds.WidgetNoName, e, $"<{local}> has no accessible name{(control is "Menu" or "ToolBar" ? "" : HintFor(ctx, e))}", lowered: control is "Menu" or "ToolBar" || lowered is not null ? Severity.Info : null, unreadable: name.Kind == NameKind.Meaningless);
+            return;
+        }
 
         if (rule == "R7")
         {
@@ -112,13 +127,13 @@ internal static class NameRules
 
         if (rule == "R2" && name.Kind != NameKind.Meaningless)
         {
-            ctx.Report(Kinds.InputNoName, e, $"<{local}> has no accessible name{HintFor(ctx, e)}", lowered: lowered, control: spoken);
+            ctx.Report(Kinds.InputNoName, e, $"<{local}> has no accessible name{HintFor(ctx, e)}{note}", lowered: lowered, control: spoken);
             return;
         }
 
         if (name.Kind == NameKind.TextNotUsed)
         {
-            ctx.Report(Kinds.TextNotName, e, $"<{local}> shows {(name.Text == "{…}" ? "bound text" : $"\"{Context.Show(name.Text)}\"")} but has no accessible name: {name.Why}", lowered: lowered, control: spoken);
+            ctx.Report(Kinds.TextNotName, e, $"<{local}> shows {(name.Text == "{…}" ? "bound text" : $"\"{Context.Show(name.Text)}\"")} but has no accessible name: {name.Why}{note}", lowered: lowered, control: spoken);
             return;
         }
 
@@ -126,16 +141,15 @@ internal static class NameRules
         {
             // 項目容器沒文字：名稱是型別名（自己的子類別是它自己的型別名，念法不猜）
             var typeName = Wpf.Items.Contains(control) && spoken is not null && name.Text is null && name.Why?.EndsWith("type name", StringComparison.Ordinal) == true;
-            ctx.Report(Kinds.MeaninglessName, e, $"<{local}> has an unreadable accessible name{(name.Text is { Length: > 0 } t && t.Trim().Length > 0 ? $" ({Context.Show(t)})" : "")}: {name.Why}", lowered: lowered, rule: rule, control: typeName ? control : null, spokenName: typeName ? control : null);
+            ctx.Report(Kinds.MeaninglessName, e, $"<{local}> has an unreadable accessible name{(name.Text is { Length: > 0 } t && t.Trim().Length > 0 ? $" ({Context.Show(t)})" : "")}: {name.Why}{note}", lowered: lowered, rule: rule, control: typeName ? control : null, spokenName: typeName ? control : null);
             return;
         }
 
-        var tip = ctx.Project.Styles.Resolve(e, "ToolTip");
         // 自訂控制項自己的文字屬性（ScreenToGif 的 ExtendedButton Text="…"）：畫面上有字，WPF 不會拿它當名稱
         var own = Markup.IsWpf(e) ? null : OwnTextProperties.FirstOrDefault(p => !string.IsNullOrWhiteSpace((string?)e.Attribute(p)));
         var onlyTip = own is not null ? $"; its {own} property belongs to the class and is not the name"
-            : tip.IsSet ? "; its ToolTip is the help text, not the name" : "";
-        ctx.Report(Kinds.MissingName, e, $"<{local}> has no accessible name: {name.Why}{onlyTip}", lowered: lowered, control: spoken);
+            : HasToolTip(ctx, e) ? "; its ToolTip is the help text, not the name" : "";
+        ctx.Report(Kinds.MissingName, e, $"<{local}> has no accessible name: {name.Why}{onlyTip}{note}", lowered: lowered, control: spoken);
     }
 
     /// <summary>NVDA 會把它念成哪一種控制項；不確定（不是 WPF 自己的類別、停用或不能聚焦、有快速鍵要念、別的 View）是 null。</summary>
@@ -151,6 +165,9 @@ internal static class NameRules
         var view = styles.Resolve(e, "View");
         return view.Kind == ResolveKind.NotSet || view.IsNull ? control : view.Element is { Name.LocalName: "GridView" } g && Markup.IsWpf(g) ? "DataGrid" : null;
     }
+
+    /// <summary>真的有設 ToolTip。樣式在專案外時每個屬性都「讀不出來」，那不是有設（Origin 是 null）。</summary>
+    private static bool HasToolTip(Context ctx, XElement e) => ctx.Project.Styles.Resolve(e, "ToolTip") is { IsSet: true, IsNull: false, Origin: not null };
 
     private sealed record LabelTargets(Dictionary<string, XElement> ByName);
 
@@ -182,7 +199,7 @@ internal static class NameRules
         if (e.Ancestors().FirstOrDefault(a => !Markup.IsPropertyElement(a)) is { Name.LocalName: "GroupBox" } group && (string?)group.Attribute("Header") is { } header && !string.IsNullOrWhiteSpace(header) && !Markup.IsMarkup(header))
             return $"; the GroupBox header \"{Context.Show(header.Trim())}\" around it does not give it one";
 
-        if (ctx.Project.Styles.Resolve(e, "ToolTip").IsSet) return "; its ToolTip is the help text, not the name";
+        if (HasToolTip(ctx, e)) return "; its ToolTip is the help text, not the name";
 
         for (var node = Markup.Previous(e); node is not null; node = Markup.Previous(node))
         {
@@ -194,9 +211,28 @@ internal static class NameRules
                 "Label" => (string?)n.Attribute("Content") ?? n.Value,
                 _ => null,
             };
-            return string.IsNullOrWhiteSpace(text) ? "" : $"; the {n.Name.LocalName} {(Markup.IsMarkup(text) ? "" : $"\"{Context.Show(text.Trim())}\" ")}before it could label it (AutomationProperties.LabeledBy)";
+            return string.IsNullOrWhiteSpace(text) || !LooksLikeLabel(ctx, n, e, text.Trim()) ? ""
+                : $"; if the {n.Name.LocalName} {(Markup.IsMarkup(text) ? "" : $"\"{Context.Show(text.Trim())}\" ")}at line {Context.LineOf(n)} is its label, use AutomationProperties.LabeledBy";
         }
         return "";
+    }
+
+    /// <summary>
+    /// 前面那段字像不像標籤。不像的不提：照著接上去就看不到問題了，名稱卻是錯的
+    /// （實際遇到：「暫無資料！」、「右鍵刪除…」、「不再提醒」的說明）。
+    /// </summary>
+    private static bool LooksLikeLabel(Context ctx, XElement label, XElement field, string text)
+    {
+        if (label.Attribute("Visibility") is not null || ctx.Project.CodeSets(label, "Visibility", "Text")) return false;
+        if ((string?)label.Attribute("DockPanel.Dock") is "Bottom" or "Right") return false;
+        if (Markup.IsMarkup(text)) return true;
+        // 表情符號、箭頭；一整句話
+        if (!text.Any(char.IsLetter) || text.Length > 30 || text.Contains('\n', StringComparison.Ordinal) || text[^1] is '.' or '。' or '!' or '！' or '…') return false;
+        // 格子裡：同一列，或正上方
+        int Cell(XElement x, string p) => int.TryParse((string?)x.Attribute(p), out var n) ? n : 0;
+        if (label.Parent?.Name.LocalName != "Grid") return true;
+        int rows = Cell(field, "Grid.Row") - Cell(label, "Grid.Row"), columns = Cell(field, "Grid.Column") - Cell(label, "Grid.Column");
+        return rows == 0 || rows == 1 && columns == 0;
     }
 
     internal static bool LooksInteractive(string local) =>

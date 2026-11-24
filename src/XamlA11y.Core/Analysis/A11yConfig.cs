@@ -61,6 +61,10 @@ public sealed class A11yConfig
         A11yConfig? config;
         try
         {
+            // 打錯的欄位：講人話，不要把 .NET 的型別名給使用者看
+            using (var probe = JsonDocument.Parse(text, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true }))
+                if (probe.RootElement.ValueKind == JsonValueKind.Object && probe.RootElement.EnumerateObject().Select(p => p.Name).Where(n => !Fields.Contains(n, StringComparer.Ordinal)).ToList() is { Count: > 0 } unknown)
+                    return (null, [.. unknown.Select(n => new Problem(n, "is not a field; the fields are " + string.Join(", ", Fields)))]);
             config = JsonSerializer.Deserialize<A11yConfig>(text, new JsonSerializerOptions
             {
                 ReadCommentHandling = JsonCommentHandling.Skip,
@@ -99,12 +103,16 @@ public sealed class A11yConfig
         foreach (var (slug, severity) in config.Rules ?? [])
         {
             if (Kinds.BySlug(slug) is null)
-                problems.Add(new Problem($"rules[\"{slug}\"]", $"is not a rule; the rules are {string.Join(", ", Kinds.All.Select(k => k.Slug))}"));
+                problems.Add(new Problem($"rules[\"{slug}\"]", Kinds.Rules.Contains(slug)
+                    ? $"is a group; name its findings instead: {string.Join(", ", Kinds.CountedIn(slug).Select(k => k.Slug))}"
+                    : $"is not a finding; they are {string.Join(", ", Kinds.All.Select(k => k.Slug))}"));
             if (ParseSeverity(severity) is null)
                 problems.Add(new Problem($"rules[\"{slug}\"]", "must be off, info, warn or fail"));
         }
         return (config, problems);
     }
+
+    private static readonly string[] Fields = ["$schema", "schemaVersion", "exclude", "minCoverage", "treatAs", "rules", "standard", "level", "language", "themeShowsFocus"];
 
     public static string StandardIds => string.Join(", ", Analysis.Standard.All.Select(s => s.Id));
 

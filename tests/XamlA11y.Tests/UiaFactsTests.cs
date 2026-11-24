@@ -51,7 +51,7 @@ public class UiaFactsTests
             var ok = j.Kind?.Slug switch
             {
                 null or "symbol-name" => Meaningful(name),
-                "list-no-name" => !Meaningful(name),
+                "list-no-name" or "widget-no-name" => !Meaningful(name),
                 "meaningless-name" => !Meaningful(name) || j.Reason!.Contains("font", StringComparison.Ordinal),
                 _ => string.IsNullOrWhiteSpace(name),
             };

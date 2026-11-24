@@ -460,6 +460,72 @@
    "xaml": "<ListView x:Name=\"p\" View=\"{x:Null}\"><ListViewItem Content=\"One\"/></ListView>",
    "zh": "清單. One, 沒選取, 1 之 1",
    "en": "list. One, not selected, 1 of 1"
+  },
+  {
+   "title": "ListBox of plain objects, DisplayMemberPath",
+   "xaml": "<ListBox x:Name=\"p\" xmlns:o=\"clr-namespace:UiaOracle;assembly=uiaoracle\" AutomationProperties.Name=\"Notes\" DisplayMemberPath=\"Title\"><o:Row Title=\"Inbox\"/></ListBox>",
+   "zh": "Notes, 清單. Uia Oracle dot Row, 沒選取, 1 之 1",
+   "en": "Notes, list. Uia Oracle dot Row, not selected, 1 of 1"
+  },
+  {
+   "title": "ListBox of plain objects, container style",
+   "xaml": "<ListBox x:Name=\"p\" xmlns:o=\"clr-namespace:UiaOracle;assembly=uiaoracle\" AutomationProperties.Name=\"Notes\" DisplayMemberPath=\"Title\"><ListBox.ItemContainerStyle><Style TargetType=\"ListBoxItem\"><Setter Property=\"AutomationProperties.Name\" Value=\"{Binding Title}\"/></Style></ListBox.ItemContainerStyle><o:Row Title=\"Inbox\"/></ListBox>",
+   "zh": "Notes, 清單. Inbox, 沒選取, 1 之 1",
+   "en": "Notes, list. Inbox, not selected, 1 of 1"
+  },
+  {
+   "title": "ListBox of objects with ToString",
+   "xaml": "<ListBox x:Name=\"p\" xmlns:o=\"clr-namespace:UiaOracle;assembly=uiaoracle\" AutomationProperties.Name=\"Notes\" DisplayMemberPath=\"Title\"><o:NamedRow Title=\"Inbox\"/></ListBox>",
+   "zh": "Notes, 清單. Inbox, 沒選取, 1 之 1",
+   "en": "Notes, list. Inbox, not selected, 1 of 1"
+  },
+  {
+   "title": "ContentControl around a Button",
+   "xaml": "<ContentControl x:Name=\"p\"><Button Content=\"Save\"/></ContentControl>",
+   "zh": "",
+   "en": ""
+  },
+  {
+   "title": "class : ButtonBase",
+   "xaml": "<o:MyButtonBase x:Name=\"p\" xmlns:o=\"clr-namespace:UiaOracle;assembly=uiaoracle\" Content=\"Save\" Height=\"20\"/>",
+   "zh": "",
+   "en": ""
+  },
+  {
+   "title": "ToolBar Header",
+   "xaml": "<ToolBar x:Name=\"p\" Header=\"Format\"><Button Content=\"Bold\"/></ToolBar>",
+   "zh": "Format, 工具列. Bold, 按鈕",
+   "en": "Format, tool bar. Bold, button"
+  },
+  {
+   "title": "ComboBox of plain objects, DisplayMemberPath",
+   "xaml": "<ComboBox x:Name=\"p\" xmlns:o=\"clr-namespace:UiaOracle;assembly=uiaoracle\" SelectedIndex=\"0\" AutomationProperties.Name=\"Note\" DisplayMemberPath=\"Title\"><o:Row Title=\"Inbox\"/></ComboBox>",
+   "zh": "Note, 下拉式方塊, Uia Oracle dot Row, 折疊",
+   "en": "Note, combo box, Uia Oracle dot Row, collapsed"
+  },
+  {
+   "title": "ComboBox of plain objects, ItemTemplate",
+   "xaml": "<ComboBox x:Name=\"p\" xmlns:o=\"clr-namespace:UiaOracle;assembly=uiaoracle\" SelectedIndex=\"0\" AutomationProperties.Name=\"Note\"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text=\"{Binding Title}\"/></DataTemplate></ComboBox.ItemTemplate><o:Row Title=\"Inbox\"/></ComboBox>",
+   "zh": "Note, 下拉式方塊, Uia Oracle dot Row, 折疊",
+   "en": "Note, combo box, Uia Oracle dot Row, collapsed"
+  },
+  {
+   "title": "ComboBox of plain objects, container style",
+   "xaml": "<ComboBox x:Name=\"p\" xmlns:o=\"clr-namespace:UiaOracle;assembly=uiaoracle\" SelectedIndex=\"0\" AutomationProperties.Name=\"Note\"><ComboBox.ItemContainerStyle><Style TargetType=\"ComboBoxItem\"><Setter Property=\"AutomationProperties.Name\" Value=\"{Binding Title}\"/></Style></ComboBox.ItemContainerStyle><ComboBox.ItemTemplate><DataTemplate><TextBlock Text=\"{Binding Title}\"/></DataTemplate></ComboBox.ItemTemplate><o:Row Title=\"Inbox\"/></ComboBox>",
+   "zh": "Note, 下拉式方塊, Inbox, 折疊",
+   "en": "Note, combo box, Inbox, collapsed"
+  },
+  {
+   "title": "ComboBox of objects with ToString, ItemTemplate",
+   "xaml": "<ComboBox x:Name=\"p\" xmlns:o=\"clr-namespace:UiaOracle;assembly=uiaoracle\" SelectedIndex=\"0\" AutomationProperties.Name=\"Note\"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text=\"{Binding Title}\"/></DataTemplate></ComboBox.ItemTemplate><o:NamedRow Title=\"Inbox\"/></ComboBox>",
+   "zh": "Note, 下拉式方塊, Inbox, 折疊",
+   "en": "Note, combo box, Inbox, collapsed"
+  },
+  {
+   "title": "ComboBox of plain objects, ItemTemplate and TextPath",
+   "xaml": "<ComboBox x:Name=\"p\" xmlns:o=\"clr-namespace:UiaOracle;assembly=uiaoracle\" SelectedIndex=\"0\" AutomationProperties.Name=\"Note\" TextSearch.TextPath=\"Title\"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text=\"{Binding Title}\"/></DataTemplate></ComboBox.ItemTemplate><o:Row Title=\"Inbox\"/></ComboBox>",
+   "zh": "Note, 下拉式方塊, Uia Oracle dot Row, 折疊",
+   "en": "Note, combo box, Uia Oracle dot Row, collapsed"
   }
  ]
 }

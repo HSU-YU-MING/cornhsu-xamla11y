@@ -75,3 +75,14 @@ nvda | TreeView ToolTip only | <TreeView x:Name='p' ToolTip='Name'><TreeViewItem
 nvda | Button icon, access key | <Button x:Name='p' AutomationProperties.AccessKey='Alt+D'>[ICON]</Button>
 nvda | Button icon, ToolTip with punctuation | <Button x:Name='p' ToolTip='Delete (all), now? Yes: 3.5 files!'>[ICON]</Button>
 nvda | ListView custom null view | <ListView x:Name='p' View='{x:Null}'><ListViewItem Content='One'/></ListView>
+nvda | ListBox of plain objects, DisplayMemberPath | <ListBox x:Name='p' [O] AutomationProperties.Name='Notes' DisplayMemberPath='Title'><o:Row Title='Inbox'/></ListBox>
+nvda | ListBox of plain objects, container style | <ListBox x:Name='p' [O] AutomationProperties.Name='Notes' DisplayMemberPath='Title'><ListBox.ItemContainerStyle><Style TargetType='ListBoxItem'><Setter Property='AutomationProperties.Name' Value='{Binding Title}'/></Style></ListBox.ItemContainerStyle><o:Row Title='Inbox'/></ListBox>
+nvda | ListBox of objects with ToString | <ListBox x:Name='p' [O] AutomationProperties.Name='Notes' DisplayMemberPath='Title'><o:NamedRow Title='Inbox'/></ListBox>
+nvda | ContentControl around a Button | <ContentControl x:Name='p'><Button Content='Save'/></ContentControl>
+nvda | class : ButtonBase | <o:MyButtonBase x:Name='p' [O] Content='Save' Height='20'/>
+nvda | ToolBar Header | <ToolBar x:Name='p' Header='Format'><Button Content='Bold'/></ToolBar>
+nvda | ComboBox of plain objects, DisplayMemberPath | <ComboBox x:Name='p' [O] SelectedIndex='0' AutomationProperties.Name='Note' DisplayMemberPath='Title'><o:Row Title='Inbox'/></ComboBox>
+nvda | ComboBox of plain objects, ItemTemplate | <ComboBox x:Name='p' [O] SelectedIndex='0' AutomationProperties.Name='Note'><ComboBox.ItemTemplate><DataTemplate><TextBlock Text='{Binding Title}'/></DataTemplate></ComboBox.ItemTemplate><o:Row Title='Inbox'/></ComboBox>
+nvda | ComboBox of plain objects, container style | <ComboBox x:Name='p' [O] SelectedIndex='0' AutomationProperties.Name='Note'><ComboBox.ItemContainerStyle><Style TargetType='ComboBoxItem'><Setter Property='AutomationProperties.Name' Value='{Binding Title}'/></Style></ComboBox.ItemContainerStyle><ComboBox.ItemTemplate><DataTemplate><TextBlock Text='{Binding Title}'/></DataTemplate></ComboBox.ItemTemplate><o:Row Title='Inbox'/></ComboBox>
+nvda | ComboBox of objects with ToString, ItemTemplate | <ComboBox x:Name='p' [O] SelectedIndex='0' AutomationProperties.Name='Note'><ComboBox.ItemTemplate><DataTemplate><TextBlock Text='{Binding Title}'/></DataTemplate></ComboBox.ItemTemplate><o:NamedRow Title='Inbox'/></ComboBox>
+nvda | ComboBox of plain objects, ItemTemplate and TextPath | <ComboBox x:Name='p' [O] SelectedIndex='0' AutomationProperties.Name='Note' TextSearch.TextPath='Title'><ComboBox.ItemTemplate><DataTemplate><TextBlock Text='{Binding Title}'/></DataTemplate></ComboBox.ItemTemplate><o:Row Title='Inbox'/></ComboBox>

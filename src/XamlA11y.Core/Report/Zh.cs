@@ -22,6 +22,7 @@ public sealed record Lang(string Id)
     public string Criterion(Criterion c) => IsZh ? c.ZhName : c.Name;
     public string Message(string m) => IsZh ? Zh.Message(m) : m;
     public string Reason(string r) => IsZh ? Zh.Reason(r) : r;
+    public string Ignore(string s) => IsZh ? Zh.Ignore(s) : s;
     public string Scope => IsZh ? Zh.ScopeText : Summary.Scope;
 }
 
@@ -44,6 +45,10 @@ public static partial class Zh
         ["not-in-tab-order"] = ("Tab 到不了", "IsTabStop=\"False\" 或 Focusable=\"False\" 讓 Tab 跳過它。", "同一件事有快速鍵或別的入口就沒關係，沒有的話把它放回 Tab 順序。"),
         ["small-target"] = ("點擊範圍小於 24 × 24", "大小設得比 24 DIP 小，而且離隔壁太近，用不了 WCAG 2.5.8 的間距例外。", "放大到 24，或拉開距離。"),
         ["list-no-name"] = ("清單、表格或樹沒有名稱", "焦點進去時螢幕閱讀器只念「清單」「資料格」「樹狀檢視」，同一個視窗有兩個就分不出來。外面的 GroupBox 與 <Label Target=…> 都不會給它名稱。", "用 AutomationProperties.LabeledBy 指到上面的標題，或設 AutomationProperties.Name。"),
+        ["widget-no-name"] = ("進度條、月曆、選單或工具列沒有名稱", "螢幕閱讀器只念「進度列」「工具列」。", "用 AutomationProperties.LabeledBy 指到旁邊的文字，或設 AutomationProperties.Name。選單與工具列只當 info：一個視窗一個主選單，不用名稱也分得出來。"),
+        ["item-type-name"] = ("清單的項目念成類別名", "資料產生的項目，名稱是物件的 ToString()；沒覆寫的類別，每一項都念成 MyApp.Models.Note。DisplayMemberPath 與 ItemTemplate 只管畫面。", "在類別裡覆寫 ToString()，或在項目的樣式（ItemContainerStyle，DataGrid 是 RowStyle）加一個 AutomationProperties.Name 的 Setter —— 已經有樣式就加進那一個，再寫一個會整個取代。"),
+        ["silent-tab-stop"] = ("Tab 停得到，螢幕閱讀器卻沒聲音", "元素拿得到鍵盤焦點，但沒有 AutomationPeer，不在 UI Automation 的樹上；設 AutomationProperties.Name 也沒用。", "只是放別的控制項的，設 Focusable=\"False\"（程式會叫它拿焦點的用 IsTabStop=\"False\"）；自己是一個控制項的，覆寫 OnCreateAutomationPeer，或改成繼承有 peer 的控制項。"),
+        ["same-name"] = ("並排的控制項念起來可能一樣", "名稱一樣、做的事不一樣。會念出來的東西（群組、標籤）分得出來就沒關係。", "分不出來的話，在 AutomationProperties.Name 補上各自是做什麼的（「瀏覽輸入資料夾」）。"),
     };
 
     public static readonly IReadOnlyDictionary<string, string> Rules = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -55,10 +60,13 @@ public static partial class Zh
         ["R5"] = "Tab 順序",
         ["R6"] = "點擊範圍",
         ["R7"] = "清單的名稱",
+        ["R8"] = "資料項目的名稱",
+        ["R9"] = "沒聲音的停留點",
+        ["R10"] = "名稱一樣",
     };
 
     public const string ScopeText =
-        "靜態檢查：讀 XAML，什麼都沒有執行；程式碼只看類別宣告與每個 XAML 自己的 code-behind（有沒有設名稱、內容、鍵盤處理器）。沒有問題不等於符合 WCAG 或任何法規。";
+        "靜態檢查：讀 XAML，什麼都沒有執行；程式碼只看型別與屬性的宣告、每個 XAML 自己的 code-behind（有沒有設名稱、內容、鍵盤處理器）。沒有問題不等於符合 WCAG 或任何法規。";
 
     /// <summary>一筆 finding 的訊息。</summary>
     public static string Message(string m) => TryMessage(m, out var zh) ? zh : m;
@@ -122,6 +130,11 @@ public static partial class Zh
         (R($"{E} has (?<p>Focusable|IsTabStop)=\"False\" \\(from the style at (?<at>.+)\\), so Tab never reaches it"), (m, _) => $"<{m.Groups["e"]}> 設了 {m.Groups["p"]}=\"False\"（樣式在 {m.Groups["at"]}），Tab 到不了"),
         (R($"{E} is (?<n>[0-9.]+) DIP (?<axis>wide|high) and (?<gap>[0-9.]+) DIP away from <(?<o>[^<>]+)>(?<id> '.*')?; targets under 24 need more space around them"),
             (m, _) => $"<{m.Groups["e"]}> {(m.Groups["axis"].Value == "wide" ? "寬" : "高")} {m.Groups["n"]} DIP，離 <{m.Groups["o"]}>{m.Groups["id"]} 只有 {m.Groups["gap"]} DIP；小於 24 的要留更多空間"),
+        (R($"{E} names every item with its type name(?: \\((?<t>[^()]*)\\))?: no style of (?<c>\\w+) sets AutomationProperties\\.Name, and the class does not override ToString\\(\\)(?<tail>; DisplayMemberPath only changes what is shown|; the ItemTemplate only changes what is shown)?"),
+            (m, _) => $"<{m.Groups["e"]}> 的每一項都念成型別名{(m.Groups["t"].Success ? $"（{m.Groups["t"]}）" : "")}：沒有 {m.Groups["c"]} 的樣式設 AutomationProperties.Name，類別也沒覆寫 ToString(){(m.Groups["tail"].Value.Contains("Display", StringComparison.Ordinal) ? "；DisplayMemberPath 只管畫面" : m.Groups["tail"].Success ? "；ItemTemplate 只管畫面" : "")}"),
+        (R($"{E} takes a Tab stop but is not in the UI Automation tree(?: \\(it derives from (?<b>\\w+) and has no AutomationPeer\\))?, so a screen reader says nothing there(?<n>; its AutomationProperties\\.Name is not used)?"),
+            (m, _) => $"<{m.Groups["e"]}> Tab 停得到，但不在 UI Automation 的樹上{(m.Groups["b"].Success ? $"（它繼承 {m.Groups["b"]}，沒有 AutomationPeer）" : "")}，螢幕閱讀器停在這裡沒聲音{(m.Groups["n"].Success ? "；它的 AutomationProperties.Name 沒有作用" : "")}"),
+        (R($"(?<n>[0-9]+) {E} here may sound alike: the accessible name \"(?<t>.*)\" at lines (?<l>[0-9, …]+), and they do different things"), (m, _) => $"這裡 {m.Groups["n"]} 個 <{m.Groups["e"]}> 念起來可能一樣：名稱都是「{m.Groups["t"]}」（第 {m.Groups["l"]} 行），做的事卻不同"),
     ];
 
     private static string Style(string s) => s.StartsWith("for ", StringComparison.Ordinal) ? $"（{s[4..]} 的）" : $"「{s.Trim((char)39)}」";
@@ -133,15 +146,26 @@ public static partial class Zh
 
     private static readonly (Regex, string)[] Tails =
     [
+        (R("(?<head>.+); a warning because it cannot take focus"), "不能聚焦，所以只算警告"),
+        (R("(?<head>.+); a warning because it is disabled"), "停用的，所以只算警告"),
+        (R("(?<head>.+); a warning because it is hidden"), "藏起來的，所以只算警告"),
         (R("(?<head>.+); its name becomes the type name"), "名稱會變成型別名"),
         (R("(?<head>.+); its ToolTip is the help text, not the name"), "ToolTip 是說明文字，不是名稱"),
         (R("(?<head>.+); its (?<p>\\w+) property belongs to the class and is not the name"), "${p} 是它自己的屬性，不是名稱"),
     ];
 
+    /// <summary>沒作用的 ignore（「檔:行: 為什麼」）。</summary>
+    public static string Ignore(string s) => s
+        .Replace("xamla11y-ignore has a commented-out element or text after it, so it does nothing (put it right before the element it is for)", "xamla11y-ignore 後面是被註解掉的元素或文字，沒有作用（要放在它管的元素正前面）", StringComparison.Ordinal)
+        .Replace("xamla11y-ignore has no reason, so it does nothing (write xamla11y-ignore: why)", "xamla11y-ignore 沒寫理由，沒有作用（寫成 xamla11y-ignore: 為什麼）", StringComparison.Ordinal);
+
     private static readonly Dictionary<string, string> Plain = new(StringComparer.Ordinal)
     {
         // 名稱
         ["its ToolTip is the help text, not the name"] = "ToolTip 是說明文字，不是名稱",
+        ["a warning because it cannot take focus"] = "不能聚焦，所以只算警告",
+        ["a warning because it is disabled"] = "停用的，所以只算警告",
+        ["a warning because it is hidden"] = "藏起來的，所以只算警告",
         ["it has no AutomationProperties.Name and nothing labels it"] = "沒有 AutomationProperties.Name，也沒有東西標示它",
         ["its content is an empty string"] = "內容是空字串",
         ["its content is only white space"] = "內容只有空白",
@@ -208,6 +232,13 @@ public static partial class Zh
         ["the BasedOn chain is too deep"] = "BasedOn 疊太多層",
         ["a style in the chain has a BasedOn this tool cannot read"] = "疊下來的樣式裡有這支讀不懂的 BasedOn",
         ["a Setter without a Value"] = "沒有 Value 的 Setter",
+        ["its container style may name the items"] = "容器樣式可能給了名稱",
+        ["what its items are is not visible"] = "項目是什麼看不出來",
+        ["the code sets whether it can take focus"] = "程式碼設它能不能聚焦",
+        ["a focus handler may pass the focus on"] = "拿到焦點的處理器可能把焦點轉出去",
+        ["inside a container that limits Tab"] = "在限制 Tab 的容器裡",
+        ["a style of its class keeps it out of the tab order"] = "這個類別的樣式不讓 Tab 進來",
+        ["the same class, reported once"] = "同一個類別，只報一次",
         // 滑鼠
         ["a handler on the root element"] = "處理器在根元素上",
         ["a handler that moves the window (the system menu does it from the keyboard)"] = "用來移動視窗的處理器（鍵盤有系統選單）",
@@ -254,8 +285,8 @@ public static partial class Zh
         (R("its text is drawn as an icon by the font '(?<t>.+)'; a screen reader reads the raw characters"), "文字用字型「${t}」畫成圖示，螢幕閱讀器念的是原本的字元"),
         (R("<Label Target> at line (?<n>\\d+) does not give it one \\(use AutomationProperties\\.LabeledBy\\)"), "第 ${n} 行的 <Label Target> 不會給它名稱（改用 AutomationProperties.LabeledBy）"),
         (R("the GroupBox header \"(?<t>.*)\" around it does not give it one"), "外面 GroupBox 的標題「${t}」不會給它名稱"),
-        (R("the (?<e>TextBlock|Label) \"(?<t>.*)\" before it could label it \\(AutomationProperties\\.LabeledBy\\)"), "前面的 ${e}「${t}」可以標示它（AutomationProperties.LabeledBy）"),
-        (R("the (?<e>TextBlock|Label) before it could label it \\(AutomationProperties\\.LabeledBy\\)"), "前面的 ${e} 可以標示它（AutomationProperties.LabeledBy）"),
+        (R("if the (?<e>TextBlock|Label) \"(?<t>.*)\" at line (?<n>[0-9]+) is its label, use AutomationProperties\\.LabeledBy"), "第 ${n} 行的 ${e}「${t}」如果是它的標籤，用 AutomationProperties.LabeledBy 接起來"),
+        (R("if the (?<e>TextBlock|Label) at line (?<n>[0-9]+) is its label, use AutomationProperties\\.LabeledBy"), "第 ${n} 行的 ${e} 如果是它的標籤，用 AutomationProperties.LabeledBy 接起來"),
         (R("<(?<t>[^<>]+)> has a Style this tool cannot read"), "<${t}> 的 Style 這支讀不懂"),
         (R("style '(?<k>.*)' is not defined in the project"), "樣式「${k}」不在專案裡"),
         (R("based on '(?<k>.*)', which is not defined in the project"), "BasedOn「${k}」，專案裡沒有"),

@@ -20,7 +20,7 @@ xamla11y audit ./src --baseline a11y-baseline.json         # from now on, fail o
 >
 > **WPF only.** WinUI/UWP, Avalonia and MAUI files are recognised and reported as *not checked*.
 
-**Run it with `--write-baseline` first.** Most WPF projects have never named a single input, so the
+**On an existing project, the second line comes before CI.** Most WPF projects have never named a single input, so the
 first run can list dozens of findings. A gate that is red from day one gets switched off; the baseline
 lets you stop the number from growing and pay it down when you touch each view.
 
@@ -39,11 +39,15 @@ lets you stop the number from growing and pay it down when you touch each view.
 | `not-in-tab-order` | 2.1.1 (A) | warn | `IsTabStop="False"` or `Focusable="False"` on a control with no access key, `IsDefault`/`IsCancel` or other visible way in. |
 | `small-target` | 2.5.8 (AA) | warn | A size *you set* under 24 DIP, too close to its neighbour for the spacing exception. |
 | `list-no-name` | 4.1.2 (A), 1.3.1 (A) | warn | A `ListBox`, `ListView`, `TreeView` or `DataGrid` nothing names. The `GroupBox` around it does not. |
+| `widget-no-name` | 4.1.2 (A) | warn | The same for a `ProgressBar` or a `Calendar` (a `Menu` or `ToolBar`: info). |
+| `item-type-name` | 4.1.2 (A) | warn | Items made from data are read as `MyApp.Models.Note`: the class has no `ToString()` and no container style sets the name. **`DisplayMemberPath` does not name them.** |
+| `silent-tab-stop` | 4.1.2 (A) | warn | Tab stops there and a screen reader says nothing: a `ContentControl` without `Focusable="False"`, or your own control without an AutomationPeer. |
+| `same-name` | 2.4.6 (AA) | info | Controls side by side with the same name that do different things. |
 | `symbol-name` | 1.1.1 (A) | info | Named only `×`, `…` or an emoji. |
 
-`xamla11y rules` prints the same list with the fix for each.
+`xamla11y rules` prints the same list with the fix for each; before and after for every one: [docs/fixes.md](docs/fixes.md).
 
-The standard is **WCAG 2.2, levels A and AA**: seven of its 55 criteria, read for desktop software as
+The standard is **WCAG 2.2, levels A and AA**: eight of its 55 criteria, read for desktop software as
 [WCAG2ICT](https://www.w3.org/TR/wcag2ict-22/) says. Why each finding is that criterion, when it is not a violation, how
 EN 301 549, Section 508 and Taiwan's rules differ, and what a person still has to check:
 [docs/standards.md](docs/standards.md). `--standard` and `--level` choose another one (WCAG 2.1 or 2.0, EN 301 549, Section 508); the
@@ -77,19 +81,22 @@ exception: MaterialDesignThemes 5.3 turns `HintAssist.Hint` into the name, and t
 `samples/demo` is broken on purpose:
 
 ```
-xamla11y audit — 1 XAML file(s), 19 check(s)
+xamla11y audit — 1 XAML file(s), 26 check(s)
   standard         WCAG 2.2 A + AA
-  resolution       92.9%  (17 judged, 1 blocked; 1 not judged)
+  resolution       93.8%  (24 judged, 1 unknown; 1 left out)
   suppressed       1
-    R1 names of controls       4 finding(s),    4 ok,    1 blocked,    1 not judged
-    R2 names of inputs         1 finding(s),    1 ok,    0 blocked,    0 not judged
-    R3 visible focus           1 finding(s),    0 ok,    0 blocked,    0 not judged
-    R4 mouse-only elements     1 finding(s),    0 ok,    0 blocked,    0 not judged
-    R5 tab order               1 finding(s),    0 ok,    0 blocked,    0 not judged
-    R6 target size             2 finding(s),    0 ok,    0 blocked,    0 not judged
-    R7 names of lists          1 finding(s),    0 ok,    0 blocked,    0 not judged
-  unknown controls FancyButton ×1  (declare them in treatAs)
-  blocked    1  R1: a control this tool does not know (declare it in treatAs)
+    R1 names of controls       4 finding(s),    6 ok,    1 unknown,    1 left out
+    R2 names of inputs         1 finding(s),    1 ok,    0 unknown,    0 left out
+    R3 visible focus           1 finding(s),    0 ok,    0 unknown,    0 left out
+    R4 mouse-only elements     1 finding(s),    0 ok,    0 unknown,    0 left out
+    R5 tab order               1 finding(s),    0 ok,    0 unknown,    0 left out
+    R6 target size             2 finding(s),    0 ok,    0 unknown,    0 left out
+    R7 names of lists          2 finding(s),    1 ok,    0 unknown,    0 left out
+    R8 names of data items     1 finding(s),    0 ok,    0 unknown,    0 left out
+    R9 silent tab stops        1 finding(s),    0 ok,    0 unknown,    0 left out
+    R10 same names              1 finding(s),    0 ok,    0 unknown,    0 left out
+  unknown controls FancyButton ×1  (if you know what they are, say so in xamla11y.config.json: "treatAs": { "FancyButton": "Button" })
+  unknown    1  R1: a control this tool does not know (declare it in treatAs)
     missing-name       1
     text-not-in-name   1
     meaningless-name   1
@@ -100,6 +107,10 @@ xamla11y audit — 1 XAML file(s), 19 check(s)
     not-in-tab-order   1
     small-target       2
     list-no-name       1
+    widget-no-name     1
+    item-type-name     1
+    silent-tab-stop    1
+    same-name          1
 
   fail focus-not-visible  MainWindow.xaml:11
        The style 'FlatButton' removes FocusVisualStyle and nothing else shows keyboard focus: its template has no focus trigger and no Focused state
@@ -121,11 +132,19 @@ xamla11y audit — 1 XAML file(s), 19 check(s)
        <Button> is 18 DIP wide and 0 DIP away from <Button>; targets under 24 need more space around them
   warn list-no-name       MainWindow.xaml:64   NVDA: "list"
        <ListBox> has no accessible name; the GroupBox header "Files" around it does not give it one
+  warn widget-no-name     MainWindow.xaml:68
+       <ProgressBar> has no accessible name
+  warn item-type-name     MainWindow.xaml:71
+       <ListBox> names every item with its type name (Note): no style of ListBoxItem sets AutomationProperties.Name, and the class does not override ToString(); DisplayMemberPath only changes what is shown
+  warn silent-tab-stop    MainWindow.xaml:74
+       <ContentControl> takes a Tab stop but is not in the UI Automation tree, so a screen reader says nothing there
   info symbol-name        MainWindow.xaml:42
        <Button> is named only by the symbol "×"
+  info same-name          MainWindow.xaml:79
+       2 <Button> here may sound alike: the accessible name "Browse" at lines 78, 79, and they do different things
 
   18 more checks need a person; --html and --md list them (the common ones, not the rest of WCAG).
-  Static: the XAML was read, nothing was run; of the code, only class declarations and each XAML file's own code-behind (does it set a name, a content or a key handler?). Passing is not a claim of WCAG or EAA conformance.
+  Static: the XAML was read, nothing was run; of the code, only type and property declarations and each XAML file's own code-behind (does it set a name, a content or a key handler?). Passing is not a claim of WCAG or EAA conformance.
 ```
 
 ## How it knows
@@ -138,14 +157,16 @@ Insights and of Visual Studio's checker.
 
 | compared with | cases | answered | unknown | **contradictions** |
 |---|---:|---:|---:|---:|
-| what NVDA 2026.2 says when Tab reaches it, in English and in Traditional Chinese | 75 | 72 | 3 | **0** |
-| UI Automation names, hand-written | 338 | 323 | 15 | **0** |
+| what NVDA 2026.2 says when Tab reaches it, in English and in Traditional Chinese | 86 | 81 | 5 | **0** |
+| UI Automation names, hand-written | 359 | 344 | 15 | **0** |
 | UI Automation names, every control × content × way of naming | 8,218 | 7,843 | 375 | **0** |
 | UI Automation names, distinct shapes from 19 real projects | 2,172 | 2,172 | 0 | **0** |
 | UI Automation names, whole files of 49 public projects and 3 apps, with their styles and resources | 10,398 | 10,398 | – | **0** |
 | names under MahApps, MaterialDesign, HandyControl, WPF-UI, Fluent | 97 | 74 | 23 | **0** |
 | focus visible (pixels), default theme and the five themes | 107 | 84 | 23 | **0** |
 | tab order | 29 | 27 | 2 | **0** |
+| items made from data (UI Automation name) | 39 | 39 | 0 | **0** |
+| Tab stops that are not in the UI Automation tree | 56 | 55 | 1 | **0** |
 | target size (bounding rectangle) | 17 | 10 | 7 | **0** |
 
 "Unknown" is a correct answer; "fine" for something a screen reader cannot name is not. The oracle has
@@ -166,56 +187,56 @@ denominator — no static tool can know them.
 
 Out of the box, no configuration:
 
-| project | XAML files | resolution | control names | inputs | focus | mouse-only | tab order, size (warn) | lists (warn) |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Cornea (maintainer app) | 5 | **100.0%** | 0 | 19 | 0 | 0 | 0 | 1 |
-| Kindling (maintainer app) | 16 | **100.0%** | 7 | 17 | 0 | 1 | 0 | 1 |
-| QuillNest (maintainer app) | 32 | **99.5%** | 65 | 81 | 0 | 3 | 0 | 10 |
-| Accessibility Insights | 71 | **59.4%** | 2 | 5 | 0 | 2 | 10 | 2 |
-| BetterGI | 153 | **97.7%** | 430 | 551 | 0 | 1 | 8 | 20 |
-| Bloxstrap | 40 | **89.9%** | 46 | 25 | 0 | 0 | 0 | 6 |
-| dnGrep | 72 | **100.0%** | 53 | 90 | 0 | 0 | 0 | 4 |
-| dnSpy | 124 | **99.3%** | 139 | 1365 | 0 | 1 | 94 | 42 |
-| Dopamine | 150 | **38.5%** | 67 | 38 | 4 | 2 | 0 | 11 |
-| EarTrumpet | 12 | **71.9%** | 11 | 9 | 0 | 0 | 8 | 10 |
-| Flow.Launcher | 393 | **80.6%** | 28 | 107 | 0 | 3 | 4 | 17 |
-| GeekDesk | 33 | **89.1%** | 14 | 23 | 0 | 2 | 0 | 7 |
-| HandBrake | 58 | **100.0%** | 30 | 85 | 0 | 3 | 3 | 20 |
-| MAA | 89 | **89.1%** | 68 | 165 | 0 | 4 | 1 | 24 |
-| NETworkManager | 173 | **95.8%** | 246 | 475 | 0 | 0 | 24 | 54 |
-| NuGet Package Explorer | 52 | **99.6%** | 40 | 55 | 0 | 0 | 0 | 11 |
-| Playnite | 275 | **100.0%** | 142 | 228 | 0 | 0 | 5 | 41 |
-| QuickLook | 56 | **89.6%** | 23 | 20 | 1 | 0 | 22 | 8 |
-| ScreenToGif | 121 | **99.6%** | 368 | 347 | 0 | 2 | 0 | 14 |
-| Snoop | 63 | **98.5%** | 23 | 41 | 0 | 0 | 8 | 12 |
-| SyncTrayzor | 25 | **100.0%** | 17 | 12 | 0 | 1 | 0 | 3 |
-| Text-Grab | 54 | **96.8%** | 179 | 59 | 1 | 1 | 26 | 4 |
-| TwitchDownloader | 16 | **89.9%** | 44 | 56 | 0 | 26 | 0 | 1 |
-| v2rayN | 24 | **89.5%** | 82 | 167 | 0 | 0 | 0 | 14 |
-| VisualHFT | 49 | **100.0%** | 14 | 96 | 0 | 0 | 0 | 12 |
-| WPF-Samples (Microsoft) | 745 | **99.2%** | 122 | 397 | 0 | 10 | 30 | 97 |
-| AvalonDock (library) | 73 | **100.0%** | 19 | 18 | 0 | 0 | 4 | 2 |
-| Fluent.Ribbon (library) | 70 | **29.2%** | 15 | 5 | 0 | 0 | 0 | 8 |
-| HandyControl (library) | 342 | **91.5%** | 390 | 205 | 0 | 0 | 0 | 19 |
-| MahApps.Metro (library) | 312 | **87.6%** | 161 | 379 | 1 | 0 | 0 | 54 |
-| MaterialDesignInXaml (library) | 368 | **95.3%** | 444 | 239 | 0 | 0 | 0 | 100 |
-| ModernWpf (library) | 298 | **81.2%** | 47 | 111 | 0 | 0 | 11 | 10 |
-| WPF-UI (library) | 229 | **99.0%** | 70 | 34 | 0 | 0 | 0 | 4 |
+| project | XAML files | resolution | control names | inputs | focus | mouse-only | tab order, size (warn) | lists, widgets (warn) | item names, silent stops (warn) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Cornea (maintainer app) | 5 | **100.0%** | 0 | 19 | 0 | 0 | 0 | 6 | 0 |
+| Kindling (maintainer app) | 16 | **100.0%** | 7 | 17 | 0 | 1 | 0 | 6 | 4 |
+| QuillNest (maintainer app) | 32 | **99.5%** | 65 | 81 | 0 | 3 | 0 | 12 | 11 |
+| Accessibility Insights | 71 | **59.4%** | 2 | 5 | 0 | 2 | 10 | 5 | 0 |
+| BetterGI | 153 | **97.7%** | 430 | 551 | 0 | 1 | 8 | 31 | 46 |
+| Bloxstrap | 40 | **89.9%** | 46 | 25 | 0 | 0 | 0 | 9 | 5 |
+| dnGrep | 72 | **100.0%** | 53 | 90 | 0 | 0 | 0 | 9 | 8 |
+| dnSpy | 124 | **99.3%** | 139 | 1365 | 0 | 1 | 94 | 54 | 2 |
+| Dopamine | 150 | **38.5%** | 67 | 38 | 4 | 2 | 0 | 11 | 20 |
+| EarTrumpet | 12 | **71.9%** | 11 | 9 | 0 | 0 | 8 | 10 | 7 |
+| Flow.Launcher | 393 | **80.6%** | 28 | 107 | 0 | 3 | 4 | 20 | 25 |
+| GeekDesk | 33 | **89.1%** | 14 | 23 | 0 | 2 | 0 | 7 | 5 |
+| HandBrake | 58 | **100.0%** | 30 | 85 | 0 | 3 | 3 | 30 | 18 |
+| MAA | 89 | **89.1%** | 68 | 165 | 0 | 4 | 1 | 32 | 18 |
+| NETworkManager | 173 | **95.8%** | 246 | 475 | 0 | 0 | 24 | 54 | 17 |
+| NuGet Package Explorer | 52 | **99.6%** | 40 | 55 | 0 | 0 | 0 | 16 | 20 |
+| Playnite | 275 | **100.0%** | 142 | 228 | 0 | 0 | 5 | 46 | 38 |
+| QuickLook | 56 | **89.6%** | 23 | 20 | 1 | 0 | 22 | 12 | 1 |
+| ScreenToGif | 121 | **99.6%** | 368 | 347 | 0 | 2 | 0 | 47 | 11 |
+| Snoop | 63 | **98.5%** | 23 | 41 | 0 | 0 | 8 | 13 | 7 |
+| SyncTrayzor | 25 | **100.0%** | 17 | 12 | 0 | 1 | 0 | 6 | 11 |
+| Text-Grab | 54 | **96.8%** | 179 | 59 | 1 | 1 | 26 | 12 | 2 |
+| TwitchDownloader | 16 | **89.9%** | 44 | 56 | 0 | 26 | 0 | 7 | 1 |
+| v2rayN | 24 | **89.5%** | 82 | 167 | 0 | 0 | 0 | 21 | 4 |
+| VisualHFT | 49 | **100.0%** | 14 | 96 | 0 | 0 | 0 | 13 | 7 |
+| WPF-Samples (Microsoft) | 745 | **99.2%** | 122 | 397 | 0 | 10 | 30 | 128 | 16 |
+| AvalonDock (library) | 73 | **100.0%** | 19 | 18 | 0 | 0 | 4 | 9 | 5 |
+| Fluent.Ribbon (library) | 70 | **29.2%** | 15 | 5 | 0 | 0 | 0 | 10 | 6 |
+| HandyControl (library) | 342 | **91.5%** | 390 | 205 | 0 | 0 | 0 | 48 | 5 |
+| MahApps.Metro (library) | 312 | **87.6%** | 161 | 379 | 1 | 0 | 0 | 104 | 26 |
+| MaterialDesignInXaml (library) | 368 | **95.3%** | 444 | 239 | 0 | 0 | 0 | 163 | 165 |
+| ModernWpf (library) | 298 | **81.2%** | 47 | 111 | 0 | 0 | 11 | 14 | 3 |
+| WPF-UI (library) | 229 | **99.0%** | 70 | 34 | 0 | 0 | 0 | 12 | 3 |
 
 The columns are findings, in pinned commits ([docs/corpus.tsv](docs/corpus.tsv)), read with their C#: without it
 ScreenToGif is 36% instead of 99%, because `class ExtendedButton : Button` is not followed. Controls from a library nobody has told it about stay unknown until you declare them with
 [`treatAs`](docs/config-schema.md). Resolution counts the four rules that can fail a build (names, inputs, focus,
-mouse-only): the other three are almost never blocked and would only flatter the number.
+mouse-only); the others do not fail a build and would only flatter the number.
 
 **What it cannot see**
 
 - Names, content and handlers set in code. It reads a XAML file's *own* code-behind, only to notice that
   it sets a control's name or content (the control is then unknown, not missing) and that a handler just drags the window.
 - Implicit styles that reach into a `UserControl` from the resources of the window that hosts it.
-- Names from data, and items generated from `ItemsSource`.
+- Names from data. Of items generated from `ItemsSource` it sees whether anything names them, not what the name is.
 - Reading order, live regions, high contrast, whether a name is a *good* name, whether an image is decorative.
-- Other containers without a name that Axe-Windows also reports: `ItemsControl` (mostly layout), `Menu`, `ToolBar`,
-  `ProgressBar`, `Calendar`.
+- An `ItemsControl` without a name (Axe-Windows reports it; it is mostly layout). Commercial control libraries (Telerik, DevExpress,
+  Syncfusion…): nothing of theirs was measured, so they are unknown.
 - Target size where the size or the neighbours are decided at run time: not judged.
 
 ## Options
@@ -224,6 +245,7 @@ mouse-only): the other three are almost never blocked and would only flatter the
 |---|---|
 | `--html <file>` | one page for people, without scripts or external files: what, why, how to fix, what NVDA says, the clause numbers, and the checks a person has to do |
 | `--json`, `--sarif`, `--md <file>` | full report, code scanning, Markdown for a PR comment |
+| `--openacr <file>` | draft of an accessibility conformance report in [OpenACR](https://github.com/GSA/openacr) YAML: only the criteria with `fail` findings, for a person to finish |
 | `--standard <id>`, `--level A\|AA` | `wcag22` (default), `wcag21`, `wcag20`, `en301549` (V3.2.1), `en301549-v4`, `section508` — [what changes](docs/standards.md#choosing-one) |
 | `--lang en\|zh-Hant` | language of the console, Markdown and HTML reports. JSON, SARIF and MSBuild stay English |
 | `--msbuild` | MSBuild diagnostics for the Visual Studio error list: `XA0001` gated, `XA0002` not gated, `XA0003` not trustworthy |

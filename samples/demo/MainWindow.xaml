@@ -64,6 +64,21 @@
             <ListBox x:Name="FileList" Height="60"/>
         </GroupBox>
 
+        <!-- widget-no-name (warn) -->
+        <ProgressBar Height="9" Value="30"/>
+
+        <!-- item-type-name (warn): every item is read as "Demo.Note"; DisplayMemberPath only changes what is shown -->
+        <ListBox ItemsSource="{Binding Notes}" DisplayMemberPath="Title" AutomationProperties.Name="Notes"/>
+
+        <!-- silent-tab-stop (warn): Tab stops here and nothing is said -->
+        <ContentControl Content="{Binding Page}"/>
+
+        <!-- same-name (info) -->
+        <StackPanel Orientation="Horizontal">
+            <Button Content="Browse" Click="OnBrowseInput"/>
+            <Button Content="Browse" Click="OnBrowseOutput"/>
+        </StackPanel>
+
         <!-- fine -->
         <Button Content="Flat" Style="{StaticResource FlatButton}"/>
         <TextBlock x:Name="MailLabel" Text="Mail"/>

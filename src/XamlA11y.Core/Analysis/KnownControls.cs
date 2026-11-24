@@ -113,6 +113,9 @@ public static class Wpf
     /// <summary>R7 判定的清單、表格、樹（Axe-Windows 也報；TabControl、StatusBar 它不報，ItemsControl 多半只是排版）。</summary>
     public static readonly HashSet<string> Lists = new(StringComparer.Ordinal) { "ListBox", "ListView", "TreeView", "DataGrid" };
 
+    /// <summary>R7 也看的：沒有名稱 Axe-Windows 會報。Menu 與 ToolBar 只當 info（一個視窗一個主選單，不用名稱也分得出來）。</summary>
+    public static readonly HashSet<string> Widgets = new(StringComparer.Ordinal) { "ProgressBar", "Calendar", "Menu", "ToolBar" };
+
     public static readonly HashSet<string> Buttons = new(StringComparer.Ordinal)
     { "Button", "ToggleButton", "RepeatButton", "CheckBox", "RadioButton" };
 
@@ -130,7 +133,7 @@ public static class Wpf
     {
         "TextBox", "PasswordBox", "RichTextBox", "ComboBox", "Slider", "DatePicker", "ListBox", "ListView", "TreeView", "DataGrid",
         "Calendar", "ProgressBar", "ItemsControl", "TabControl", "Menu", "ContextMenu", "ScrollBar", "Thumb", "GridSplitter",
-        "Separator", "StatusBar", "Control", "DatePickerTextBox", "InkCanvas", "MediaElement", "WebBrowser", "FlowDocumentScrollViewer",
+        "Separator", "StatusBar", "Control", "DatePickerTextBox", "RangeBase", "InkCanvas", "MediaElement", "WebBrowser", "FlowDocumentScrollViewer",
     };
 
     /// <summary>沒有純文字的 FrameworkElement。</summary>
@@ -138,7 +141,7 @@ public static class Wpf
     {
         "Grid", "StackPanel", "DockPanel", "WrapPanel", "Canvas", "UniformGrid", "VirtualizingStackPanel", "TabPanel", "ToolBarPanel",
         "Border", "Viewbox", "Decorator", "BulletDecorator", "AdornerDecorator", "Image", "Path", "Rectangle", "Ellipse", "Line", "Polygon", "Polyline",
-        "AccessText", "ContentPresenter", "ItemsPresenter", "Popup", "Glyphs", "Viewport3D", "InkPresenter", "TickBar", "Track", "ScrollContentPresenter",
+        "FrameworkElement", "Panel", "Shape", "AccessText", "ContentPresenter", "ItemsPresenter", "Popup", "Glyphs", "Viewport3D", "InkPresenter", "TickBar", "Track", "ScrollContentPresenter",
     };
 
     public static NameSource NameSourceOf(string control) =>
@@ -153,7 +156,7 @@ public static class Wpf
     /// <summary>有 AutomationPeer 的（UIA 樹上看得到）。沒有的：面板、Border、圖形、ContentControl、AccessText…（docs/M1-UIA實測.md）。</summary>
     public static bool HasPeer(string control) =>
         control is "Image" or "MediaElement" or "Viewport3D"
-        || (!Nothings.Contains(control) && control is not ("ContentControl" or "Control" or "Run" or "Span" or "StatusBarItem" or "HeaderedContentControl"));
+        || (!Nothings.Contains(control) && control is not ("ContentControl" or "Control" or "ButtonBase" or "RangeBase" or "Run" or "Span" or "StatusBarItem" or "HeaderedContentControl"));
 
     /// <summary>WPF 的型別名（樣式的 TargetType 只有名字）：名稱來源認得的，加上幾個不是名稱候選的控制項與基底。</summary>
     public static bool IsKnownType(string name) =>

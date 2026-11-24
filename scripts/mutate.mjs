@@ -1,6 +1,6 @@
 // 變異測試：故意改壞一處、跑測試，測試全綠的就是沒人守。
 //
-//   node scripts/mutate.mjs <工作資料夾> [幾處=60] [亂數種子=1] [第幾個/共幾個=0/1]
+//   node scripts/mutate.mjs <工作資料夾> [幾處=60] [亂數種子=1] [第幾個/共幾個=0/1] [只改檔名符合這個樣式的]
 //
 // 在複製品上改，不動這個資料夾。平行跑就開好幾個，給不同的「第幾個/共幾個」。一處約 20 秒。
 // 剩下活著的不一定要補：迴圈上限、防呆、換句話說一樣的條件，改了結果不變。
@@ -9,7 +9,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const [work, count = '60', seed = '1', part = '0/1'] = process.argv.slice(2);
+const [work, count = '60', seed = '1', part = '0/1', only = ''] = process.argv.slice(2);
 if (!work) { console.error('node scripts/mutate.mjs <work folder> [count] [seed] [part/parts]'); process.exit(2); }
 const [index, parts] = part.split('/').map(Number);
 const repo = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -35,7 +35,7 @@ const sites = [];
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const file = path.join(dir, e.name);
     if (e.isDirectory()) { walk(file); continue; }
-    if (!e.name.endsWith('.cs')) continue;
+    if (!e.name.endsWith('.cs') || only && !new RegExp(only).test(e.name)) continue;
     fs.readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
       if (/^\s*(\/\/|using |\[Generated)/.test(line) || /JsonPropertyName|Regex\(/.test(line)) return;
       for (const [pattern, to] of operators)

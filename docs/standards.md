@@ -2,10 +2,10 @@
 
 [中文](標準對照.md)
 
-**WCAG 2.2, levels A and AA.** XamlA11y looks for violations of seven of its 55 success criteria in WPF XAML, all about
+**WCAG 2.2, levels A and AA.** XamlA11y looks for violations of eight of its 55 success criteria in WPF XAML, all about
 names, the keyboard, visible focus and target size. It is a tool that finds problems. A run without findings is not a
-statement of conformance with WCAG, EN 301 549, Section 508 or any law: the other 48 criteria are not checked, and the
-seven are checked only as far as XAML decides them.
+statement of conformance with WCAG, EN 301 549, Section 508 or any law: the other 47 criteria are not checked, and the
+eight are checked only as far as XAML decides them.
 
 WCAG is written for the web. For desktop software, [WCAG2ICT](https://www.w3.org/TR/wcag2ict-22/) (a W3C note, guidance
 rather than requirements) says how to read it. It applies 2.1.1, 2.4.7, 2.5.3 as written and 2.5.8 and 4.1.2 with
@@ -35,6 +35,10 @@ reason XAML does not show.
 | `not-in-tab-order` | 2.1.1 (A) | warn | Taken out of the tab order, a control is only reachable some other way. | There is another way: a shortcut, a menu, arrow keys. |
 | `small-target` | 2.5.8 (AA) | warn | Smaller than 24 × 24 and without the spacing exception. | The equivalent, inline, user agent or essential exceptions. |
 | `list-no-name` | 4.1.2 (A), 1.3.1 (A) | warn | A list is a user interface component; Axe-Windows reports it under Section 508 502.3.1. | Some auditors accept a list without a name when it is the only one and its purpose is obvious. |
+| `widget-no-name` | 4.1.2 (A) | warn | They are user interface components too; Axe-Windows reports them. `Menu` and `ToolBar` are info. | A progress bar whose text next to it already says everything. |
+| `item-type-name` | 4.1.2 (A) | warn | The name can be determined, but it is the class name: it does not identify the item. | The class gets a `ToString()` from somewhere this tool cannot see (a base class of a library). |
+| `silent-tab-stop` | 4.1.2 (A) | warn | Something that takes focus has neither a name nor a role that can be determined. | Focus is passed on in code, or the element is never shown in a place Tab reaches. |
+| `same-name` | 2.4.6 (AA) | info | Labels describe the purpose. WCAG does not ask for unique labels; Axe-Windows reports focusable siblings with the same name, under 4.1.2. | The context tells them apart: a group that is announced, a label. |
 
 Two common claims this tool does not make:
 
@@ -71,6 +75,7 @@ WCAG version), Markdown only those of the chosen one:
 | 1.1.1 | 11.1.1.1.1 | 11.1.1.1 | E207.2 |
 | 1.3.1 | 11.1.3.1.1 | 11.1.3.1 | E207.2 |
 | 2.1.1 | 11.2.1.1.1 | 11.2.1.1 | E207.2 |
+| 2.4.6 | 11.2.4.6 | 11.2.4.6 | E207.2 |
 | 2.4.7 | 11.2.4.7 | 11.2.4.7 | E207.2 |
 | 2.5.3 | 11.2.5.3.1 | 11.2.5.3 | – |
 | 2.5.8 | – | 11.2.5.8 | – |
@@ -78,8 +83,8 @@ WCAG version), Markdown only those of the chosen one:
 | the name is empty | 11.5.2.5 | 11.5.2.5 | 502.3.1 |
 
 `E207.2` is the whole of WCAG 2.0 A and AA; Section 508 does not number the criteria of software separately. The last row is *Object
-information*: names have to be programmatically determinable. It goes with `missing-name`, `text-not-in-name`, `input-no-name` and
-`list-no-name` when the name is empty, not with a name that exists and means nothing.
+information*: names have to be programmatically determinable. It goes with `missing-name`, `text-not-in-name`, `input-no-name`, `list-no-name` and
+`widget-no-name` when the name is empty, not with a name that exists and means nothing.
 
 Whether a product falls under one of these is a legal question about the product and where it is sold. This page does not
 answer it.
@@ -103,7 +108,7 @@ the chosen standard):
 | 2.1.2 No Keyboard Trap (A) | Can Tab or Esc leave every control, also editors and grids? |
 | 2.1.4 Character Key Shortcuts (A) | Single-letter shortcuts: can they be turned off? |
 | 2.4.3 Focus Order (A) | Does Tab follow the meaning? Where is focus after a dialog closes? |
-| 2.4.6 Headings and Labels (AA) | Do the names say what the control does? A name that exists passes this tool. |
+| 2.4.6 Headings and Labels (AA) | Do the names say what the control does? This tool only sees whether there is one, and whether two side by side are the same. |
 | 2.4.11 Focus Not Obscured (Minimum) (AA) | Does a sticky bar or popup cover the focused control? |
 | 2.5.7 Dragging Movements (AA) | Is there a way without dragging? |
 | 3.2.1 On Focus, 3.2.2 On Input (A) | Does something unexpected happen when a control gets focus or a value? |

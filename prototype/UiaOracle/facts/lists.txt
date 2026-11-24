@@ -35,3 +35,15 @@ list | GroupBox no header | <GroupBox x:Name='p'><Button Content='a'/></GroupBox
 list | GroupBox header | <GroupBox x:Name='p' Header='Files'><Button Content='a'/></GroupBox>
 list | Image | <Image x:Name='p' Width='10' Height='10'/>
 list | ScrollBar | <ScrollBar x:Name='p' Orientation='Horizontal'/>
+list | ProgressBar nothing | <ProgressBar x:Name='p' Width='99' Height='9' Value='3'/>
+list | ProgressBar Name | <ProgressBar x:Name='p' Width='99' Height='9' AutomationProperties.Name='Copying'/>
+list | ProgressBar LabeledBy | <TextBlock x:Name='l' Text='Copying'/><ProgressBar x:Name='p' Width='99' Height='9' AutomationProperties.LabeledBy='{Binding ElementName=l}'/>
+list | ProgressBar ToolTip | <ProgressBar x:Name='p' Width='99' Height='9' ToolTip='Copying'/>
+list | Calendar nothing | <Calendar x:Name='p'/>
+list | Calendar Name | <Calendar x:Name='p' AutomationProperties.Name='Due date'/>
+list | Menu nothing | <Menu x:Name='p'><MenuItem Header='File'/></Menu>
+list | Menu Name | <Menu x:Name='p' AutomationProperties.Name='Main'><MenuItem Header='File'/></Menu>
+list | ToolBar nothing | <ToolBar x:Name='p'><Button Content='x'/></ToolBar>
+list | ToolBar Header | <ToolBar x:Name='p' Header='Format'><Button Content='x'/></ToolBar>
+list | ToolBar Header panel | <ToolBar x:Name='p'><ToolBar.Header><StackPanel><TextBlock Text='Format'/></StackPanel></ToolBar.Header><Button Content='x'/></ToolBar>
+list | ToolBar Name | <ToolBar x:Name='p' AutomationProperties.Name='Format'><Button Content='x'/></ToolBar>

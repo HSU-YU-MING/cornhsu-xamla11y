@@ -26,10 +26,10 @@ public static class Program
             case "--version": stdout.WriteLine(Version()); return 0;
             case "audit" when args.Contains("--help") || args.Contains("-h"): Usage.Print(stdout); return 0;
             case "audit": return AuditCommand.Run(args[1..], stdout, stderr);
-            case "rules": Usage.PrintRules(stdout); return 0;
+            case "rules": return Usage.Rules(args[1..], stdout, stderr);
             default:
                 stderr.WriteLine($"unknown command: {Text.Safe(args[0])}");
-                stderr.WriteLine("run 'xamla11y --help' for usage");
+                stderr.WriteLine(Directory.Exists(args[0]) ? "that is a folder: did you mean 'xamla11y audit <folder>'?" : "run 'xamla11y --help' for usage");
                 return 2;
         }
     }
@@ -43,7 +43,7 @@ public static class Program
 
 internal sealed class Options
 {
-    public string? Root, Json, Sarif, Md, Html, Baseline, WriteBaseline, Config, Standard, Level, Language;
+    public string? Root, Json, Sarif, Md, Html, OpenAcr, Baseline, WriteBaseline, Config, Standard, Level, Language;
     public Severity FailOn = Severity.Fail;
     public double MinCoverage = 60;
     public bool MsBuild;
@@ -68,7 +68,7 @@ internal sealed class Options
 
             if (!o.Given.Add(a) && a is not "--exclude") return (o, $"{a} was given twice");
             string? value = null;
-            if (a is "--json" or "--sarif" or "--md" or "--html" or "--standard" or "--level" or "--lang" or "--baseline" or "--write-baseline" or "--config" or "--fail-on" or "--min-coverage" or "--exclude")
+            if (a is "--json" or "--sarif" or "--md" or "--html" or "--openacr" or "--standard" or "--level" or "--lang" or "--baseline" or "--write-baseline" or "--config" or "--fail-on" or "--min-coverage" or "--exclude")
             {
                 if (i + 1 >= args.Length || args[i + 1].StartsWith("--", StringComparison.Ordinal) || args[i + 1].Length == 0) return (o, $"{a} needs a value");
                 value = args[++i];
@@ -80,6 +80,7 @@ internal sealed class Options
                 case "--sarif": o.Sarif = value; break;
                 case "--md": o.Md = value; break;
                 case "--html": o.Html = value; break;
+                case "--openacr": o.OpenAcr = value; break;
                 case "--standard":
                     if (Core.Analysis.Standard.ById(value!) is null) return (o, "--standard takes one of: " + A11yConfig.StandardIds);
                     o.Standard = value;
@@ -122,7 +123,7 @@ internal static class AuditCommand
         if (opts.Root is null) { stderr.WriteLine("audit needs a root directory"); return 2; }
         if (!Directory.Exists(opts.Root)) { stderr.WriteLine($"not a directory: {Text.Safe(opts.Root)}"); return 2; }
         if (opts.Baseline is not null && opts.WriteBaseline is not null) { stderr.WriteLine("--baseline and --write-baseline cannot be combined"); return 2; }
-        if (opts.WriteBaseline is not null && (opts.Json ?? opts.Sarif ?? opts.Md ?? opts.Html) is not null || opts is { WriteBaseline: not null, MsBuild: true })
+        if (opts.WriteBaseline is not null && (opts.Json ?? opts.Sarif ?? opts.Md ?? opts.Html ?? opts.OpenAcr) is not null || opts is { WriteBaseline: not null, MsBuild: true })
         { stderr.WriteLine("--write-baseline only writes the baseline; run again for the reports"); return 2; }
         if (opts.Baseline is not null && !File.Exists(opts.Baseline)) { stderr.WriteLine($"baseline not found: {Text.Safe(opts.Baseline)}"); return 2; }
 
@@ -156,7 +157,7 @@ internal static class AuditCommand
             // 什麼都沒看到的時候寫出一份空的 baseline，等於替「沒檢查」蓋章
             if (Untrustworthy(result, double.Epsilon) is { } empty) { stderr.WriteLine(empty); stderr.WriteLine("baseline not written"); return 3; }
             if (!TryWrite(opts.WriteBaseline, Baseline.From(result.Findings, DateOnly.FromDateTime(DateTime.Now)).ToJson(), stderr)) return 2;
-            stdout.WriteLine($"wrote baseline with {result.Findings.Count} known finding(s) → {Text.Safe(opts.WriteBaseline)}");
+            stdout.WriteLine(lang.T($"wrote baseline with {result.Findings.Count} known finding(s) → {Text.Safe(opts.WriteBaseline)}", $"寫好 baseline，記下 {result.Findings.Count} 筆已知的 → {Text.Safe(opts.WriteBaseline)}"));
             return 0;
         }
 
@@ -183,21 +184,26 @@ internal static class AuditCommand
         if (why is not null) stderr.WriteLine("\n" + Text.Safe(why));
         else if (blocking > 0)
         {
-            stderr.WriteLine($"\n{blocking} finding(s) at or above '{Text.Slug(opts.FailOn)}'");
+            stderr.WriteLine("\n" + lang.T($"{blocking} finding(s) at or above '{Text.Slug(opts.FailOn)}'", $"{blocking} 筆在 '{Text.Slug(opts.FailOn)}' 以上"));
             // 第一次跑常是幾十筆：一上來就紅的閘門會被關掉
             if (opts.Baseline is null && blocking >= 10)
-                stderr.WriteLine("first run on this project? record these as known with --write-baseline <file>, then run with --baseline <file> to fail only on new ones");
+                stderr.WriteLine(lang.T("first run on this project? record these as known with --write-baseline <file>, then run with --baseline <file> to fail only on new ones", "第一次在這個專案跑？用 --write-baseline <檔> 記成已知，之後用 --baseline <檔> 只擋新增的"));
         }
 
         if (opts.Json is not null && !TryWrite(opts.Json, JsonReport.Create(result, reported, baselined, Program.Version(), exit), stderr)) return 2;
         if (opts.Sarif is not null && !TryWrite(opts.Sarif, SarifReport.Create(reported, Program.Version(), scope), stderr)) return 2;
-        if (opts.Md is not null && !TryWrite(opts.Md, MarkdownReport.Create(result, reported, exit, baselined, why, lang), stderr)) return 2;
-        if (opts.Html is not null && !TryWrite(opts.Html, HtmlReport.Create(result, reported, exit, baselined, why, Program.Version(), lang, stale), stderr)) return 2;
-        foreach (var path in new[] { opts.Json, opts.Sarif, opts.Md, opts.Html })
-            if (path is not null) stdout.WriteLine($"wrote {Text.Safe(path)}");
+        if (opts.Md is not null && !TryWrite(opts.Md, MarkdownReport.Create(result, reported, exit, baselined, why, lang, Known(result, reported)), stderr)) return 2;
+        if (opts.Html is not null && !TryWrite(opts.Html, HtmlReport.Create(result, reported, exit, baselined, why, Program.Version(), lang, stale, Known(result, reported)), stderr)) return 2;
+        // 已知債（baseline）也是問題：合規報告的草稿寫全部的 finding
+        if (opts.OpenAcr is not null && !TryWrite(opts.OpenAcr, OpenAcrReport.Create(result, Path.GetFileName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(opts.Root))), Program.Version(), DateOnly.FromDateTime(DateTime.Now)), stderr)) return 2;
+        foreach (var path in new[] { opts.Json, opts.Sarif, opts.Md, opts.Html, opts.OpenAcr })
+            if (path is not null) stdout.WriteLine(lang.T("wrote ", "寫好 ") + Text.Safe(path));
         if (opts.MsBuild) stdout.Write(MsBuildReport.Create(reported, opts.Root, opts.FailOn, exit));
         return exit;
     }
+
+    /// <summary>baseline 蓋住的：還沒修的問題。</summary>
+    private static IReadOnlyList<Finding> Known(AuditResult r, IReadOnlyList<Finding> reported) => [.. r.Findings.Except(reported)];
 
     private static string? Untrustworthy(AuditResult r, double minCoverage)
     {
@@ -223,12 +229,12 @@ internal static class AuditCommand
         if (lang.IsZh) { PrintZh(r, reported, baselined, stale, lang, o); return; }
         o.WriteLine($"xamla11y audit — {r.Files} XAML file(s), {r.Candidates} check(s)");
         o.WriteLine($"  standard         {r.Scope.Title}");
-        o.WriteLine(string.Create(inv, $"  resolution       {r.Resolution:F1}%  ({r.Judged} judged, {r.Blocked} blocked; {r.NotJudged} not judged)"));
+        o.WriteLine(string.Create(inv, $"  resolution       {r.Resolution:F1}%  ({r.Judged} judged, {r.Blocked} unknown; {r.NotJudged} left out)"));
         if (r.Suppressed > 0) o.WriteLine($"  suppressed       {r.Suppressed}");
         if (baselined > 0) o.WriteLine($"  in baseline      {baselined}");
         if (stale > 0) o.WriteLine($"  stale baseline   {stale}  (fixed since, or not in {r.Scope.Title}; write the baseline again to drop them)");
         foreach (var s in r.Rules.Where(s => s.Candidates > 0))
-            o.WriteLine(string.Create(inv, $"    {s.Rule} {Kinds.RuleTitle(s.Rule),-20} {s.Findings,4} finding(s), {s.Pass,4} ok, {s.Blocked,4} blocked, {s.NotJudged,4} not judged{(s.Off ? "  (off)" : "")}"));
+            o.WriteLine(string.Create(inv, $"    {s.Rule} {Kinds.RuleTitle(s.Rule),-20} {s.Findings,4} finding(s), {s.Pass,4} ok, {s.Blocked,4} unknown, {s.NotJudged,4} left out{(s.Off ? "  (off)" : "")}"));
 
         foreach (var f in r.ParseErrors) o.WriteLine($"  !! could not parse {Text.Safe(f)}{(r.ParseWhy.TryGetValue(f, out var why) ? ": " + Text.Safe(why) : "")}");
         if (r.Gaps.Excluded > 0) o.WriteLine($"  {r.Gaps.Excluded} XAML file(s) excluded");
@@ -236,9 +242,9 @@ internal static class AuditCommand
         foreach (var f in r.InvalidIgnores) o.WriteLine($"  !! {Text.Safe(f)}");
         foreach (var g in r.Foreign.GroupBy(f => f.Dialect)) o.WriteLine($"  {g.Count()} {g.Key} file(s) not checked (WPF only)");
         if (r.UnknownControls.Count > 0)
-            o.WriteLine($"  unknown controls {string.Join(", ", r.UnknownControls.Take(8).Select(u => $"{Text.Safe(u.Element)} ×{u.Count}"))}  (declare them in treatAs)");
+            o.WriteLine($"  unknown controls {string.Join(", ", r.UnknownControls.Take(8).Select(u => $"{Text.Safe(u.Element)} ×{u.Count}"))}  (if you know what they are, say so in xamla11y.config.json: \"treatAs\": {{ \"{Text.Safe(r.UnknownControls[0].Element)}\": \"Button\" }})");
         var blocked = r.On.SelectMany(s => s.BlockedReasons.Select(b => (s.Rule, b.Key, b.Value))).OrderByDescending(b => b.Value).ThenBy(b => b.Key, StringComparer.Ordinal).Take(6).ToList();
-        foreach (var (rule, reason, n) in blocked) o.WriteLine($"  blocked {n,4}  {rule}: {Trunc(Text.Safe(reason), 110)}");
+        foreach (var (rule, reason, n) in blocked) o.WriteLine($"  unknown {n,4}  {rule}: {Trunc(Text.Safe(reason), 110)}");
 
         foreach (var kind in Kinds.All)
         {
@@ -248,16 +254,7 @@ internal static class AuditCommand
             o.WriteLine(baselined > 0 ? $"    {kind.Slug,-18} {n}  ({fresh} new, {n - fresh} already in the baseline)" : $"    {kind.Slug,-18} {n}");
         }
 
-        if (reported.Count > 0)
-        {
-            o.WriteLine();
-            foreach (var f in reported.OrderByDescending(f => f.Severity).Take(60))
-            {
-                o.WriteLine($"  {Text.Slug(f.Severity),-4} {f.Kind.Slug,-18} {Text.Safe(f.Site)}{(Nvda.Says(f, lang) is { } says ? $"   NVDA: \"{Text.Safe(says)}\"" : "")}");
-                o.WriteLine($"       {Text.Safe(f.Message)}");
-            }
-            if (reported.Count > 60) o.WriteLine($"  … and {reported.Count - 60} more (--json has all of them)");
-        }
+        PrintFindings(reported, lang, o);
         o.WriteLine();
         o.WriteLine($"  {ManualCheck.In(r.Scope).Count} more checks need a person; --html and --md list them (the common ones, not the rest of WCAG).");
         o.WriteLine("  " + Summary.Scope);
@@ -279,10 +276,10 @@ internal static class AuditCommand
         foreach (var f in r.ParseErrors) o.WriteLine($"  !! 讀不懂 {Text.Safe(f)}{(r.ParseWhy.TryGetValue(f, out var why) ? "：" + Text.Safe(why) : "")}");
         if (r.Gaps.Excluded > 0) o.WriteLine($"  排除 {r.Gaps.Excluded} 個 XAML 檔");
         foreach (var d in r.Gaps.Unreadable) o.WriteLine($"  !! 資料夾讀不到 {Text.Safe(d)}");
-        foreach (var f in r.InvalidIgnores) o.WriteLine($"  !! {Text.Safe(f)}");
+        foreach (var f in r.InvalidIgnores) o.WriteLine($"  !! {Text.Safe(lang.Ignore(f))}");
         foreach (var g in r.Foreign.GroupBy(f => f.Dialect)) o.WriteLine($"  {g.Count()} 個 {g.Key} 檔沒有檢查（只看 WPF）");
         if (r.UnknownControls.Count > 0)
-            o.WriteLine($"  不認得的控制項：{string.Join("、", r.UnknownControls.Take(8).Select(u => $"{Text.Safe(u.Element)} ×{u.Count}"))}（用 treatAs 宣告）");
+            o.WriteLine($"  不認得的控制項：{string.Join("、", r.UnknownControls.Take(8).Select(u => $"{Text.Safe(u.Element)} ×{u.Count}"))}（知道是什麼的話寫在 xamla11y.config.json：\"treatAs\": {{ \"{Text.Safe(r.UnknownControls[0].Element)}\": \"Button\" }}）");
         foreach (var (rule, reason, n) in r.On.SelectMany(s => s.BlockedReasons.Select(b => (s.Rule, b.Key, b.Value))).OrderByDescending(b => b.Value).ThenBy(b => b.Key, StringComparer.Ordinal).Take(6))
             o.WriteLine($"  判不出來 {n} 處，{rule}：{Trunc(Text.Safe(lang.Reason(reason)), 110)}");
 
@@ -294,19 +291,42 @@ internal static class AuditCommand
             o.WriteLine($"    {kind.Slug}（{lang.Title(kind)}）：{n}{(baselined > 0 ? $"（新的 {fresh}，baseline 裡 {n - fresh}）" : "")}");
         }
 
-        if (reported.Count > 0)
-        {
-            o.WriteLine();
-            foreach (var f in reported.OrderByDescending(f => f.Severity).Take(60))
-            {
-                o.WriteLine($"  {Text.Slug(f.Severity),-4} {f.Kind.Slug} {Text.Safe(f.Site)}{(Nvda.Says(f, lang) is { } says ? $"　NVDA 會念「{Text.Safe(says)}」" : "")}");
-                o.WriteLine($"       {Text.Safe(lang.Message(f.Message))}");
-            }
-            if (reported.Count > 60) o.WriteLine($"  … 還有 {reported.Count - 60} 筆（--json 有全部）");
-        }
+        PrintFindings(reported, lang, o);
         o.WriteLine();
         o.WriteLine($"  另外有 {ManualCheck.In(r.Scope).Count} 項要人檢查，--html 與 --md 有清單（最常出問題的，不是 WCAG 剩下的全部）。");
         o.WriteLine("  " + lang.Scope);
+    }
+
+    private const int ListAll = 40;
+    private const int PerKind = 4;
+
+    /// <summary>少的時候全部列；多的時候（第一次跑常見）每一種列幾筆，加上哪幾個檔案最多 —— 六十筆同一種的清單看不出該從哪裡開始。</summary>
+    private static void PrintFindings(IReadOnlyList<Finding> reported, Lang lang, TextWriter o)
+    {
+        if (reported.Count == 0) return;
+        o.WriteLine();
+        if (reported.Count <= ListAll)
+        {
+            foreach (var f in reported.OrderByDescending(f => f.Severity)) One(f, "  ");
+            return;
+        }
+        foreach (var group in reported.GroupBy(f => (f.Severity, f.Kind)).OrderByDescending(g => g.Key.Severity).ThenByDescending(g => g.Count()))
+        {
+            var (severity, kind) = group.Key;
+            o.WriteLine($"  {Text.Slug(severity)} {kind.Slug} ×{group.Count()}  {lang.Title(kind)}");
+            foreach (var f in group.Take(PerKind)) One(f, "    ");
+            if (group.Count() > PerKind) o.WriteLine(lang.T($"      … and {group.Count() - PerKind} more", $"      … 還有 {group.Count() - PerKind} 筆"));
+        }
+        var files = reported.Where(f => f.Severity >= Severity.Warn).GroupBy(f => f.File).OrderByDescending(g => g.Count()).ThenBy(g => g.Key, StringComparer.Ordinal).Take(5).ToList();
+        if (files.Count > 1) o.WriteLine(lang.T("  most in: ", "  最多的檔案：") + string.Join(lang.T(", ", "、"), files.Select(g => $"{Text.Safe(g.Key)} ×{g.Count()}")));
+        o.WriteLine(lang.T("  all of them: --html <file> (to read) or --json <file>", "  全部：--html <檔>（給人看）或 --json <檔>"));
+
+        void One(Finding f, string indent)
+        {
+            var says = Nvda.Says(f, lang) is { } x ? lang.T($"   NVDA: \"{Text.Safe(x)}\"", $"　NVDA 會念「{Text.Safe(x)}」") : "";
+            o.WriteLine(indent.Length > 2 ? $"{indent}{Text.Safe(f.Site)}{says}" : $"{indent}{Text.Slug(f.Severity),-4} {f.Kind.Slug,-18} {Text.Safe(f.Site)}{says}");
+            o.WriteLine($"{indent}     {Text.Safe(lang.Message(f.Message))}");
+        }
     }
 
     private static string Trunc(string s, int n) => s.Length <= n ? s : s[..(n - 1)] + "…";
@@ -334,7 +354,7 @@ internal static class Usage
 
         usage:
           xamla11y audit <root> [options]
-          xamla11y rules                     list the rules, their WCAG criteria and default severity
+          xamla11y rules [--lang zh-Hant]    list the rules, their WCAG criteria and default severity
           xamla11y --version
 
         options:
@@ -345,6 +365,7 @@ internal static class Usage
           --msbuild                also print MSBuild diagnostics (XA0001 gated, XA0002 not gated, XA0003 not trustworthy)
           --baseline <file>        only report findings that are not in this file
           --write-baseline <file>  record today's findings as known and exit
+          --openacr <file>         draft accessibility conformance report (OpenACR YAML): only the criteria with fail findings, for a person to finish
           --standard <id>          wcag22 (default), wcag21, wcag20, en301549, en301549-v4, section508
           --level A|AA             AA (default) includes A
           --lang en|zh-Hant        language of the console, Markdown and HTML reports (default: en)
@@ -360,14 +381,24 @@ internal static class Usage
           <!-- xamla11y-ignore: decorative, the row itself is the control -->
         """);
 
-    public static void PrintRules(TextWriter o)
+    public static int Rules(string[] args, TextWriter o, TextWriter stderr)
     {
-        o.WriteLine($"WCAG {Wcag.Version} success criteria, level in brackets. Passing is not a claim of conformance: https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/standards.md");
+        var lang = args switch { [] => Lang.En, ["--lang", var id] => Lang.ById(id), _ => null };
+        if (lang is null) { stderr.WriteLine($"usage: xamla11y rules [--lang {Lang.Ids.Replace(", ", "|", StringComparison.Ordinal)}]"); return 2; }
+        PrintRules(o, lang);
+        return 0;
+    }
+
+    public static void PrintRules(TextWriter o, Lang lang)
+    {
+        if (lang.IsZh) o.WriteLine($"WCAG {Wcag.Version} 的成功準則，括號是等級。通過不等於符合規範：https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/%E6%A8%99%E6%BA%96%E5%B0%8D%E7%85%A7.md");
+        else o.WriteLine($"WCAG {Wcag.Version} success criteria, level in brackets. Passing is not a claim of conformance: https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/standards.md");
         o.WriteLine();
         foreach (var k in Kinds.All)
         {
             o.WriteLine($"{k.Slug,-18} {k.Rule}  {Text.Slug(k.Default),-4}  WCAG {k.WcagWithLevels}");
-            o.WriteLine($"    {k.Title}. {k.Help}");
+            o.WriteLine(lang.IsZh ? $"    {lang.Title(k)}。{lang.Help(k)}" : $"    {k.Title}. {k.Help}");
+            o.WriteLine(lang.T("    Examples: ", "    寫法範例：") + k.Uri(lang.IsZh));
             o.WriteLine($"    {string.Join("; ", Core.Analysis.Standard.All.Where(s => s.HasClauses).Select(s => (s.Title, Clauses: s.ClausesOf(k.Criteria.Where(s.Has), k.NameIsEmpty))).Where(x => x.Clauses.Count > 0).Select(x => $"{x.Title}: {string.Join(", ", x.Clauses)}"))}");
         }
     }
