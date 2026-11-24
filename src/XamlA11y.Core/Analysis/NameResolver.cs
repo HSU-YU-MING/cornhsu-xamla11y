@@ -401,10 +401,10 @@ public sealed partial class NameResolver(Project project)
         }
 
         // 不是 FrameworkElement 的物件：名稱是 ToString()
-        if (local is "Geometry" or "PathGeometry" or "StreamGeometry" or "GeometryGroup" or "CombinedGeometry")
-            return new NameResult(NameKind.Meaningless, null, "its content is a Geometry, so its name is the path data");
-        if (local is "DrawingImage" or "BitmapImage" or "CroppedBitmap" or "DrawingBrush" or "ImageBrush" or "GeometryDrawing" or "DrawingGroup" or "SolidColorBrush" or "VisualBrush")
-            return new NameResult(NameKind.Meaningless, null, $"its content is a {local}, so its name is the type name or a file path");
+        if (Markup.IsWpfNamespace(c.Name.NamespaceName) && IsDrawingObject(local))
+            return new NameResult(NameKind.Meaningless, null, local is "Geometry" or "PathGeometry" or "StreamGeometry"
+                ? "its content is a Geometry, so its name is the path data"
+                : $"its content is a {local}, so its name is the type name, a color code or a file path");
 
         var known = project.ControlOf(c);
         if (known is null)
@@ -439,6 +439,12 @@ public sealed partial class NameResolver(Project project)
                     visible);
         }
     }
+
+    /// <summary>WPF 的繪圖物件（不是元素）。WPF 沒有任何元素的型別名以這幾個字結尾，Image 除外。</summary>
+    private static bool IsDrawingObject(string local) =>
+        local.EndsWith("Geometry", StringComparison.Ordinal) || local.EndsWith("Brush", StringComparison.Ordinal)
+        || local.EndsWith("Drawing", StringComparison.Ordinal) || local.EndsWith("Bitmap", StringComparison.Ordinal)
+        || local is "GeometryGroup" or "DrawingGroup" or "DrawingImage" or "BitmapImage" or "Color";
 
     /// <summary>內容不給文字。項目容器的名稱變成型別名（不是空的），其他的是空名稱。</summary>
     private static NameResult NothingFor(string control, string why, string? visible = null) =>

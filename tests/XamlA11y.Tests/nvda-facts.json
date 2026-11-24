@@ -1,0 +1,495 @@
+{
+ "nvda": "0.2.1-2026.2",
+ "language": "zh_TW",
+ "cases": [
+  {
+   "title": "Button text",
+   "xaml": "<Button x:Name=\"p\" Content=\"Save\"/>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "Save, 按鈕"
+    }
+   ]
+  },
+  {
+   "title": "Button icon, no name",
+   "xaml": "<Button x:Name=\"p\"><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></Button>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "按鈕"
+    }
+   ]
+  },
+  {
+   "title": "Button icon, ToolTip only",
+   "xaml": "<Button x:Name=\"p\" ToolTip=\"Delete\"><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></Button>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "按鈕, Delete"
+    }
+   ]
+  },
+  {
+   "title": "Button icon, Name",
+   "xaml": "<Button x:Name=\"p\" AutomationProperties.Name=\"Delete\"><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></Button>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "Delete, 按鈕"
+    }
+   ]
+  },
+  {
+   "title": "Button icon, Name and ToolTip",
+   "xaml": "<Button x:Name=\"p\" AutomationProperties.Name=\"Delete\" ToolTip=\"Delete the file\"><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></Button>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "Delete, 按鈕, Delete the file"
+    }
+   ]
+  },
+  {
+   "title": "Button icon, HelpText only",
+   "xaml": "<Button x:Name=\"p\" AutomationProperties.HelpText=\"Delete\"><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></Button>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "按鈕, Delete"
+    }
+   ]
+  },
+  {
+   "title": "Button text in a panel",
+   "xaml": "<Button x:Name=\"p\"><StackPanel><TextBlock Text=\"Save\"/></StackPanel></Button>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "按鈕"
+    }
+   ]
+  },
+  {
+   "title": "Button private-use glyph",
+   "xaml": "<Button x:Name=\"p\" FontFamily=\"Segoe MDL2 Assets\" Content=\"&#xE74D;\"/>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": ", 按鈕"
+    }
+   ]
+  },
+  {
+   "title": "Button multiplication sign",
+   "xaml": "<Button x:Name=\"p\" Content=\"×\"/>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "乘以, 按鈕"
+    }
+   ]
+  },
+  {
+   "title": "Button ellipsis",
+   "xaml": "<Button x:Name=\"p\" Content=\"…\"/>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "..., 按鈕"
+    }
+   ]
+  },
+  {
+   "title": "Button emoji",
+   "xaml": "<Button x:Name=\"p\" Content=\"🗑\"/>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "廢紙簍, 按鈕"
+    }
+   ]
+  },
+  {
+   "title": "Button geometry",
+   "xaml": "<Button x:Name=\"p\"><Button.Content><EllipseGeometry RadiusX=\"3\" RadiusY=\"3\"/></Button.Content></Button>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "System dot Windows dot Media dot Ellipse Geometry, 按鈕"
+    }
+   ]
+  },
+  {
+   "title": "ToggleButton icon",
+   "xaml": "<ToggleButton x:Name=\"p\"><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></ToggleButton>",
+   "heard": [
+    {
+     "type": "ToggleButton",
+     "said": "切換按鈕, 沒按下"
+    }
+   ]
+  },
+  {
+   "title": "CheckBox no content",
+   "xaml": "<CheckBox x:Name=\"p\"/>",
+   "heard": [
+    {
+     "type": "CheckBox",
+     "said": "核取方塊, 沒勾選"
+    }
+   ]
+  },
+  {
+   "title": "CheckBox content",
+   "xaml": "<CheckBox x:Name=\"p\" Content=\"Remember\"/>",
+   "heard": [
+    {
+     "type": "CheckBox",
+     "said": "Remember, 核取方塊, 沒勾選"
+    }
+   ]
+  },
+  {
+   "title": "RadioButton no content",
+   "xaml": "<RadioButton x:Name=\"p\"/>",
+   "heard": [
+    {
+     "type": "RadioButton",
+     "said": "選擇鈕, 沒勾選"
+    }
+   ]
+  },
+  {
+   "title": "TextBox nothing",
+   "xaml": "<TextBox x:Name=\"p\"/>",
+   "heard": [
+    {
+     "type": "TextBox",
+     "said": "編輯區, 英文 (不支援), 空白"
+    }
+   ]
+  },
+  {
+   "title": "TextBox after a TextBlock",
+   "xaml": "<TextBlock Text=\"Name\"/><TextBox x:Name=\"p\"/>",
+   "heard": [
+    {
+     "type": "TextBox",
+     "said": "編輯區, 空白"
+    }
+   ]
+  },
+  {
+   "title": "TextBox Label Target",
+   "xaml": "<Label Content=\"Name\" Target=\"{Binding ElementName=p}\"/><TextBox x:Name=\"p\"/>",
+   "heard": [
+    {
+     "type": "TextBox",
+     "said": "編輯區, 空白"
+    }
+   ]
+  },
+  {
+   "title": "TextBox LabeledBy",
+   "xaml": "<TextBlock x:Name=\"l\" Text=\"Name\"/><TextBox x:Name=\"p\" AutomationProperties.LabeledBy=\"{Binding ElementName=l}\"/>",
+   "heard": [
+    {
+     "type": "TextBox",
+     "said": "Name, 編輯區, 空白"
+    }
+   ]
+  },
+  {
+   "title": "TextBox ToolTip only",
+   "xaml": "<TextBox x:Name=\"p\" ToolTip=\"Name\"/>",
+   "heard": [
+    {
+     "type": "TextBox",
+     "said": "編輯區, Name, 空白"
+    }
+   ]
+  },
+  {
+   "title": "TextBox Name",
+   "xaml": "<TextBox x:Name=\"p\" AutomationProperties.Name=\"Name\"/>",
+   "heard": [
+    {
+     "type": "TextBox",
+     "said": "Name, 編輯區, 空白"
+    }
+   ]
+  },
+  {
+   "title": "PasswordBox nothing",
+   "xaml": "<PasswordBox x:Name=\"p\"/>",
+   "heard": [
+    {
+     "type": "PasswordBox",
+     "said": "編輯區, 受保護, 空白"
+    }
+   ]
+  },
+  {
+   "title": "ComboBox nothing",
+   "xaml": "<ComboBox x:Name=\"p\" SelectedIndex=\"0\"><ComboBoxItem Content=\"One\"/></ComboBox>",
+   "heard": [
+    {
+     "type": "ComboBox",
+     "said": "下拉式方塊, One, 折疊"
+    }
+   ]
+  },
+  {
+   "title": "ComboBox Name",
+   "xaml": "<ComboBox x:Name=\"p\" SelectedIndex=\"0\" AutomationProperties.Name=\"Size\"><ComboBoxItem Content=\"One\"/></ComboBox>",
+   "heard": [
+    {
+     "type": "ComboBox",
+     "said": "Size, 下拉式方塊, One, 折疊"
+    }
+   ]
+  },
+  {
+   "title": "Slider nothing",
+   "xaml": "<Slider x:Name=\"p\" Value=\"3\"/>",
+   "heard": [
+    {
+     "type": "Slider",
+     "said": "滑桿, 3"
+    }
+   ]
+  },
+  {
+   "title": "Slider Name",
+   "xaml": "<Slider x:Name=\"p\" Value=\"3\" AutomationProperties.Name=\"Volume\"/>",
+   "heard": [
+    {
+     "type": "Slider",
+     "said": "Volume, 滑桿, 3"
+    }
+   ]
+  },
+  {
+   "title": "ListBox nothing",
+   "xaml": "<ListBox x:Name=\"p\"><ListBoxItem Content=\"One\"/></ListBox>",
+   "heard": [
+    {
+     "type": "ListBoxItem",
+     "said": "清單. One, 沒選取, 1 之 1"
+    }
+   ]
+  },
+  {
+   "title": "ListBox in GroupBox",
+   "xaml": "<GroupBox Header=\"Files\"><ListBox x:Name=\"p\"><ListBoxItem Content=\"One\"/></ListBox></GroupBox>",
+   "heard": [
+    {
+     "type": "ListBoxItem",
+     "said": "Files, 群組. 清單. One, 沒選取, 1 之 1"
+    }
+   ]
+  },
+  {
+   "title": "ListBox Name",
+   "xaml": "<ListBox x:Name=\"p\" AutomationProperties.Name=\"Files\"><ListBoxItem Content=\"One\"/></ListBox>",
+   "heard": [
+    {
+     "type": "ListBoxItem",
+     "said": "Files, 清單. One, 沒選取, 1 之 1"
+    }
+   ]
+  },
+  {
+   "title": "TreeView nothing",
+   "xaml": "<TreeView x:Name=\"p\"><TreeViewItem Header=\"One\"/></TreeView>",
+   "heard": [
+    {
+     "type": "TreeView",
+     "said": "樹狀檢視"
+    }
+   ]
+  },
+  {
+   "title": "TreeView Name",
+   "xaml": "<TreeView x:Name=\"p\" AutomationProperties.Name=\"Folders\"><TreeViewItem Header=\"One\"/></TreeView>",
+   "heard": [
+    {
+     "type": "TreeView",
+     "said": "Folders, 樹狀檢視"
+    }
+   ]
+  },
+  {
+   "title": "ListView GridView nothing",
+   "xaml": "<ListView x:Name=\"p\"><ListView.View><GridView><GridViewColumn Header=\"H\"/></GridView></ListView.View><ListViewItem Content=\"One\"/></ListView>",
+   "heard": [
+    {
+     "type": "ListViewItem",
+     "said": "資料格. One, 資料項目, 1 之 1"
+    }
+   ]
+  },
+  {
+   "title": "TabItem icon",
+   "xaml": "<TabControl><TabItem x:Name=\"p\"><TabItem.Header><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></TabItem.Header></TabItem></TabControl>",
+   "heard": [
+    {
+     "type": "TabItem",
+     "said": "索引標籤控制項. System dot Windows dot Controls dot Tab Item 標頭: 內容:, 索引標籤, 已選取, 1 之 1"
+    }
+   ]
+  },
+  {
+   "title": "TabItem Name",
+   "xaml": "<TabControl><TabItem x:Name=\"p\" AutomationProperties.Name=\"Home\"><TabItem.Header><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></TabItem.Header></TabItem></TabControl>",
+   "heard": [
+    {
+     "type": "TabItem",
+     "said": "索引標籤控制項. Home, 索引標籤, 已選取, 1 之 1"
+    }
+   ]
+  },
+  {
+   "title": "ListBoxItem icon",
+   "xaml": "<ListBox AutomationProperties.Name=\"Pages\"><ListBoxItem x:Name=\"p\"><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></ListBoxItem></ListBox>",
+   "heard": [
+    {
+     "type": "ListBoxItem",
+     "said": "Pages, 清單. System dot Windows dot Controls dot List Box Item, 沒選取, 1 之 1"
+    }
+   ]
+  },
+  {
+   "title": "Hyperlink text",
+   "xaml": "<TextBlock><Hyperlink x:Name=\"p\">Open</Hyperlink></TextBlock>",
+   "heard": [
+    {
+     "type": "Hyperlink",
+     "said": "Open. Open, 連結"
+    }
+   ]
+  },
+  {
+   "title": "Hyperlink empty",
+   "xaml": "<TextBlock><Hyperlink x:Name=\"p\"><InlineUIContainer><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></InlineUIContainer></Hyperlink></TextBlock>",
+   "heard": [
+    {
+     "type": "Hyperlink",
+     "said": ", 連結"
+    }
+   ]
+  },
+  {
+   "title": "Expander no header",
+   "xaml": "<Expander x:Name=\"p\"/>",
+   "heard": [
+    {
+     "type": "ToggleButton",
+     "said": "群組, 折疊"
+    }
+   ]
+  },
+  {
+   "title": "Expander header",
+   "xaml": "<Expander x:Name=\"p\" Header=\"Advanced\"/>",
+   "heard": [
+    {
+     "type": "ToggleButton",
+     "said": "Advanced, 群組, 折疊"
+    }
+   ]
+  },
+  {
+   "title": "DatePicker nothing",
+   "xaml": "<DatePicker x:Name=\"p\"/>",
+   "heard": [
+    {
+     "type": "DatePickerTextBox",
+     "said": "編輯區, 空白"
+    }
+   ]
+  },
+  {
+   "title": "Focusable Border with Name",
+   "xaml": "<Border x:Name=\"p\" Focusable=\"True\" Height=\"20\" Background=\"Red\" AutomationProperties.Name=\"Open\"/>",
+   "heard": [
+    {
+     "type": "Border",
+     "said": ""
+    }
+   ]
+  },
+  {
+   "title": "Focusable TextBlock",
+   "xaml": "<TextBlock x:Name=\"p\" Focusable=\"True\" Text=\"Open the folder\"/>",
+   "heard": [
+    {
+     "type": "TextBlock",
+     "said": "Open the folder"
+    }
+   ]
+  },
+  {
+   "title": "UserControl with Name",
+   "xaml": "<UserControl x:Name=\"p\" Focusable=\"True\" IsTabStop=\"True\" AutomationProperties.Name=\"Card\" Height=\"20\"/>",
+   "heard": [
+    {
+     "type": "UserControl",
+     "said": "Card"
+    }
+   ]
+  },
+  {
+   "title": "Button command text",
+   "xaml": "<Button x:Name=\"p\" Command=\"ApplicationCommands.Copy\"><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></Button>",
+   "heard": []
+  },
+  {
+   "title": "Button access key",
+   "xaml": "<Button x:Name=\"p\" Content=\"_Save\"/>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "Save, 按鈕, S"
+    }
+   ]
+  },
+  {
+   "title": "GroupBox around a Button",
+   "xaml": "<GroupBox Header=\"Danger\"><Button x:Name=\"p\" Content=\"Reset\"/></GroupBox>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "Danger, 群組. Reset, 按鈕"
+    }
+   ]
+  },
+  {
+   "title": "Button AccessText",
+   "xaml": "<Button x:Name=\"p\"><AccessText Text=\"_Open\"/></Button>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "按鈕, O"
+    }
+   ]
+  },
+  {
+   "title": "Two buttons, same name",
+   "xaml": "<StackPanel><Button x:Name=\"p\" Content=\"Edit\"/><Button Content=\"Edit\"/></StackPanel>",
+   "heard": [
+    {
+     "type": "Button",
+     "said": "Edit, 按鈕"
+    },
+    {
+     "type": "Button",
+     "said": "Edit, 按鈕"
+    }
+   ]
+  }
+ ]
+}

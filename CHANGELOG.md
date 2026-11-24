@@ -8,11 +8,11 @@ This project follows [Semantic Versioning](https://semver.org/).
 First version.
 
 - `xamla11y audit <root>`: ten kinds of finding in seven rules — names of controls, inputs and lists (WCAG 4.1.2,
-  1.1.1, 1.3.1, 3.3.2), visible focus (2.4.7), mouse-only elements (2.1.1), tab order (2.4.3), target size (2.5.8).
+  1.1.1, 1.3.1, 2.5.3), visible focus (2.4.7), mouse-only elements (2.1.1), tab order (2.1.1), target size (2.5.8).
 - Every finding names its WCAG 2.2 criteria with their level; `docs/standards.md` says why, when it is not a violation, how
   EN 301 549, Section 508 and Taiwan's rules differ, and what a person still has to check.
 - Names follow what WPF does, measured with a UI Automation client on .NET Framework 4.8 and .NET 8–11 and
-  checked against Axe-Windows: `Label.Target` gives no name, a ToolTip gives no name, text inside a panel
+  checked against Axe-Windows and against what NVDA says: `Label.Target` gives no name, a ToolTip gives no name, text inside a panel
   gives no name, template text gives no name, `MaterialDesignThemes` 5.3's `HintAssist.Hint` does.
 - Focus under MahApps.Metro 2.4, MaterialDesignThemes 5.3, HandyControl 3.5 and WPF-UI 4.3 was measured in
   real windows; other themes and versions are unknown unless `themeShowsFocus` vouches for them.

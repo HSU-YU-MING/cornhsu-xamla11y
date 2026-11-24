@@ -45,8 +45,8 @@ Two common claims this tool does not make:
 ## A ToolTip is not a name, but it may be heard
 
 WPF exposes a ToolTip as the UI Automation *HelpText*. NVDA reads HelpText as the description, after the type ("button,
-Delete"), so some users do hear it (from NVDA's source; not yet run with a real NVDA). 4.1.2 asks for the *name*, and Axe-Windows reports the same control. The finding
-stays a `fail`.
+Delete"), so some users do hear it (run with NVDA 2026.2, see [what NVDA says](M1-UIA實測.md#5d-nvda-怎麼念)). 4.1.2 asks for the *name*, and
+Axe-Windows reports the same control. The finding stays a `fail`.
 
 ## The other standards
 

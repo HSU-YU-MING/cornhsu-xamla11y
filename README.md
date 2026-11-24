@@ -135,7 +135,8 @@ Insights and of Visual Studio's checker.
 
 | compared with | cases | answered | unknown | **contradictions** |
 |---|---:|---:|---:|---:|
-| UI Automation names, hand-written | 325 | 310 | 15 | **0** |
+| what NVDA 2026.2 says when Tab reaches it | 48 | 45 | 3 | **0** |
+| UI Automation names, hand-written | 338 | 323 | 15 | **0** |
 | UI Automation names, every control × content × way of naming | 8,218 | 7,843 | 375 | **0** |
 | UI Automation names, distinct shapes from 19 real projects | 2,172 | 2,172 | 0 | **0** |
 | UI Automation names, whole files of 49 public projects and 3 apps, with their styles and resources | 10,398 | 10,398 | – | **0** |
@@ -150,8 +151,8 @@ for: two independent reviews then found some forty more ways to fool the tool, a
 are 1,919 that a real WPF window could load without running any of the projects' code; elements that need their code, a
 theme that was not measured or an open menu are left out of that row.
 
-The recorded answers of WPF ship with the tests (`tests/XamlA11y.Tests/uia-facts.json`), so CI on Linux
-checks the same facts. Details: [docs/M1-UIA實測.md](docs/M1-UIA實測.md) (Chinese).
+The recorded answers of WPF and of NVDA ship with the tests (`tests/XamlA11y.Tests/uia-facts.json`, `nvda-facts.json`), so
+CI on Linux checks the same facts. Narrator and JAWS were not run. Details: [docs/M1-UIA實測.md](docs/M1-UIA實測.md) (Chinese).
 
 ## What it can see, honestly
 

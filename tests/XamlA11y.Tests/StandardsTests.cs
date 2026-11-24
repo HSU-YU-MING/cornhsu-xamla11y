@@ -13,12 +13,7 @@ public class StandardsTests
             .ToDictionary(c => c.GetProperty("num").GetString()!, c => (c.GetProperty("level").GetString()!, c.GetProperty("name").GetString()!), StringComparer.Ordinal);
 
     /// <summary>從輸出資料夾往上找。⚠ 不要用 CallerFilePath：CI 的建置會把原始碼路徑換成 /_/。</summary>
-    private static string Repo()
-    {
-        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
-            if (File.Exists(Path.Combine(dir.FullName, "XamlA11y.slnx"))) return dir.FullName;
-        throw new DirectoryNotFoundException("XamlA11y.slnx");
-    }
+    private static string Repo() => ActionContractTests.RepoRoot();
 
     [Fact]
     public void The_levels_and_names_are_the_ones_W3C_publishes()

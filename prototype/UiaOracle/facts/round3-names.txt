@@ -64,3 +64,16 @@ r3 | Run text from its style | <TextBlock><Hyperlink x:Name='p'><Run Style='{Sta
 r3 | Run text from a style trigger | <TextBlock><Hyperlink x:Name='p'><Run Style='{StaticResource s}'/></Hyperlink></TextBlock> | <Style x:Key='s' TargetType='Run'><Style.Triggers><Trigger Property='IsEnabled' Value='True'><Setter Property='Text' Value='Show all'/></Trigger></Style.Triggers></Style>
 r3 | Run implicit style text | <Button x:Name='p'><TextBlock><Run/></TextBlock></Button> | <Style TargetType='Run'><Setter Property='Text' Value='Save'/></Style>
 r3 | Run style without text | <TextBlock><Hyperlink x:Name='p'><Run Style='{StaticResource s}'/></Hyperlink></TextBlock> | <Style x:Key='s' TargetType='Run'><Setter Property='Foreground' Value='Red'/></Style>
+r3 | EllipseGeometry content | <Button x:Name='p'><Button.Content><EllipseGeometry RadiusX='3' RadiusY='3'/></Button.Content></Button>
+r3 | RectangleGeometry content | <Button x:Name='p'><Button.Content><RectangleGeometry Rect='0,0,3,3'/></Button.Content></Button>
+r3 | LineGeometry content | <Button x:Name='p'><Button.Content><LineGeometry EndPoint='3,3'/></Button.Content></Button>
+r3 | EllipseGeometry resource | <GroupBox Header='G'><Button x:Name='p' Content='{StaticResource G}'/></GroupBox> | <EllipseGeometry x:Key='G' RadiusX='3' RadiusY='3'/>
+r3 | LinearGradientBrush content | <Button x:Name='p'><Button.Content><LinearGradientBrush/></Button.Content></Button>
+r3 | RadialGradientBrush content | <Button x:Name='p'><Button.Content><RadialGradientBrush/></Button.Content></Button>
+r3 | ImageDrawing content | <Button x:Name='p'><Button.Content><ImageDrawing/></Button.Content></Button>
+r3 | Color content | <Button x:Name='p'><Button.Content><Color>Red</Color></Button.Content></Button>
+r3 | PathGeometry content | <Button x:Name='p'><Button.Content><PathGeometry Figures='M0,0 L3,3'/></Button.Content></Button>
+r3 | GeometryGroup content | <Button x:Name='p'><Button.Content><GeometryGroup><EllipseGeometry RadiusX='3' RadiusY='3'/></GeometryGroup></Button.Content></Button>
+r3 | CombinedGeometry content | <Button x:Name='p'><Button.Content><CombinedGeometry/></Button.Content></Button>
+r3 | SolidColorBrush content | <Button x:Name='p'><Button.Content><SolidColorBrush Color='Red'/></Button.Content></Button>
+r3 | Color resource | <Button x:Name='p' Content='{StaticResource G}'/> | <Color x:Key='G'>Red</Color>

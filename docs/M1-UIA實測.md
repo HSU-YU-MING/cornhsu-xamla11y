@@ -94,6 +94,32 @@
 - Axe **也報**：ItemsControl（有項目時）、Menu、ToolBar、ProgressBar、Calendar。**不報**：TabControl、StatusBar、GroupBox、ScrollBar。
 - 鍵盤到不了的（`Focusable="False"`、停用）Axe 不報 → 這支降成 info。
 
+## 5d. NVDA 怎麼念
+
+2026-11-24，NVDA 2026.2、繁體中文語音，用 Tab 走過 49 種寫法的真視窗（`prototype/UiaOracle/nvda.mjs` + `facts/nvda.txt`，逐句記在
+`tests/XamlA11y.Tests/nvda-facts.json`）。工具判得出來的 45 案跟 NVDA 念的沒有一案矛盾。第一次跑抓到一個判錯種類的：按鈕內容是 EllipseGeometry
+時念的是型別名，工具說「沒有名稱」（已修，同類的漸層筆刷、Color 一起）。
+
+| 寫法 | NVDA 念 |
+|---|---|
+| 只有圖示的按鈕 | 按鈕 |
+| 同上，只加 ToolTip，或只加 HelpText | 按鈕, Delete |
+| 同上，加 `AutomationProperties.Name` | Delete, 按鈕 |
+| 同上，Name 與 ToolTip 都有 | Delete, 按鈕, Delete the file |
+| 文字包在面板裡的按鈕 | 按鈕 |
+| `×`、`…`、🗑 | 乘以, 按鈕／..., 按鈕／廢紙簍, 按鈕 |
+| 內容是 EllipseGeometry | System dot Windows dot Media dot Ellipse Geometry, 按鈕 |
+| 輸入框：什麼都沒有、前面有 TextBlock、有 `Label.Target` | 編輯區, 空白（三種一樣） |
+| 輸入框：LabeledBy 或 Name | Name, 編輯區, 空白 |
+| 清單沒名稱 | 清單. One, 沒選取, 1 之 1 |
+| 清單沒名稱，外面有 GroupBox | Files, 群組. 清單. One, … |
+| 清單有名稱 | Files, 清單. One, … |
+| 只有圖示的 TabItem | 索引標籤控制項. System dot Windows dot Controls dot Tab Item 標頭: 內容:, 索引標籤… |
+| 可聚焦的 Border 設了 Name | （什麼都沒念） |
+
+- **GroupBox 的標題聽得到**（當成群組念），只是不是清單的名稱 —— R7 放在 warn 的另一個理由。
+- 停用的命令按鈕 Tab 停不到，沒有比。Narrator 與 JAWS 沒跑過。
+
 ## 6. .NET Framework 4.8
 
 同一份案例，Windows PowerShell 5.1（就是 .NET Framework 4.8）跑 `net48.ps1`。

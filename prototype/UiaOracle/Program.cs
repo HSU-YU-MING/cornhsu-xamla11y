@@ -29,6 +29,7 @@ internal static class Program
                 case "check-corpus": return CorpusCheck.Run(args[1..]);
                 case "check-windows": return WindowCheck.Run(args[1..]);
                 case "record": Check.Record(args[1]); break;
+                case "nvda-window": return NvdaWindow.Run(args[1]);
                 case "check-hostile": return SafeMarkup.SelfTest();
                 case "axe-pid": Diag.AxePid(int.Parse(args[1])); break;
                 case "label": Diag.LabelTarget(); break;
