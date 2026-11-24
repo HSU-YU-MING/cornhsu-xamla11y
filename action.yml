@@ -266,7 +266,7 @@ runs:
     - name: Upload SARIF
       if: ${{ always() && inputs.sarif == 'true' }}
       continue-on-error: true   # 無 Advanced Security 的私有 repo 會 403，不該紅掉整個 job
-      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+      uses: github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
       with:
         sarif_file: ${{ runner.temp }}/xamla11y.sarif
         # 同一個 job 裡四件套都上傳 SARIF 時，code scanning 以「工具名 + category」區分分析，不給也不會互蓋；
