@@ -12,7 +12,13 @@ public class StandardsTests
         JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "wcag22.json"))).RootElement.GetProperty("criteria").EnumerateArray()
             .ToDictionary(c => c.GetProperty("num").GetString()!, c => (c.GetProperty("level").GetString()!, c.GetProperty("name").GetString()!), StringComparer.Ordinal);
 
-    private static string Repo([System.Runtime.CompilerServices.CallerFilePath] string here = "") => Path.GetFullPath(Path.Combine(Path.GetDirectoryName(here)!, "..", ".."));
+    /// <summary>從輸出資料夾往上找。⚠ 不要用 CallerFilePath：CI 的建置會把原始碼路徑換成 /_/。</summary>
+    private static string Repo()
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+            if (File.Exists(Path.Combine(dir.FullName, "XamlA11y.slnx"))) return dir.FullName;
+        throw new DirectoryNotFoundException("XamlA11y.slnx");
+    }
 
     [Fact]
     public void The_levels_and_names_are_the_ones_W3C_publishes()
