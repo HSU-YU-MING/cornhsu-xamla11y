@@ -1,4 +1,4 @@
-# 清單、表格、樹：沒名稱時 UIA 給什麼、Axe-Windows 報不報（R7）
+# 清單、表格、樹：沒名稱時 UIA 給什麼、Axe-Windows 報不報
 list | ListBox empty | <ListBox x:Name='p'/>
 list | ListBox items | <ListBox x:Name='p'><ListBoxItem Content='a'/></ListBox>
 list | ListBox Name | <ListBox x:Name='p' AutomationProperties.Name='Files'/>

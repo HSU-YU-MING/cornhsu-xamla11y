@@ -2,7 +2,11 @@
 import fs from 'node:fs';
 
 const update = process.argv[2] === '--update';
-const actual = process.env.SAMPLE.replace(/\r\n/g, '\n').trimEnd();
+// 貼到 fail 為止：總結加擋下來的那幾筆就看得懂，後面的 warn、info 不佔 README 的版面
+const lines = process.env.SAMPLE.replace(/\r\n/g, '\n').trimEnd().split('\n');
+const warn = lines.findIndex(l => l.startsWith('  warn '));
+if (warn < 0) { console.error('the demo has no warn finding'); process.exit(1); }
+const actual = [...lines.slice(0, warn), '  … then warn, info, what it could not judge and the checks a person has to do'].join('\n');
 const file = 'README.md';
 const text = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 const m = /(## Example[\s\S]*?\n```\n)([\s\S]*?)(\n```)/.exec(text);

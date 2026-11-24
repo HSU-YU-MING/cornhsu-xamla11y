@@ -1,70 +1,13 @@
 using System.Text.RegularExpressions;
-using XamlA11y.Core.Analysis;
 
 namespace XamlA11y.Core.Report;
 
-/// <summary>報告的語言（主控台、Markdown、HTML）。JSON、SARIF、MSBuild 與錯誤訊息一律英文：給程式讀的不隨設定變。</summary>
-public sealed record Lang(string Id)
-{
-    public static readonly Lang En = new("en");
-    public static readonly Lang ZhHant = new("zh-Hant");
-
-    public static Lang? ById(string id) => id switch { "en" => En, "zh-Hant" => ZhHant, _ => null };
-    public static string Ids => "en, zh-Hant";
-
-    public bool IsZh => Id == "zh-Hant";
-
-    public string T(string en, string zh) => IsZh ? zh : en;
-
-    public string Title(Kind k) => IsZh ? Zh.Kinds[k.Slug].Title : k.Title;
-    public string Help(Kind k) => IsZh ? $"{Zh.Kinds[k.Slug].Why}{Zh.Kinds[k.Slug].How}" : k.Help;
-    public string RuleTitle(string rule) => IsZh ? Zh.Rules.GetValueOrDefault(rule, rule) : Analysis.Kinds.RuleTitle(rule);
-    public string Criterion(Criterion c) => IsZh ? c.ZhName : c.Name;
-    public string Message(string m) => IsZh ? Zh.Message(m) : m;
-    public string Reason(string r) => IsZh ? Zh.Reason(r) : r;
-    public string Ignore(string s) => IsZh ? Zh.Ignore(s) : s;
-    public string Scope => IsZh ? Zh.ScopeText : Summary.Scope;
-}
-
 /// <summary>
-/// 繁體中文。種類的「是什麼、為什麼、怎麼修」是手寫的；每一筆的細節由英文訊息照樣式翻
+/// 繁體中文的訊息：種類的「是什麼、為什麼、怎麼修」在 data/findings.json；每一筆的細節由英文訊息照樣式翻
 /// （訊息只在規則裡組一次，翻譯不進規則）。認不得的樣式照英文印 —— 測試逐一核對規則寫得出來的訊息都翻得到。
 /// </summary>
 public static partial class Zh
 {
-    /// <summary>種類 → 標題、為什麼、怎麼修。</summary>
-    public static readonly IReadOnlyDictionary<string, (string Title, string Why, string How)> Kinds = new Dictionary<string, (string, string, string)>(StringComparer.Ordinal)
-    {
-        ["missing-name"] = ("控制項沒有名稱", "螢幕閱讀器只能念「按鈕」「核取方塊」，說不出是做什麼的。", "設 AutomationProperties.Name，或用 AutomationProperties.LabeledBy 指到有文字的元素。ToolTip 不是名稱：WPF 把它當說明文字，有的螢幕閱讀器會念在型別後面。"),
-        ["text-not-in-name"] = ("畫面有字，名稱卻是空的", "字放在面板、Border 或 AccessText 裡，WPF 只從字串、TextBlock、ContentControl 拿名稱，所以名稱是空的。", "把同樣的字設到 AutomationProperties.Name。"),
-        ["meaningless-name"] = ("名稱念不出意思", "名稱是圖示字型的字元、空白、型別名（System.Windows.Controls.TabItem）或圖形的路徑資料。", "設 AutomationProperties.Name。"),
-        ["symbol-name"] = ("名稱只有符號", "名稱只有標點或表情符號，螢幕閱讀器念的是符號自己的名字（× 念「乘以」）。", "把 AutomationProperties.Name 設成它做的事。"),
-        ["input-no-name"] = ("輸入框沒有名稱", "螢幕閱讀器說不出這一格要填什麼。旁邊的 TextBlock 不算標籤；<Label Target=…> 只會用快速鍵移焦點，WPF 不拿它當名稱。", "用 AutomationProperties.LabeledBy 指到標籤，或設 AutomationProperties.Name。"),
-        ["focus-not-visible"] = ("看不到鍵盤焦點在哪", "FocusVisualStyle 被拿掉，範本與樣式裡也沒有別的東西表示焦點（沒有 IsKeyboardFocused、IsFocused 觸發器，也沒有 Focused 狀態）。", "留著預設的 FocusVisualStyle，或在範本裡畫出焦點。"),
-        ["mouse-only"] = ("滑鼠能用，鍵盤不能", "不是控制項的元素處理了滑鼠點按，鍵盤沒有辦法做同一件事。", "改用 Button（要的話換外觀）。只讓 Border 能聚焦不夠：Border 永遠不在 UI Automation 的樹上。"),
-        ["not-in-tab-order"] = ("Tab 到不了", "IsTabStop=\"False\" 或 Focusable=\"False\" 讓 Tab 跳過它。", "同一件事有快速鍵或別的入口就沒關係，沒有的話把它放回 Tab 順序。"),
-        ["small-target"] = ("點擊範圍小於 24 × 24", "大小設得比 24 DIP 小，而且離隔壁太近，用不了 WCAG 2.5.8 的間距例外。", "放大到 24，或拉開距離。"),
-        ["list-no-name"] = ("清單、表格或樹沒有名稱", "焦點進去時螢幕閱讀器只念「清單」「資料格」「樹狀檢視」，同一個視窗有兩個就分不出來。外面的 GroupBox 與 <Label Target=…> 都不會給它名稱。", "用 AutomationProperties.LabeledBy 指到上面的標題，或設 AutomationProperties.Name。"),
-        ["widget-no-name"] = ("進度條、月曆、選單或工具列沒有名稱", "螢幕閱讀器只念「進度列」「工具列」。", "用 AutomationProperties.LabeledBy 指到旁邊的文字，或設 AutomationProperties.Name。選單與工具列只當 info：一個視窗一個主選單，不用名稱也分得出來。"),
-        ["item-type-name"] = ("清單的項目念成類別名", "資料產生的項目，名稱是物件的 ToString()；沒覆寫的類別，每一項都念成 MyApp.Models.Note。DisplayMemberPath 與 ItemTemplate 只管畫面。", "在類別裡覆寫 ToString()，或在項目的樣式（ItemContainerStyle，DataGrid 是 RowStyle）加一個 AutomationProperties.Name 的 Setter —— 已經有樣式就加進那一個，再寫一個會整個取代。"),
-        ["silent-tab-stop"] = ("Tab 停得到，螢幕閱讀器卻沒聲音", "元素拿得到鍵盤焦點，但沒有 AutomationPeer，不在 UI Automation 的樹上；設 AutomationProperties.Name 也沒用。", "只是放別的控制項的，設 Focusable=\"False\"（程式會叫它拿焦點的用 IsTabStop=\"False\"）；自己是一個控制項的，覆寫 OnCreateAutomationPeer，或改成繼承有 peer 的控制項。"),
-        ["same-name"] = ("並排的控制項念起來可能一樣", "名稱一樣、做的事不一樣。會念出來的東西（群組、標籤）分得出來就沒關係。", "分不出來的話，在 AutomationProperties.Name 補上各自是做什麼的（「瀏覽輸入資料夾」）。"),
-    };
-
-    public static readonly IReadOnlyDictionary<string, string> Rules = new Dictionary<string, string>(StringComparer.Ordinal)
-    {
-        ["R1"] = "控制項的名稱",
-        ["R2"] = "輸入框的名稱",
-        ["R3"] = "焦點看得見",
-        ["R4"] = "只能用滑鼠",
-        ["R5"] = "Tab 順序",
-        ["R6"] = "點擊範圍",
-        ["R7"] = "清單的名稱",
-        ["R8"] = "資料項目的名稱",
-        ["R9"] = "沒聲音的停留點",
-        ["R10"] = "名稱一樣",
-    };
-
     public const string ScopeText =
         "靜態檢查：讀 XAML，什麼都沒有執行；程式碼只看型別與屬性的宣告、每個 XAML 自己的 code-behind（有沒有設名稱、內容、鍵盤處理器）。沒有問題不等於符合 WCAG 或任何法規。";
 

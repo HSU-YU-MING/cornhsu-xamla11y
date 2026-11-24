@@ -1,0 +1,205 @@
+{
+  "//": "一種問題一列：分組、預設嚴重度、WCAG 準則、中英文的「是什麼／為什麼／怎麼修」。主控台、報告、rules 指令、SARIF 都從這裡來；README 與 docs 的表由測試核對。改字只改這裡。",
+  "groups": [
+    { "id": "names", "en": "not read out", "zh": "念不出來" },
+    { "id": "keyboard", "en": "out of reach of the keyboard", "zh": "鍵盤到不了" },
+    { "id": "focus", "en": "focus not visible", "zh": "看不到焦點" },
+    { "id": "size", "en": "too small", "zh": "太小" }
+  ],
+  "checks": [
+    { "id": "control-names", "en": "names of controls", "zh": "控制項的名稱", "gate": true },
+    { "id": "input-names", "en": "names of inputs", "zh": "輸入框的名稱", "gate": true },
+    { "id": "list-names", "en": "names of lists and bars", "zh": "清單、進度條等的名稱" },
+    { "id": "item-names", "en": "names of data items", "zh": "資料項目的名稱" },
+    { "id": "silent-stops", "en": "silent tab stops", "zh": "沒聲音的停留點" },
+    { "id": "same-names", "en": "same names", "zh": "名稱一樣" },
+    { "id": "mouse", "en": "mouse-only elements", "zh": "只能用滑鼠", "gate": true },
+    { "id": "tab-order", "en": "tab order", "zh": "Tab 順序" },
+    { "id": "focus", "en": "visible focus", "zh": "焦點看得見", "gate": true },
+    { "id": "target-size", "en": "target size", "zh": "點擊範圍" }
+  ],
+  "findings": [
+    {
+      "slug": "missing-name", "check": "control-names", "group": "names", "severity": "fail", "wcag": ["4.1.2", "1.1.1"], "emptyName": true,
+      "en": {
+        "title": "Control has no accessible name",
+        "why": "UI Automation has no name for this control, so all a screen reader can call it is \"button\" (or \"check box\", \"tab\"…).",
+        "how": "Set AutomationProperties.Name, or AutomationProperties.LabeledBy to an element that has text. A ToolTip is not a name: WPF exposes it as the help text, which some screen readers read as a description after the type."
+      },
+      "zh": {
+        "title": "控制項沒有名稱",
+        "why": "螢幕閱讀器只能念「按鈕」「核取方塊」，說不出是做什麼的。",
+        "how": "設 AutomationProperties.Name，或用 AutomationProperties.LabeledBy 指到有文字的元素。ToolTip 不是名稱：WPF 把它當說明文字，有的螢幕閱讀器會念在型別後面。"
+      }
+    },
+    {
+      "slug": "text-not-in-name", "check": "control-names", "group": "names", "severity": "fail", "wcag": ["4.1.2", "2.5.3"], "emptyName": true,
+      "en": {
+        "title": "Visible text is not the accessible name",
+        "why": "The control shows text, but the text sits inside a panel, a Border or an AccessText, and WPF only takes the name from a string, a TextBlock or a ContentControl. The accessible name is empty.",
+        "how": "Set AutomationProperties.Name to the same text."
+      },
+      "zh": {
+        "title": "畫面有字，名稱卻是空的",
+        "why": "字放在面板、Border 或 AccessText 裡，WPF 只從字串、TextBlock、ContentControl 拿名稱，所以名稱是空的。",
+        "how": "把同樣的字設到 AutomationProperties.Name。"
+      }
+    },
+    {
+      "slug": "meaningless-name", "check": "control-names", "group": "names", "severity": "fail", "wcag": ["4.1.2", "1.1.1"],
+      "en": {
+        "title": "Accessible name is not readable text",
+        "why": "The accessible name is an icon-font character, white space, a type name such as System.Windows.Controls.TabItem, or geometry path data.",
+        "how": "Set AutomationProperties.Name."
+      },
+      "zh": {
+        "title": "名稱念不出意思",
+        "why": "名稱是圖示字型的字元、空白、型別名（System.Windows.Controls.TabItem）或圖形的路徑資料。",
+        "how": "設 AutomationProperties.Name。"
+      }
+    },
+    {
+      "slug": "input-no-name", "check": "input-names", "group": "names", "severity": "fail", "wcag": ["4.1.2", "1.3.1"], "emptyName": true,
+      "en": {
+        "title": "Input has no accessible name",
+        "why": "A screen reader cannot say what this field is for. A TextBlock next to it is not a label, and <Label Target=…> only moves focus with the access key: WPF does not use it for the name.",
+        "how": "Set AutomationProperties.LabeledBy to the label, or AutomationProperties.Name."
+      },
+      "zh": {
+        "title": "輸入框沒有名稱",
+        "why": "螢幕閱讀器說不出這一格要填什麼。旁邊的 TextBlock 不算標籤；<Label Target=…> 只會用快速鍵移焦點，WPF 不拿它當名稱。",
+        "how": "用 AutomationProperties.LabeledBy 指到標籤，或設 AutomationProperties.Name。"
+      }
+    },
+    {
+      "slug": "list-no-name", "check": "list-names", "group": "names", "severity": "warn", "wcag": ["4.1.2", "1.3.1"], "emptyName": true,
+      "en": {
+        "title": "List, grid or tree has no accessible name",
+        "why": "A screen reader announces this as just \"list\", \"data grid\" or \"tree\" when focus enters it, so two of them in one window sound the same. A GroupBox around it and a <Label Target=…> do not name it.",
+        "how": "Set AutomationProperties.LabeledBy to the heading above it, or AutomationProperties.Name."
+      },
+      "zh": {
+        "title": "清單、表格或樹沒有名稱",
+        "why": "焦點進去時螢幕閱讀器只念「清單」「資料格」「樹狀檢視」，同一個視窗有兩個就分不出來。外面的 GroupBox 與 <Label Target=…> 都不會給它名稱。",
+        "how": "用 AutomationProperties.LabeledBy 指到上面的標題，或設 AutomationProperties.Name。"
+      }
+    },
+    {
+      "slug": "widget-no-name", "check": "list-names", "group": "names", "severity": "warn", "wcag": ["4.1.2"], "emptyName": true,
+      "en": {
+        "title": "Progress bar, calendar, menu or tool bar has no accessible name",
+        "why": "A screen reader announces this as just \"progress bar\" or \"tool bar\". A menu or tool bar is only an info: one main menu per window needs no name.",
+        "how": "Set AutomationProperties.LabeledBy to the text next to it, or AutomationProperties.Name."
+      },
+      "zh": {
+        "title": "進度條、月曆、選單或工具列沒有名稱",
+        "why": "螢幕閱讀器只念「進度列」「工具列」。選單與工具列只當 info：一個視窗一個主選單，不用名稱也分得出來。",
+        "how": "用 AutomationProperties.LabeledBy 指到旁邊的文字，或設 AutomationProperties.Name。"
+      }
+    },
+    {
+      "slug": "item-type-name", "check": "item-names", "group": "names", "severity": "warn", "wcag": ["4.1.2"],
+      "en": {
+        "title": "List items are read as their type name",
+        "why": "An item made from data is named by the object's ToString(), and a class without one gives MyApp.Models.Note for every item. DisplayMemberPath and ItemTemplate only change what is shown.",
+        "how": "Override ToString() in the class, or add a Setter for AutomationProperties.Name to the style of the items (ItemContainerStyle, RowStyle for a DataGrid; add it to the one that is there, a second one replaces it)."
+      },
+      "zh": {
+        "title": "清單的項目念成類別名",
+        "why": "資料產生的項目，名稱是物件的 ToString()；沒覆寫的類別，每一項都念成 MyApp.Models.Note。DisplayMemberPath 與 ItemTemplate 只管畫面。",
+        "how": "在類別裡覆寫 ToString()，或在項目的樣式（ItemContainerStyle，DataGrid 是 RowStyle）加一個 AutomationProperties.Name 的 Setter —— 已經有樣式就加進那一個，再寫一個會整個取代。"
+      }
+    },
+    {
+      "slug": "silent-tab-stop", "check": "silent-stops", "group": "names", "severity": "warn", "wcag": ["4.1.2"],
+      "en": {
+        "title": "Tab stops here and a screen reader says nothing",
+        "why": "The element takes keyboard focus but has no AutomationPeer, so it is not in the UI Automation tree; AutomationProperties.Name does not help.",
+        "how": "When it only holds other controls, set Focusable=\"False\" (IsTabStop=\"False\" when your code focuses it). When it is a control of its own, override OnCreateAutomationPeer, or derive from a control that has a peer."
+      },
+      "zh": {
+        "title": "Tab 停得到，螢幕閱讀器卻沒聲音",
+        "why": "元素拿得到鍵盤焦點，但沒有 AutomationPeer，不在 UI Automation 的樹上；設 AutomationProperties.Name 也沒用。",
+        "how": "只是放別的控制項的，設 Focusable=\"False\"（程式會叫它拿焦點的用 IsTabStop=\"False\"）；自己是一個控制項的，覆寫 OnCreateAutomationPeer，或改成繼承有 peer 的控制項。"
+      }
+    },
+    {
+      "slug": "symbol-name", "check": "control-names", "group": "names", "severity": "info", "wcag": ["1.1.1"],
+      "en": {
+        "title": "Accessible name is only a symbol",
+        "why": "The accessible name is only punctuation or an emoji, and a screen reader reads the symbol's own name (\"times\" for ×).",
+        "how": "Set AutomationProperties.Name to what the control does."
+      },
+      "zh": {
+        "title": "名稱只有符號",
+        "why": "名稱只有標點或表情符號，螢幕閱讀器念的是符號自己的名字（× 念「乘以」）。",
+        "how": "把 AutomationProperties.Name 設成它做的事。"
+      }
+    },
+    {
+      "slug": "same-name", "check": "same-names", "group": "names", "severity": "info", "wcag": ["2.4.6"],
+      "en": {
+        "title": "Controls side by side may sound alike",
+        "why": "They have the same accessible name and do different things. Fine when something that is announced tells them apart (a group, a label).",
+        "how": "Otherwise add what each one is for to AutomationProperties.Name (\"Browse for the input folder\")."
+      },
+      "zh": {
+        "title": "並排的控制項念起來可能一樣",
+        "why": "名稱一樣、做的事不一樣。會念出來的東西（群組、標籤）分得出來就沒關係。",
+        "how": "分不出來的話，在 AutomationProperties.Name 補上各自是做什麼的（「瀏覽輸入資料夾」）。"
+      }
+    },
+    {
+      "slug": "mouse-only", "check": "mouse", "group": "keyboard", "severity": "fail", "wcag": ["2.1.1"],
+      "en": {
+        "title": "Works with the mouse but not the keyboard",
+        "why": "An element that is not a control handles mouse clicks, and the keyboard has no way to do the same.",
+        "how": "Use a Button (restyle it if needed): making a Border focusable fixes Tab, but a Border is never in the UI Automation tree."
+      },
+      "zh": {
+        "title": "滑鼠能用，鍵盤不能",
+        "why": "不是控制項的元素處理了滑鼠點按，鍵盤沒有辦法做同一件事。",
+        "how": "改用 Button（要的話換外觀）。只讓 Border 能聚焦不夠：Border 永遠不在 UI Automation 的樹上。"
+      }
+    },
+    {
+      "slug": "not-in-tab-order", "check": "tab-order", "group": "keyboard", "severity": "warn", "wcag": ["2.1.1"],
+      "en": {
+        "title": "Interactive control is not in the tab order",
+        "why": "IsTabStop=\"False\" or Focusable=\"False\" keeps Tab from reaching this control.",
+        "how": "Fine when the same action has a keyboard shortcut or another focusable entry point; otherwise put it back."
+      },
+      "zh": {
+        "title": "Tab 到不了",
+        "why": "IsTabStop=\"False\" 或 Focusable=\"False\" 讓 Tab 跳過它。",
+        "how": "同一件事有快速鍵或別的入口就沒關係，沒有的話把它放回 Tab 順序。"
+      }
+    },
+    {
+      "slug": "focus-not-visible", "check": "focus", "group": "focus", "severity": "fail", "wcag": ["2.4.7"],
+      "en": {
+        "title": "Keyboard focus is not visible",
+        "why": "FocusVisualStyle is removed and nothing else shows focus: the template and styles have no IsKeyboardFocused or IsFocused trigger and no Focused visual state.",
+        "how": "Keep the default FocusVisualStyle, or draw focus in the template."
+      },
+      "zh": {
+        "title": "看不到鍵盤焦點在哪",
+        "why": "FocusVisualStyle 被拿掉，範本與樣式裡也沒有別的東西表示焦點（沒有 IsKeyboardFocused、IsFocused 觸發器，也沒有 Focused 狀態）。",
+        "how": "留著預設的 FocusVisualStyle，或在範本裡畫出焦點。"
+      }
+    },
+    {
+      "slug": "small-target", "check": "target-size", "group": "size", "severity": "warn", "wcag": ["2.5.8"],
+      "en": {
+        "title": "Click target is smaller than 24 by 24",
+        "why": "The target's size is set to less than 24 DIP and it is too close to its neighbour for the spacing exception of WCAG 2.5.8.",
+        "how": "Make it 24 by 24, or leave more room around it."
+      },
+      "zh": {
+        "title": "點擊範圍小於 24 × 24",
+        "why": "大小設得比 24 DIP 小，而且離隔壁太近，用不了 WCAG 2.5.8 的間距例外。",
+        "how": "放大到 24，或拉開距離。"
+      }
+    }
+  ]
+}

@@ -10,7 +10,7 @@ using XamlMarkup = XamlA11y.Core.Xaml.Markup;
 namespace UiaOracle;
 
 /// <summary>
-/// 真實專案的形狀：每個 R1／R2 候選元素連同子樹取出來，只留跟名稱有關的屬性，放進真的 WPF 讀 UIA 名稱，
+/// 真實專案的形狀：每個要有名稱的元素連同子樹取出來，只留跟名稱有關的屬性，放進真的 WPF 讀 UIA 名稱，
 /// 跟工具對**同一段**的判定比。需要專案資源（StaticResource）或第三方控制項的取不出來，數出來就好。
 /// </summary>
 internal static class CorpusCheck
@@ -29,7 +29,7 @@ internal static class CorpusCheck
             var project = Project.Load(root, []);
             var audit = Auditor.Run(project);
             var batch = new List<(string Where, XElement Element)>();
-            foreach (var j in audit.Judgements.Where(j => j.Rule is "R1" or "R2" or "R7" && j.Verdict is Verdict.Pass or Verdict.Finding))
+            foreach (var j in audit.Judgements.Where(j => j.Check is "control-names" or "input-names" or "list-names" && j.Verdict is Verdict.Pass or Verdict.Finding))
             {
                 if (Extract(j.Element) is not { } e) { skipped++; continue; }
                 if (!seen.Add(e.ToString(SaveOptions.DisableFormatting))) continue;
@@ -76,7 +76,7 @@ internal static class CorpusCheck
         var result = Auditor.Run(Project.FromText(xaml));
         using var shown = Host.Show(window, 420, 300);
         var tree = Host.Tree(shown.Handle).Where(n => n.Id.Length > 0).GroupBy(n => n.Id).ToDictionary(g => g.Key, g => g.First());
-        foreach (var j in result.Judgements.Where(j => j.Rule is "R1" or "R2" or "R7"))
+        foreach (var j in result.Judgements.Where(j => j.Check is "control-names" or "input-names" or "list-names"))
         {
             if (XamlMarkup.NameOf(j.Element) is not { } id || !id.StartsWith('p') || !int.TryParse(id[1..], out var i)) continue;
             if (j.Verdict is Verdict.Blocked or Verdict.NotJudged) { unknown++; continue; }

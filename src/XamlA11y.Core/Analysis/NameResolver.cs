@@ -35,7 +35,7 @@ public readonly record struct NameResult(NameKind Kind, string? Text = null, str
 }
 
 /// <summary>
-/// 照 WPF 實際的取法算一個元素的 UIA 名稱（docs/M1-UIA實測.md 第 2 節；每一條都進 UiaOracle 比對）。
+/// 照 WPF 實際的取法算一個元素的 UIA 名稱（docs/WPF實測.md 第 2 節；每一條都進 UiaOracle 比對）。
 /// </summary>
 public sealed partial class NameResolver(Project project)
 {

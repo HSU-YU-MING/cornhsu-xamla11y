@@ -85,7 +85,7 @@ internal static class Check
         _ => true,
     };
 
-    private static IEnumerable<Judgement> NameJudgements(AuditResult r) => r.Judgements.Where(j => j.Rule is "R1" or "R2" or "R7");
+    private static IEnumerable<Judgement> NameJudgements(AuditResult r) => r.Judgements.Where(j => j.Check is "control-names" or "input-names" or "list-names");
 
     public static int Run()
     {
@@ -318,15 +318,15 @@ internal static class Check
                 var result = Audit(WindowXaml(body, c.Resources), null);
                 using var shown = Host.Show(body, c.Resources);
                 var stops = Host.TabStops(shown);
-                foreach (var j in result.Judgements.Where(x => x.Rule is "R5" or "R4" && XamlMarkup.NameOf(x.Element) == "p"))
+                foreach (var j in result.Judgements.Where(x => x.Check is "tab-order" or "mouse" && XamlMarkup.NameOf(x.Element) == "p"))
                 {
-                    if (j.Verdict is Verdict.Blocked or Verdict.NotJudged) { t.Skip($"{j.Rule} {j.Reason}"); continue; }
+                    if (j.Verdict is Verdict.Blocked or Verdict.NotJudged) { t.Skip($"{j.Check} {j.Reason}"); continue; }
                     // PART_EditableTextBox 之類的內部零件算到得了
                     var reached = stops.Contains("p") || stops.Any(s => s.StartsWith("PART_", StringComparison.Ordinal));
                     var excused = j.Verdict == Verdict.Pass && j.Reason is not null;      // Enter／Esc、存取鍵：不靠 Tab
-                    var ok = j.Verdict == Verdict.Finding ? !reached : j.Rule == "R4" || reached || excused || NotLive(c.Body);
+                    var ok = j.Verdict == Verdict.Finding ? !reached : j.Check == "mouse" || reached || excused || NotLive(c.Body);
                     if (ok) t.Ok++;
-                    else { t.Wrong++; Console.WriteLine($"  WRONG {c.Title}: tool {j.Rule} {j.Verdict}; stops {string.Join(" → ", stops)}"); }
+                    else { t.Wrong++; Console.WriteLine($"  WRONG {c.Title}: tool {j.Check} {j.Verdict}; stops {string.Join(" → ", stops)}"); }
                 }
             }
             catch (Exception ex) { Console.WriteLine($"  !! {c.Title}: {ex.GetBaseException().Message.Split('\n')[0]}"); t.Wrong++; }
@@ -334,7 +334,7 @@ internal static class Check
         t.Print("tab order");
         return t.Wrong;
 
-        // 停用、收合、容器的 TabNavigation=None：R5 只判元素自己明寫的 False，這些刻意不管
+        // 停用、收合、容器的 TabNavigation=None：只判元素自己明寫的 False，這些刻意不管
         static bool NotLive(string body) => body.Contains("IsEnabled=\"False\"") || body.Contains("Collapsed") || body.Contains("TabNavigation=");
     }
 
@@ -350,7 +350,7 @@ internal static class Check
                 var result = Audit(WindowXaml(body, c.Resources), theme);
                 using var shown = Host.Show(body, c.Resources);
                 var measured = Probe.Measure(shown);
-                var judged = result.Judgements.Where(x => x.Rule == "R3").ToList();
+                var judged = result.Judgements.Where(x => x.Check == "focus").ToList();
                 if (judged.Count == 0) continue;
                 if (!Probe.ReachedTarget) { t.Skip("Tab did not reach it in the oracle"); continue; }
                 foreach (var j in judged)
@@ -367,7 +367,7 @@ internal static class Check
         return t.Wrong;
     }
 
-    /// <summary>佈景底下的 R3：每個佈景一組（等動畫跑完再比）。</summary>
+    /// <summary>佈景底下的焦點：每個佈景一組（等動畫跑完再比）。</summary>
     public static int ThemeFocusCases()
     {
         var wrong = 0;
@@ -383,7 +383,7 @@ internal static class Check
         return wrong;
     }
 
-    /// <summary>R8：資料產生的項目念出來是不是型別名。</summary>
+    /// <summary>item-type-name：資料產生的項目念出來是不是型別名。</summary>
     public static int ItemCases()
     {
         var t = new Tally();
@@ -395,7 +395,7 @@ internal static class Check
                 var result = Audit(WindowXaml(Items.ToolXaml(body), c.Resources), null, Items.Code);
                 using var shown = Host.Show(body, c.Resources);
                 var name = Items.ItemName(Host.Tree(shown.Handle), c.Title) ?? "";
-                foreach (var j in result.Judgements.Where(x => x.Rule == "R8" && XamlMarkup.NameOf(x.Element) == "p"))
+                foreach (var j in result.Judgements.Where(x => x.Check == "item-names" && XamlMarkup.NameOf(x.Element) == "p"))
                 {
                     if (j.Verdict is Verdict.Blocked or Verdict.NotJudged) { t.Skip(j.Reason); continue; }
                     var ok = (j.Verdict == Verdict.Finding) == name.StartsWith("UiaOracle.", StringComparison.Ordinal);
@@ -409,7 +409,7 @@ internal static class Check
         return t.Wrong;
     }
 
-    /// <summary>R9：Tab 停得到、UIA 樹上沒有。</summary>
+    /// <summary>silent-tab-stop：Tab 停得到、UIA 樹上沒有。</summary>
     public static int SilentCases()
     {
         var t = new Tally();
@@ -421,7 +421,7 @@ internal static class Check
                 var result = Audit(WindowXaml(body, c.Resources), null, Items.Code);
                 using var shown = Host.Show(body, c.Resources);
                 var silent = !Host.Tree(shown.Handle).Any(n => n.Id == "p") && Host.TabStops(shown).Contains("p");
-                var judged = result.Judgements.Where(x => x.Rule == "R9" && XamlMarkup.NameOf(x.Element) == "p").ToList();
+                var judged = result.Judgements.Where(x => x.Check == "silent-stops" && XamlMarkup.NameOf(x.Element) == "p").ToList();
                 var found = judged.Any(j => j.Verdict == Verdict.Finding);
                 if (judged.Any(j => j.Verdict is Verdict.NotJudged or Verdict.Blocked)) t.Skip(judged[0].Reason);
                 else if (found == silent) t.Ok++;
@@ -433,7 +433,7 @@ internal static class Check
         return t.Wrong;
     }
 
-    /// <summary>R6：工具算的上界 ≥ 真的大小（BoundingRectangle），而且工具報的真的小於 24。</summary>
+    /// <summary>small-target：工具算的上界 ≥ 真的大小（BoundingRectangle），而且工具報的真的小於 24。</summary>
     public static int Sizes()
     {
         var t = new Tally();
@@ -445,7 +445,7 @@ internal static class Check
                 using var shown = Host.Show(c.Body, c.Resources);
                 var dpi = VisualTreeHelper.GetDpi(shown.Window).DpiScaleX;
                 var tree = Host.Tree(shown.Handle);
-                foreach (var j in result.Judgements.Where(x => x.Rule == "R6" && XamlMarkup.NameOf(x.Element) == "p"))
+                foreach (var j in result.Judgements.Where(x => x.Check == "target-size" && XamlMarkup.NameOf(x.Element) == "p"))
                 {
                     var n = tree.First(x => x.Id == "p");
                     double w = n.Width / dpi, h = n.Height / dpi;

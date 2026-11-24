@@ -98,7 +98,7 @@ internal static partial class WindowCheck
     private static void One(Project project, AuditResult audit, Cleaner cleaner, XamlDoc doc, Tally t, bool axe, bool verbose, string name)
     {
         if (XamlFiles.IsApplication(doc.Root, doc.File) || doc.Root.Name.LocalName == "ResourceDictionary") return;
-        var judged = audit.Judgements.Where(j => j.Rule is "R1" or "R2" or "R7" && j.File == doc.File && j.Verdict is Verdict.Pass or Verdict.Finding).ToList();
+        var judged = audit.Judgements.Where(j => j.Check is "control-names" or "input-names" or "list-names" && j.File == doc.File && j.Verdict is Verdict.Pass or Verdict.Finding).ToList();
         var considered = audit.Judgements.Where(j => j.File == doc.File).Select(j => j.Element).ToHashSet();
         if (judged.Count == 0 && !axe) return;
         var ids = new Dictionary<XElement, string>();

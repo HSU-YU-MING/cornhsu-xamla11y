@@ -7,14 +7,14 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 First version.
 
-- `xamla11y audit <root>`: fourteen kinds of finding in ten rules — names of controls, inputs and lists (WCAG 4.1.2,
+- `xamla11y audit <root>`: fourteen kinds of finding in four groups — names of controls, inputs and lists (WCAG 4.1.2,
   1.1.1, 1.3.1, 2.5.3), items read as their type name and silent tab stops (4.1.2), controls that sound alike (2.4.6),
   visible focus (2.4.7), mouse-only elements (2.1.1), tab order (2.1.1), target size (2.5.8).
 - Every finding names its WCAG 2.2 criteria with their level; `docs/standards.md` says why, when it is not a violation, how
   EN 301 549, Section 508 and Taiwan's rules differ, and what a person still has to check. `--standard` and `--level` choose
   WCAG 2.2, 2.1 or 2.0, EN 301 549 V3.2.1 or V4.1.1, or Section 508; HTML, JSON and SARIF carry the clause numbers.
 - `--html`: one self-contained page with why, how to fix, what NVDA says (only where it was run), the clauses and the checks a
-  person has to do. `--openacr`: a draft conformance report with the criteria that fail. `docs/fixes.md`: before and after for
+  person has to do. `docs/fixes.md`: before and after for
   every finding, linked from SARIF and HTML. `--lang zh-Hant` for the console, Markdown and HTML reports.
 - Names follow what WPF does, measured with a UI Automation client on .NET Framework 4.8 and .NET 8–11 and
   checked against Axe-Windows and against what NVDA says: `Label.Target` gives no name, a ToolTip gives no name, text inside a panel

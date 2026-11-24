@@ -3,7 +3,7 @@
 [中文](修法.md)
 
 One section per finding: what it looks like, what to write instead. Why it is a finding and which criterion it goes with is in
-[standards.md](standards.md); what WPF does was measured ([M1-UIA實測.md](M1-UIA實測.md), Chinese).
+[standards.md](standards.md); what WPF does was measured ([WPF實測.md](WPF實測.md), Chinese).
 
 ## missing-name
 
@@ -71,15 +71,6 @@ A link whose content is an element, not text:
 
 `Mode=OneWay` matters: `Run.Text` binds TwoWay by default and throws on a read-only property.
 
-## symbol-name
-
-```xml
-<!-- before: NVDA reads "times, button" -->
-<Button Content="×"/>
-<!-- after -->
-<Button Content="×" AutomationProperties.Name="Close"/>
-```
-
 ## input-no-name
 
 `Label.Target` only moves focus with the access key. Give the field the label as its name.
@@ -96,51 +87,6 @@ A link whose content is an element, not text:
 Without a visible label (a search box): `AutomationProperties.Name="Search"`.
 Microsoft: [edit field](https://learn.microsoft.com/en-us/accessibility-tools-docs/items/wpf/edit_name),
 [combo box](https://learn.microsoft.com/en-us/accessibility-tools-docs/items/wpf/combobox_name).
-
-## focus-not-visible
-
-Leave `FocusVisualStyle` alone, or draw focus in the template.
-
-```xml
-<!-- before -->
-<Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-<!-- after: in the ControlTemplate -->
-<Trigger Property="IsKeyboardFocused" Value="True">
-  <Setter TargetName="Frame" Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
-</Trigger>
-```
-
-## mouse-only
-
-```xml
-<!-- before -->
-<Border MouseLeftButtonUp="OnOpen"><TextBlock Text="Open"/></Border>
-<!-- after: a Button without the look of one -->
-<Button Click="OnOpen" Content="Open">
-  <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"><ContentPresenter/></Border></ControlTemplate></Button.Template>
-</Button>
-```
-
-Change the handler's second parameter to `RoutedEventArgs`: `Click` does not take a `MouseButtonEventArgs` handler. With a command, the
-same thing inside a `DataTemplate`:
-
-```xml
-<Button Command="{Binding OpenCommand}" AutomationProperties.Name="{Binding Title}">
-  <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"><ContentPresenter/></Border></ControlTemplate></Button.Template>
-  <TextBlock Text="{Binding Title}" Style="{StaticResource LinkText}"/>
-</Button>
-```
-
-Keep the look by keeping the element with the style inside the Button; keep the focus visual (see above).
-
-## not-in-tab-order
-
-Remove `IsTabStop="False"` / `Focusable="False"`, or give the same action a keyboard shortcut (`KeyBinding`) or another control that
-Tab reaches.
-
-## small-target
-
-Make it at least 24 × 24, or leave room around it (24 between the centres of two small targets).
 
 ## list-no-name
 
@@ -216,6 +162,15 @@ sealed class CardAutomationPeer(Card owner) : FrameworkElementAutomationPeer(own
 }
 ```
 
+## symbol-name
+
+```xml
+<!-- before: NVDA reads "times, button" -->
+<Button Content="×"/>
+<!-- after -->
+<Button Content="×" AutomationProperties.Name="Close"/>
+```
+
 ## same-name
 
 ```xml
@@ -228,3 +183,48 @@ sealed class CardAutomationPeer(Card owner) : FrameworkElementAutomationPeer(own
 ```
 
 The name should start with the visible text, so that speech input still works (2.5.3).
+
+## mouse-only
+
+```xml
+<!-- before -->
+<Border MouseLeftButtonUp="OnOpen"><TextBlock Text="Open"/></Border>
+<!-- after: a Button without the look of one -->
+<Button Click="OnOpen" Content="Open">
+  <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"><ContentPresenter/></Border></ControlTemplate></Button.Template>
+</Button>
+```
+
+Change the handler's second parameter to `RoutedEventArgs`: `Click` does not take a `MouseButtonEventArgs` handler. With a command, the
+same thing inside a `DataTemplate`:
+
+```xml
+<Button Command="{Binding OpenCommand}" AutomationProperties.Name="{Binding Title}">
+  <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"><ContentPresenter/></Border></ControlTemplate></Button.Template>
+  <TextBlock Text="{Binding Title}" Style="{StaticResource LinkText}"/>
+</Button>
+```
+
+Keep the look by keeping the element with the style inside the Button; keep the focus visual (see above).
+
+## not-in-tab-order
+
+Remove `IsTabStop="False"` / `Focusable="False"`, or give the same action a keyboard shortcut (`KeyBinding`) or another control that
+Tab reaches.
+
+## focus-not-visible
+
+Leave `FocusVisualStyle` alone, or draw focus in the template.
+
+```xml
+<!-- before -->
+<Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+<!-- after: in the ControlTemplate -->
+<Trigger Property="IsKeyboardFocused" Value="True">
+  <Setter TargetName="Frame" Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+</Trigger>
+```
+
+## small-target
+
+Make it at least 24 × 24, or leave room around it (24 between the centres of two small targets).

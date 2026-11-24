@@ -1,14 +1,31 @@
 # XamlA11y — 給接手的人
 
-一句話：**不開 App，就找出鍵盤按不到、螢幕閱讀器念不出來的地方。** 完整設計在 `XamlA11y專案規畫書.md`，
-WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「修正」的設計**，每一條都有實查來源。
+一句話：**不開 App，就找出鍵盤按不到、螢幕閱讀器念不出來的地方。** WPF 的事實在 `docs/WPF實測.md`。
+這份只記**東西在哪、踩過的坑、不要「修正」的設計**，每一條都有實查來源。開工前的規畫書在 `docs/歸檔/`（過時了，只留著看當初怎麼想）。
+
+## 東西在哪
+
+| 要做什麼 | 在哪 |
+|---|---|
+| 改一種問題的標題、說明、修法、嚴重度、準則、分組 | `data/findings.json`（一種一列，中英文在一起；主控台、報告、`rules`、SARIF 都讀它）。README ×2 與 `docs/standards.md`、`標準對照.md` 的表、`docs/fixes.md`、`修法.md` 的順序由測試核對 |
+| 改某一種怎麼判 | `src/XamlA11y.Core/Rules/`，一個檔一項；名稱怎麼算在 `Analysis/NameResolver.cs` |
+| 加一種問題 | `findings.json` 加一列 → `Kinds.cs` 加一行 → 規則 → `Zh.cs` 加訊息的中文 → 上面那幾份文件 → `samples/demo` 與 `verify-demo.sh` |
+| 每一筆訊息的中文 | `Report/Zh.cs`（照英文句型翻） |
+| 報告 | `Report/`，一種格式一個檔；共用的句子在 `Summary.cs`、語言在 `Lang.cs` |
+| 指令列 | `src/XamlA11y.Cli/`：`Options`（旗標）、`AuditCommand`（流程與退出碼）、`Usage`（說明） |
+| 第三方控制項與佈景 | `data/known-controls.json` |
+| 測試 | `tests/XamlA11y.Tests/`，一個主題一個檔；共用的在 `Kit.cs` |
+| 跟真的 WPF、NVDA 比 | `prototype/UiaOracle/` |
+
+**名字只有一套**：一種問題一個 slug（`missing-name`…，14 種），收成四組（念不出來、鍵盤到不了、看不到焦點、太小）。
+統計與可解析率另外分「檢查」（`control-names`…，見 `findings.json` 的 `checks`，`gate` 的四項才算可解析率）。**沒有 R1、R2 這種編號**，不要加回來。
 
 ## 憲法
 
 1. **靜態分析 + 全量掃描 + CI 退出碼。**（三件套同一條）
 2. **「工具沒看到」與「看到了沒問題」分得開。** 讀不出來 = `Blocked`（進可解析率分母）；靜態不可能知道 = `NotJudged`（不進分母、但要數）。
 3. **每條規則都拿真的 WPF 對照過。** 加規則、改規則之前先在 `prototype/UiaOracle/facts/` 加案例。
-4. **永遠開火的閘門會被關掉。** 預設只擋確定的；R5～R9 是 warn，符號名稱與 R10（名稱一樣）是 info。
+4. **永遠開火的閘門會被關掉。** 預設只擋確定的；哪些擋、哪些警告看 `findings.json` 的 severity。
 
 ## 改規則的流程
 
@@ -18,18 +35,18 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
    別人的 XAML 一律過 `SafeMarkup`（白名單）才交給 XamlReader；改它之後跑 `uiaoracle check-hostile`。
    名稱的規則大改之後，用真的 NVDA 再走一次：`node prototype/UiaOracle/nvda.mjs … zh_TW` 與 `… en`（各約 4 分鐘，會出聲、搶焦點，先講；只在自己的視窗是前景時按鍵），`nvda-merge.mjs` 合成 `nvda-facts.json`。
 4. `uiaoracle record tests/XamlA11y.Tests/uia-facts.json`：把 WPF 的答案錄給跨平台的測試。**只錄真值，不錄工具的答案。**
-5. `scripts/corpus-fetch.sh` 抓語料（`docs/corpus.tsv`，commit 釘死），`scripts/corpus-run.sh <輸出資料夾>` 前後各一次，`node scripts/corpus-diff.mjs 前 後` 逐類抽樣看原始碼，`node scripts/readme-corpus.mjs <輸出> --update` 重貼 README 的表。Oracle 抓規則想錯，語料抓規則想漏 —— 兩個都要。
+5. `scripts/corpus-fetch.sh` 抓語料（`docs/corpus.tsv`，commit 釘死），`scripts/corpus-run.sh <輸出資料夾>` 前後各一次，`node scripts/corpus-diff.mjs 前 後` 逐類抽樣看原始碼，`node scripts/docs-corpus.mjs <輸出> --update` 重貼 `docs/verification.md`、`驗證.md` 的表。Oracle 抓規則想錯，語料抓規則想漏 —— 兩個都要。
 
 ## 不要「修正」的設計
 
-- **`Label.Target` 不算名稱。** 很多人（包括規劃書第一版）以為會。實測五個執行期都不會，原始碼也確認：`GetLabeledByCore` 只讀 `AutomationProperties.LabeledBy`。
-- **範本裡的文字不算名稱**，所以「範本被換掉」不影響 R1／R2。不要為了「保守」把它改成不知道，那會讓可解析率掉一大截而且是錯的。
-- **R3 報在樣式的 Setter，不報在每個用到的元素**：修的地方只有一個。
+- **`Label.Target` 不算名稱。** 很多人（包括我們第一版）以為會。實測五個執行期都不會，原始碼也確認：`GetLabeledByCore` 只讀 `AutomationProperties.LabeledBy`。
+- **範本裡的文字不算名稱**，所以「範本被換掉」不影響名稱的判定。不要為了「保守」把它改成不知道，那會讓可解析率掉一大截而且是錯的。
+- **看不到焦點報在樣式的 Setter，不報在每個用到的元素**：修的地方只有一個。
 - **`DataBound` 不進分母**：`Content="{Binding}"` 專案改不了「靜態看不到」。
 - **C# 的 `class X : Button` 會自動跟**，但只要那個檔案提到 `AutomationProperties` 或 `OnCreateAutomationPeer` 就整個算不知道。
 - **訊息裡的文字一律當不可信輸入**：console 走 `Text.Safe`、Markdown 走 `Code`、HTML 走 `H`。新增輸出點時照做。
 - baseline 的鍵不含行號，也不含語言與標準。
-- **中文是照英文訊息的句型翻的**（`Zh.cs`）：規則只寫英文。新增或改一句訊息，`Zh.cs` 要跟著加，ReportTests 會擋。JSON、SARIF、MSBuild 一律英文。
+- **中文是照英文訊息的句型翻的**（`Zh.cs`）：規則只寫英文。新增或改一句訊息，`Zh.cs` 要跟著加，ChineseTests 會擋。JSON、SARIF、MSBuild 一律英文。
 - **台灣的檢測碼不標**：那是給網頁的。EN 301 549 與 508 的條號在 `Standards.cs`，照標準原文查的，文件的表由測試守。EN 301 549 V4.1.1 刊登歐盟公報之後（Deque 預期 2027-01-22）要改兩份標準文件那一列。
 
 ## 實查踩過的坑
@@ -59,9 +76,9 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
 | 21 | `ElementName` 看進別的範本、指到沒有 peer 的元素 | 名稱範圍一層一層往外找；`Wpf.HasPeer` | 獨立審查 |
 | 22 | 內容只在觸發器裡設 | 觸發器沒成立時是空的，基底狀態要一起算 | 獨立審查 |
 | 23 | 專案自己的 `local:ApplicationCommands`（Prism 慣例） | 不是 WPF 的命令，要看前綴的命名空間 | 獨立審查 |
-| 24 | R3 只看樣式不看用它的元素 | 元素可能換了範本、加回焦點框、不能聚焦。現在逐一看使用者，找不到使用者才看樣式自己 | 獨立審查 |
+| 24 | 焦點規則只看樣式不看用它的元素 | 元素可能換了範本、加回焦點框、不能聚焦。現在逐一看使用者，找不到使用者才看樣式自己 | 獨立審查 |
 | 25 | 深度有上限、分支沒有 | 600 位元組的 XAML 跑不完。`NameResolver.MaxSteps` | 獨立審查 |
-| 26 | 每個控制項都自動通過 R5 | 可解析率被灌水，名稱 75% 看不到還是過。R5 只算有設屬性的；可解析率只看 R1～R4 | 獨立審查 |
+| 26 | 每個控制項都自動通過 Tab 順序 | 可解析率被灌水，名稱 75% 看不到還是過。Tab 順序只算有設屬性的；可解析率只看會擋的四項 | 獨立審查 |
 | 27 | 讀 code-behind 沒去掉註解與字串、分不出讀和寫 | 註解掉的程式也算。`CSharp.Strip` + 要有 `=`（不是 `==`） | 獨立審查 |
 | 28 | 降過級的 finding 變嚴重了，baseline 還是蓋住 | 鍵加「~」 | 獨立審查 |
 | 29 | MaterialDesign 的 Hint 名稱來自**樣式** | 樣式被換掉、佈景沒合併就沒有。光看套件版本不夠 | 獨立審查 → Oracle 確認 |
@@ -73,7 +90,7 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
 | 35 | 樣式觸發器的 Content 壓過本地內容 | 本地值才是贏的 | panuon 語料 |
 | 36 | Run 一起判 | 每個 Run 有自己的字型、可以是綁定、文字可以來自它的樣式 | 第二輪審查、check-windows（NuGet Package Explorer） |
 | 37 | 「Content = x」就是類別設自己的內容 | 物件初始設定式 `new ToolTip { Content = x, }` 也長這樣；看等號後面先遇到 `;` 還是 `,`／`}` | Playnite |
-| 38 | 測試全綠 ≠ 有人守 | 變異測試第一次 120 處只抓到 60；補 `Pinned*Tests` 之後全新抽樣 150 處抓到 118（剩下多是迴圈上限、防呆這種改了也一樣的）。多數是清單少一項：一項一個案例。`scripts/mutate.mjs` | 變異測試 |
+| 38 | 測試全綠 ≠ 有人守 | 變異測試第一次 120 處只抓到 60；補齊案例之後全新抽樣 150 處抓到 118（剩下多是迴圈上限、防呆這種改了也一樣的）。多數是清單少一項：一項一個案例。`scripts/mutate.mjs` | 變異測試 |
 | 42 | 沒人直接用的基底樣式 | 衍生樣式把焦點框加回來了，基底還是被單獨判、報 fail。只要有樣式以它為底、沒有元素直接用它，就不單獨判 | 補測試時發現 |
 | 39 | 深度有上限、沒記住答案 | 同名類別互相當基底，142 KB 的 .cs 跑不完。`DerivedFrom` 有記憶 | 第二輪審查 |
 | 40 | LINQ to XML 的 `PreviousNode` 是從頭數 | 三萬個兄弟元素 39 秒。用 `Markup.Previous` | 第二輪審查 |
@@ -82,7 +99,7 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
 | 44 | 說「螢幕閱讀器只念得出按鈕」 | 有 ToolTip 時 NVDA 會把 HelpText 當描述念出來。名稱還是空的（4.1.2、Axe 都算），但話不能說滿 | NVDA 原始碼 → NVDA 2026.2 實跑確認 |
 | 45 | Guidepup 的 `press` 預設只收第一句 | 清單項目、頁籤的名字在第二句，看起來像沒念。要 `{ capture: true }` | NVDA 實跑 |
 | 46 | 繪圖物件（EllipseGeometry、漸層筆刷、Color）當內容 | 名稱是型別名或色碼，不是空的；第一版說沒有名稱 | NVDA 實跑 → Oracle 確認 |
-| 47 | 「關掉的規則不算可解析率」做成 gate 空了就 100 | 全部關掉變成通過。一條都沒開就是 exit 3；R2 要連亂碼、只有符號的名稱都關了才算關（它們也算在 R2） | 獨立審查 |
+| 47 | 「關掉的規則不算可解析率」做成 gate 空了就 100 | 全部關掉變成通過。一條都沒開就是 exit 3；輸入框的要連亂碼、只有符號的名稱都關了才算關（它們也算在 `input-names`） | 獨立審查 |
 | 48 | NVDA 的念法照控制項型別寫 | RichTextBox 念「文件」不是「編輯區」，有欄位的 ListView 念「資料格」，AccessText 還會念快速鍵。沒跑過的一律不寫（自己的類別、停用的、提示裡有符號的） | 獨立審查、NVDA 實跑 |
 | 49 | 報告只說「這支查不到的 17 件」 | 讀起來像其餘都查過了。清單是最常出問題的，要寫明不是 WCAG 剩下的全部 | 獨立審查 |
 | 50 | 訊息從尾巴截斷 | 中文照英文的句型翻，尾巴不見就翻不到。`CutMiddle` 截中間 | 獨立審查 |
@@ -94,10 +111,13 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
 | 56 | 修法文件的範例沒編過 | `MouseLeftButtonUp` 的處理器接不上 `Click`、`ButtonAutomationPeer` 只收 Button、GridView 的 ListView 用 `{x:Type ListViewItem}` 會當。現在「原本／改成」由測試跑，peer 的範例在 Oracle 裡編 | 第一次用的人、獨立審查 |
 | 57 | 一個類別報一次，鍵用檔名 | 多一個用它的檔案就變新的。`Finding.KeyFile` | 獨立審查 |
 | 58 | 「前面那段字可以當標籤」照著接就看不到問題 | 實際遇到「暫無資料！」「右鍵刪除…」。不像標籤的不提，提的時候說「如果是」 | 第一次用的人 |
+| 59 | 同一件事好幾套名字（slug、R 編號、英文標題散在 C#、中文在 Zh.cs） | 加一種要改五個地方，報告、文件、程式各講各的。現在一張表（`findings.json`），照 Ramp 的 rules-map | 2026-11-24 整理 |
+| 60 | 整理（搬檔、改名）也會改壞 | 每一步都有對照：52 個專案 11,946 筆逐筆逐欄比、測試案例逐一比、搬測試時字串逐一比（抓到把字串裡的 `Note` 也改名） | 2026-11-24 整理 |
+| 61 | OpenACR 草稿做了又拿掉 | 55 條只填得了 8 條，格式用的人極少，而且合規聲明寫錯的代價在使用者身上。條號 JSON、SARIF、HTML 都有，夠用 | 2026-11-24 整理 |
 
 ## 沒做的、知道的
 
-- `ItemsControl` 沒有名稱：Axe 會報，這支不判（多半只是排版）。`ProgressBar`、`Calendar`（警告）、`Menu`、`ToolBar`（info）是 `widget-no-name`。清單、表格、樹是 R7，警告、不進可解析率（49 個公開專案與 3 個 App 共 697 筆）。2026-11-24 實跑 QuillNest：Axe 在真的畫面上報的按鈕、輸入框名稱全部對得上，多出來的就是清單（後來做成 R7）與「兄弟同名」兩類（後來做成 R10，info）。Kindling、Cornea 同一天用複製品（資料夾改指暫存區）也對過，一樣一個不漏。
-- 高度引擎：R6 只用明寫的大小與固定的 Grid 格子。沒設大小的是平台預設，WCAG 2.5.8 有例外，所以不需要算預設高度。
+- `ItemsControl` 沒有名稱：Axe 會報，這支不判（多半只是排版）。`ProgressBar`、`Calendar`（警告）、`Menu`、`ToolBar`（info）是 `widget-no-name`。清單、表格、樹是 `list-no-name`，警告、不進可解析率（49 個公開專案與 3 個 App 共 697 筆）。2026-11-24 實跑 QuillNest：Axe 在真的畫面上報的按鈕、輸入框名稱全部對得上，多出來的就是清單（後來做成 `list-no-name`）與「兄弟同名」兩類（後來做成 `same-name`，info）。Kindling、Cornea 同一天用複製品（資料夾改指暫存區）也對過，一樣一個不漏。
+- 高度引擎：`small-target` 只用明寫的大小與固定的 Grid 格子。沒設大小的是平台預設，WCAG 2.5.8 有例外，所以不需要算預設高度。
 - PresentationFramework.Fluent（.NET 9+ 的 ThemeMode）量過了（`focus-themes`），但沒有套件版本可比對，所以當沒量過。
 - `.vb` 的類別繼承不跟（code-behind 的 `.vb` 有讀）。

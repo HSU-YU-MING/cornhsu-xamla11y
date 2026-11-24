@@ -6,7 +6,7 @@ using XamlA11y.Core.Xaml;
 namespace XamlA11y.Core.Rules;
 
 /// <summary>
-/// R6：點擊範圍小於 24×24（WCAG 2.5.8）。
+/// small-target：點擊範圍小於 24×24（WCAG 2.5.8）。
 ///
 /// 只判**作者自己設的**大小：沒設的是平台預設，2.5.8 有「使用者代理決定」的例外（WPF 預設的 Button 本來就約 20 高）。
 /// 間距例外要知道鄰居在哪：只有在同一個 StackPanel／WrapPanel／ToolBar 裡緊鄰另一個可點的元素、算得出距離時才報；
@@ -29,19 +29,19 @@ internal static class SizeRule
         if (!(w < Min) && !(h < Min))
         {
             // 上界夠大不等於真的夠大：兩個方向都確定至少 24 才算沒問題
-            if (AtLeast(ctx, e, true) && AtLeast(ctx, e, false)) ctx.Pass("R6", e);
-            else ctx.NotJudged("R6", e, "only part of its size is set in the XAML");
+            if (AtLeast(ctx, e, true) && AtLeast(ctx, e, false)) ctx.Pass(Checks.TargetSize, e);
+            else ctx.NotJudged(Checks.TargetSize, e, "only part of its size is set in the XAML");
             return;
         }
 
-        if (Context.ControlTemplateOf(e) is not null) { ctx.NotJudged("R6", e, "a template part"); return; }
-        if (Scaled(e)) { ctx.NotJudged("R6", e, "it is inside a Viewbox or has a transform"); return; }
+        if (Context.ControlTemplateOf(e) is not null) { ctx.NotJudged(Checks.TargetSize, e, "a template part"); return; }
+        if (Scaled(e)) { ctx.NotJudged(Checks.TargetSize, e, "it is inside a Viewbox or has a transform"); return; }
 
         var (panel, horizontal) = PanelOf(ctx, e);
-        if (panel is null) { ctx.NotJudged("R6", e, "its neighbours' positions are not known (WCAG 2.5.8 allows small targets with enough space around them)"); return; }
+        if (panel is null) { ctx.NotJudged(Checks.TargetSize, e, "its neighbours' positions are not known (WCAG 2.5.8 allows small targets with enough space around them)"); return; }
 
         var size = horizontal ? w : h;
-        if (size is not { } own || own >= Min) { ctx.NotJudged("R6", e, "its neighbours' positions are not known (WCAG 2.5.8 allows small targets with enough space around them)"); return; }
+        if (size is not { } own || own >= Min) { ctx.NotJudged(Checks.TargetSize, e, "its neighbours' positions are not known (WCAG 2.5.8 allows small targets with enough space around them)"); return; }
 
         foreach (var (neighbour, before) in Neighbours(e))
         {
@@ -66,7 +66,7 @@ internal static class SizeRule
                 string.Create(CultureInfo.InvariantCulture, $"<{e.Name.LocalName}> is {own:0.#} DIP {axis} and {Math.Max(0, gap):0.#} DIP away from <{neighbour.Name.LocalName}>{NameOf(neighbour)}; targets under 24 need more space around them"));
             return;
         }
-        ctx.NotJudged("R6", e, "its neighbours' positions are not known (WCAG 2.5.8 allows small targets with enough space around them)");
+        ctx.NotJudged(Checks.TargetSize, e, "its neighbours' positions are not known (WCAG 2.5.8 allows small targets with enough space around them)");
     }
 
     /// <summary>這個方向確定至少 24：明寫的大小（沒被 Max 夾小）或 Min，而且不在更小的固定格子裡。</summary>

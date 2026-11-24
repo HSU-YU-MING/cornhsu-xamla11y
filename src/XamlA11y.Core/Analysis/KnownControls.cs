@@ -72,7 +72,7 @@ public static class KnownControls
     public static KnownLibrary? LibraryOf(string ns) => Markup.IsMarkup(ns) ? null : Libraries.FirstOrDefault(l => l.Owns(ns));
 }
 
-/// <summary>控制項怎麼得到 UIA 名稱（docs/M1-UIA實測.md 第 2 節）。</summary>
+/// <summary>控制項怎麼得到 UIA 名稱（docs/WPF實測.md 第 2 節）。</summary>
 public enum NameSource
 {
     /// <summary>看 Content 的純文字（Button、CheckBox、Label、ListBoxItem…）。</summary>
@@ -92,7 +92,7 @@ public enum NameSource
 
 public static class Wpf
 {
-    /// <summary>R1 判定的元件。</summary>
+    /// <summary>要有名稱的互動元件。</summary>
     public static readonly HashSet<string> Interactive = new(StringComparer.Ordinal)
     {
         "Button", "ToggleButton", "RepeatButton", "CheckBox", "RadioButton", "MenuItem", "Hyperlink",
@@ -106,14 +106,14 @@ public static class Wpf
     public static readonly HashSet<string> Items = new(StringComparer.Ordinal)
     { "TabItem", "TreeViewItem", "ListBoxItem", "ListViewItem", "ComboBoxItem" };
 
-    /// <summary>R2 判定的輸入元件。</summary>
+    /// <summary>要有名稱的輸入元件。</summary>
     public static readonly HashSet<string> Inputs = new(StringComparer.Ordinal)
     { "TextBox", "PasswordBox", "RichTextBox", "ComboBox", "Slider", "DatePicker" };
 
-    /// <summary>R7 判定的清單、表格、樹（Axe-Windows 也報；TabControl、StatusBar 它不報，ItemsControl 多半只是排版）。</summary>
+    /// <summary>要有名稱的清單、表格、樹（Axe-Windows 也報；TabControl、StatusBar 它不報，ItemsControl 多半只是排版）。</summary>
     public static readonly HashSet<string> Lists = new(StringComparer.Ordinal) { "ListBox", "ListView", "TreeView", "DataGrid" };
 
-    /// <summary>R7 也看的：沒有名稱 Axe-Windows 會報。Menu 與 ToolBar 只當 info（一個視窗一個主選單，不用名稱也分得出來）。</summary>
+    /// <summary>跟清單一起看的：沒有名稱 Axe-Windows 會報。Menu 與 ToolBar 只當 info（一個視窗一個主選單，不用名稱也分得出來）。</summary>
     public static readonly HashSet<string> Widgets = new(StringComparer.Ordinal) { "ProgressBar", "Calendar", "Menu", "ToolBar" };
 
     public static readonly HashSet<string> Buttons = new(StringComparer.Ordinal)
@@ -153,7 +153,7 @@ public static class Wpf
         : Nothings.Contains(control) ? NameSource.Nothing
         : NameSource.Unknown;
 
-    /// <summary>有 AutomationPeer 的（UIA 樹上看得到）。沒有的：面板、Border、圖形、ContentControl、AccessText…（docs/M1-UIA實測.md）。</summary>
+    /// <summary>有 AutomationPeer 的（UIA 樹上看得到）。沒有的：面板、Border、圖形、ContentControl、AccessText…（docs/WPF實測.md）。</summary>
     public static bool HasPeer(string control) =>
         control is "Image" or "MediaElement" or "Viewport3D"
         || (!Nothings.Contains(control) && control is not ("ContentControl" or "Control" or "ButtonBase" or "RangeBase" or "Run" or "Span" or "StatusBarItem" or "HeaderedContentControl"));
@@ -162,7 +162,7 @@ public static class Wpf
     public static bool IsKnownType(string name) =>
         NameSourceOf(name) != NameSource.Unknown || name is "DataGridRow" or "Window" or "Page" or "FrameworkElement" or "ItemsPresenter" or "TextElement" or "Inline" or "TabControl";
 
-    /// <summary>內建、不是控制項、會被拿來當按鈕的元素（R4）。</summary>
+    /// <summary>內建、不是控制項、會被拿來當按鈕的元素（mouse-only）。</summary>
     public static readonly HashSet<string> NonControls = new(StringComparer.Ordinal)
     {
         "Border", "Grid", "StackPanel", "DockPanel", "WrapPanel", "Canvas", "UniformGrid", "Viewbox", "Decorator",

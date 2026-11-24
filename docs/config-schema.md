@@ -24,7 +24,7 @@ that is silently skipped would look like a setting that works.
 | `exclude` | list of text | files whose path relative to the root (starting with `/`) contains the text, ignoring case |
 | `minCoverage` | 0–100 | exit 3 below this resolution; default 60, 0 accepts any. `--min-coverage` wins |
 | `treatAs` | name → WPF control | "this control gets its accessible name the way that WPF control does". Local names, no prefix. You vouch for it: the class must not override `OnCreateAutomationPeer` or set its own name in code |
-| `rules` | finding → `off`, `info`, `warn`, `fail` | severity of each kind of finding. `off` also stops counting it; a rule with every kind off does not count in the resolution, and a run with every rule off exits 3. Wins over `standard` and `level` |
+| `rules` | finding → `off`, `info`, `warn`, `fail` | severity of each kind of finding. `off` also stops counting it; a check whose findings are all off does not count in the resolution, and a run with everything off exits 3. Wins over `standard` and `level` |
 | `themeShowsFocus` | bool | the theme your app merges draws keyboard focus even where `FocusVisualStyle` is removed, and you have seen it. Only matters for themes that were not measured |
 | `standard` | `wcag22`, `wcag21`, `wcag20`, `en301549`, `en301549-v4`, `section508` | default `wcag22`. Findings whose criteria are not in it are off ([clauses](standards.md#choosing-one)). `--standard` wins |
 | `level` | `A`, `AA` | default `AA`, which includes A. `--level` wins |

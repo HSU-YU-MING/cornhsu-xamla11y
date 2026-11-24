@@ -55,7 +55,7 @@ public sealed class Context(Project project, AuditOptions options)
 
     private readonly List<Finding> _findings = [];
     private readonly List<Judgement> _judgements = [];
-    private readonly Dictionary<string, RuleStats> _stats = Kinds.Rules.ToDictionary(r => r, r => new RuleStats(r) { Off = Kinds.CountedIn(r).All(k => options.SeverityOf(k) == Severity.Off) }, StringComparer.Ordinal);
+    private readonly Dictionary<string, CheckStats> _stats = Kinds.Checks.ToDictionary(c => c.Id, c => new CheckStats(c.Id) { Off = Kinds.CountedIn(c.Id).All(k => options.SeverityOf(k) == Severity.Off) }, StringComparer.Ordinal);
     private readonly Dictionary<string, int> _unknown = new(StringComparer.Ordinal);
     private readonly SortedSet<string> _invalidIgnores = new(StringComparer.Ordinal);
 
@@ -96,36 +96,36 @@ public sealed class Context(Project project, AuditOptions options)
             or "ResourceDictionary" or "Storyboard" or "BeginStoryboard" or "VisualState" or "VisualStateGroup");
     }
 
-    public void Pass(string rule, XElement e, string? reason = null) => Record(rule, Verdict.Pass, e, reason, null);
+    public void Pass(string check, XElement e, string? reason = null) => Record(check, Verdict.Pass, e, reason, null);
 
-    public void Blocked(string rule, XElement e, string reason, string? control = null)
+    public void Blocked(string check, XElement e, string reason, string? control = null)
     {
         if (control is not null) _unknown[control] = _unknown.GetValueOrDefault(control) + 1;
-        Record(rule, Verdict.Blocked, e, reason, null);
+        Record(check, Verdict.Blocked, e, reason, null);
     }
 
-    public void NotJudged(string rule, XElement e, string reason) => Record(rule, Verdict.NotJudged, e, reason, null);
+    public void NotJudged(string check, XElement e, string reason) => Record(check, Verdict.NotJudged, e, reason, null);
 
     /// <param name="at">報在哪裡（樣式的 Setter；預設就是元素）。</param>
     /// <param name="lowered">這一筆最多報到這個嚴重度。</param>
-    /// <param name="rule">算在哪條規則的統計裡（預設是這一種自己的規則；輸入框的亂碼名稱算 R2）。</param>
+    /// <param name="check">算在哪一項檢查的統計裡（預設是這一種自己的；輸入框的亂碼名稱算輸入框的）。</param>
     /// <param name="control">名稱規則的：當成哪一個 WPF 控制項。</param>
     /// <param name="spokenName">NVDA 會念的名稱（空名稱是 null）。</param>
-    public void Report(Kind kind, XElement e, string message, XElement? at = null, Severity? lowered = null, string? identity = null, string? rule = null, string? control = null, string? spokenName = null, bool unreadable = false, string? keyFile = null)
+    public void Report(Kind kind, XElement e, string message, XElement? at = null, Severity? lowered = null, string? identity = null, string? check = null, string? control = null, string? spokenName = null, bool unreadable = false, string? keyFile = null)
     {
-        rule ??= kind.Rule;
+        check ??= kind.Check;
         var site = at ?? e;
         var severity = Options.SeverityOf(kind, lowered);
-        if (severity == Severity.Off) { Record(rule, Verdict.NotJudged, e, Options.Severities.ContainsKey(kind.Slug) ? $"{kind.Slug} is turned off" : $"{kind.Slug} is not in {Options.Scope.Title}", null); return; }
+        if (severity == Severity.Off) { Record(check, Verdict.NotJudged, e, Options.Severities.ContainsKey(kind.Slug) ? $"{kind.Slug} is turned off" : $"{kind.Slug} is not in {Options.Scope.Title}", null); return; }
 
         var (reason, stranded) = IgnoreOf(site);
-        if (reason is { Length: > 0 }) { Record(rule, Verdict.Suppressed, e, reason, kind); return; }
+        if (reason is { Length: > 0 }) { Record(check, Verdict.Suppressed, e, reason, kind); return; }
         if (stranded || reason is not null)
             _invalidIgnores.Add($"{StyleIndex.FileOf(site)}:{LineOf(site)}: xamla11y-ignore " + (stranded
                 ? "has a commented-out element or text after it, so it does nothing (put it right before the element it is for)"
                 : "has no reason, so it does nothing (write xamla11y-ignore: why)"));
 
-        Record(rule, Verdict.Finding, e, message, kind);
+        Record(check, Verdict.Finding, e, message, kind);
         if (kind == Kinds.MouseOnly) _mouseOnly.Add(e);
         _findings.Add(new Finding(kind, severity, StyleIndex.FileOf(site), LineOf(site), site.Name.LocalName, CutMiddle(XamlA11y.Core.Report.Text.Visible(message), 600)) { Identity = identity ?? IdentityOf(site), Lowered = lowered is not null, Control = control, SpokenName = spokenName, Unreadable = unreadable, KeyFile = keyFile, Description = control is null ? null : DescriptionOf(e) });
     }
@@ -148,9 +148,9 @@ public sealed class Context(Project project, AuditOptions options)
         return "";
     }
 
-    private void Record(string rule, Verdict verdict, XElement e, string? reason, Kind? kind)
+    private void Record(string check, Verdict verdict, XElement e, string? reason, Kind? kind)
     {
-        var s = _stats[rule];
+        var s = _stats[check];
         switch (verdict)
         {
             case Verdict.Pass: s.Pass++; break;
@@ -159,7 +159,7 @@ public sealed class Context(Project project, AuditOptions options)
             case Verdict.Blocked: s.Blocked++; Count(s.BlockedReasons, reason); break;
             case Verdict.NotJudged: s.NotJudged++; Count(s.NotJudgedReasons, reason); break;
         }
-        _judgements.Add(new Judgement(rule, verdict, e, StyleIndex.FileOf(e), LineOf(e), reason, kind));
+        _judgements.Add(new Judgement(check, verdict, e, StyleIndex.FileOf(e), LineOf(e), reason, kind));
 
         // 原因裡夾了 repo 的字（資源鍵、綁定），一個二十萬字的鍵不能把報告撐爆
         static void Count(Dictionary<string, int> map, string? reason)
@@ -182,7 +182,7 @@ public sealed class Context(Project project, AuditOptions options)
         return new AuditResult
         {
             Findings = sorted,
-            Rules = [.. Kinds.Rules.Select(r => _stats[r])],
+            Checks = [.. Kinds.Checks.Select(c => _stats[c.Id])],
             Files = Project.FilesScanned,
             Scope = Options.Scope,
             ParseErrors = Project.ParseErrors,
