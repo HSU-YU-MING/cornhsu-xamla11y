@@ -5,7 +5,7 @@ using XamlA11y.Core.Xaml;
 namespace XamlA11y.Core.Rules;
 
 /// <summary>
-/// R8：資料產生的清單項目，名稱是資料物件的 ToString()（實測 facts/items.txt）。沒覆寫的類別念出來是型別名。
+/// item-type-name：資料產生的清單項目，名稱是資料物件的 ToString()（實測 facts/items.txt）。沒覆寫的類別念出來是型別名。
 /// DisplayMemberPath、ItemTemplate、TextSearch.TextPath 都只管畫面，不管名稱；
 /// 只有容器樣式設的 AutomationProperties.Name（或 Content／Header）才算。
 /// </summary>
@@ -34,12 +34,12 @@ internal static class ItemsRule
             .Where(c => !Markup.IsWpf(c) && KnownControls.LibraryOf(c) is null && ctx.Project.BaseOf(c) is null).ToList();
         if (!source.IsSet && inline.Count == 0) return;
         // 範本裡的清單：容器樣式常由控制項給
-        if (Context.ControlTemplateOf(e) is not null) { ctx.NotJudged("R8", e, "a template part"); return; }
+        if (Context.ControlTemplateOf(e) is not null) { ctx.NotJudged(Checks.ItemNames, e, "a template part"); return; }
 
         if (Named(ctx, e, container, content) is { } named)
         {
-            if (named) ctx.Pass("R8", e);
-            else ctx.NotJudged("R8", e, "its container style may name the items");
+            if (named) ctx.Pass(Checks.ItemNames, e);
+            else ctx.NotJudged(Checks.ItemNames, e, "its container style may name the items");
             return;
         }
 
@@ -47,8 +47,8 @@ internal static class ItemsRule
             : inline.Select(c => ctx.Project.Code.ReadingOf(c.Name.LocalName)).Distinct().ToList() is [var only] ? (inline[0].Name.LocalName, only) : (null, Reading.Unknown);
         switch (reading)
         {
-            case Reading.Text: ctx.Pass("R8", e); return;
-            case Reading.Unknown: ctx.NotJudged("R8", e, "what its items are is not visible"); return;
+            case Reading.Text: ctx.Pass(Checks.ItemNames, e); return;
+            case Reading.Unknown: ctx.NotJudged(Checks.ItemNames, e, "what its items are is not visible"); return;
         }
 
         // 樣式在專案外時每個屬性都「讀不出來」，那不是有設

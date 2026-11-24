@@ -1,7 +1,7 @@
-// README 兩份的「老實說看得到多少」表：從 corpus-run.sh 的輸出重貼。
+// docs/verification.md 與 docs/驗證.md 的語料表：從 corpus-run.sh 的輸出重貼。
 //
-//   node scripts/readme-corpus.mjs <輸出目錄>            # 比對，不一致 exit 1
-//   node scripts/readme-corpus.mjs <輸出目錄> --update   # 重貼
+//   node scripts/docs-corpus.mjs <輸出目錄>            # 比對，不一致 exit 1
+//   node scripts/docs-corpus.mjs <輸出目錄> --update   # 重貼
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -26,7 +26,7 @@ const rows = lang => ROWS.map(([file, name, kind]) => {
 });
 
 let stale = 0;
-for (const [file, lang, header] of [['README.md', 'en', '| project | XAML files |'], ['README.zh-Hant.md', 'zh', '| 專案 | XAML 檔 |']]) {
+for (const [file, lang, header] of [['docs/verification.md', 'en', '| project | XAML files |'], ['docs/驗證.md', 'zh', '| 專案 | XAML 檔 |']]) {
   const text = fs.readFileSync(file, 'utf8');
   const eol = text.includes('\r\n') ? '\r\n' : '\n';
   const lines = text.split(/\r?\n/);

@@ -11,5 +11,7 @@
   <!-- 第三方控制項與佈景的事實：prototype/UiaOracle 在真的 WPF 裡量的。 -->
   <ItemGroup>
     <EmbeddedResource Include="../../data/known-controls.json" LogicalName="XamlA11y.Core.known-controls.json" />
+    <!-- 每一種問題的中英文、嚴重度、準則、分組。 -->
+    <EmbeddedResource Include="../../data/findings.json" LogicalName="XamlA11y.Core.findings.json" />
   </ItemGroup>
 </Project>

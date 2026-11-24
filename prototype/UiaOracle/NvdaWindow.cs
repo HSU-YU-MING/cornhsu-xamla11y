@@ -34,7 +34,7 @@ internal static class NvdaWindow
             panel.Children.Add(host);
             // 工具對同一段的判定
             var audit = Auditor.Run(Project.FromText($"<Window {Host.Ns}><StackPanel>{cases[i].Body.Replace("[O]", Items.O)}</StackPanel></Window>"));
-            var verdicts = audit.Judgements.Where(j => j.Rule is "R1" or "R2" or "R7" && XamlMarkup.NameOf(j.Element) == "p").Select(j => j.Kind?.Slug ?? j.Verdict.ToString());
+            var verdicts = audit.Judgements.Where(j => j.Check is "control-names" or "input-names" or "list-names" && XamlMarkup.NameOf(j.Element) == "p").Select(j => j.Kind?.Slug ?? j.Verdict.ToString());
             Console.WriteLine($"case\t{i}\t{cases[i].Title}\t{string.Join(",", verdicts)}\t{cases[i].Body.Replace("[O]", Items.O)}");
         }
         panel.Children.Add(new Button { Content = "End", Tag = "end" });

@@ -49,7 +49,7 @@ public class NvdaFactsTests
     }
 
     private static IEnumerable<Judgement> Judged(JsonElement c) => Audit(c).Judgements
-        .Where(j => Markup.NameOf(j.Element) == "p" && j.Rule is "R1" or "R2" or "R7" && j.Verdict is not (Verdict.Blocked or Verdict.NotJudged));
+        .Where(j => Markup.NameOf(j.Element) == "p" && j.Check is "control-names" or "input-names" or "list-names" && j.Verdict is not (Verdict.Blocked or Verdict.NotJudged));
 
     /// <summary>NVDA 先念名稱、再念型別；沒有名稱就直接念型別。清單的名稱在清單那一句，其他的在最後一句。</summary>
     private static string SpokenName(string said, bool list)
@@ -70,7 +70,7 @@ public class NvdaFactsTests
         if (Said(c, lang) is not { } said) return;                       // 停用的命令按鈕：Tab 停不到
         foreach (var j in Judged(c))
         {
-            var name = SpokenName(said, j.Rule == "R7");
+            var name = SpokenName(said, j.Check == "list-names");
             var ok = j.Kind?.Slug switch
             {
                 null or "symbol-name" => Meaningful(name),
@@ -107,21 +107,21 @@ public class NvdaFactsTests
         }
     }
 
-    /// <summary>R8：工具說「念成型別名」的，NVDA 真的念型別名；說沒問題的沒有。收起來的 ComboBox 也是。</summary>
+    /// <summary>資料項目的名稱：工具說「念成型別名」的，NVDA 真的念型別名；說沒問題的沒有。收起來的 ComboBox 也是。</summary>
     [Theory, MemberData(nameof(Titles))]
     public void Items_are_read_the_way_the_tool_says(string lang, string title)
     {
         var c = Case(title);
-        foreach (var j in Audit(c).Judgements.Where(j => j.Rule == "R8" && j.Verdict is Verdict.Finding or Verdict.Pass))
+        foreach (var j in Audit(c).Judgements.Where(j => j.Check == "item-names" && j.Verdict is Verdict.Finding or Verdict.Pass))
             Assert.Equal(j.Verdict == Verdict.Finding, Said(c, lang)!.Contains("Uia Oracle dot", StringComparison.Ordinal));
     }
 
-    /// <summary>R9：工具說「沒聲音」的，NVDA 停在那裡真的什麼都沒念。</summary>
+    /// <summary>沒聲音的停留點：工具說「沒聲音」的，NVDA 停在那裡真的什麼都沒念。</summary>
     [Theory, MemberData(nameof(Titles))]
     public void Silent_stops_are_silent(string lang, string title)
     {
         var c = Case(title);
-        foreach (var j in Audit(c).Judgements.Where(j => j.Rule == "R9" && Markup.NameOf(j.Element) == "p" && j.Verdict == Verdict.Finding))
+        foreach (var j in Audit(c).Judgements.Where(j => j.Check == "silent-stops" && Markup.NameOf(j.Element) == "p" && j.Verdict == Verdict.Finding))
             Assert.Equal("", Said(c, lang));
     }
 
@@ -129,9 +129,9 @@ public class NvdaFactsTests
     public void Both_new_rules_were_heard()
     {
         var all = Cases.SelectMany(c => Audit(c).Judgements).ToList();
-        Assert.True(all.Count(j => j.Rule == "R8" && j.Verdict == Verdict.Finding) >= 4);
-        Assert.True(all.Count(j => j.Rule == "R8" && j.Verdict == Verdict.Pass) >= 4);
-        Assert.True(all.Count(j => j.Rule == "R9" && j.Verdict == Verdict.Finding) >= 3);
+        Assert.True(all.Count(j => j.Check == "item-names" && j.Verdict == Verdict.Finding) >= 4);
+        Assert.True(all.Count(j => j.Check == "item-names" && j.Verdict == Verdict.Pass) >= 4);
+        Assert.True(all.Count(j => j.Check == "silent-stops" && j.Verdict == Verdict.Finding) >= 3);
     }
 
     /// <summary>念法表上的每一種控制項、每一種會念描述的，都真的跑過。</summary>
@@ -144,12 +144,12 @@ public class NvdaFactsTests
     }
 
     [Fact]
-    public void The_readmes_say_how_much_was_compared()
+    public void The_documents_say_how_much_was_compared()
     {
         var heard = Cases.Where(c => Said(c, "zh") is not null).ToList();
         var judged = heard.Count(c => Judged(c).Any());
         Assert.True(judged >= 72, $"{judged} of {heard.Count}");
-        foreach (var file in (string[])["README.md", "README.zh-Hant.md"])
+        foreach (var file in (string[])["docs/verification.md", "docs/驗證.md"])
             Assert.Contains($"| {heard.Count} | {judged} | {heard.Count - judged} | **0** |", File.ReadAllText(Path.Combine(ActionContractTests.RepoRoot(), file)), StringComparison.Ordinal);
     }
 

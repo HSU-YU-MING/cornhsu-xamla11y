@@ -69,13 +69,13 @@ public static class HtmlReport
         Notes(lang.T("xamla11y-ignore comments that do nothing:", "沒作用的 xamla11y-ignore："), [.. r.InvalidIgnores.Select(lang.Ignore)]);
         Notes(lang.T("Controls it does not know (say what they are with treatAs in xamla11y.config.json):", "不認得的控制項（在 xamla11y.config.json 用 treatAs 說明它是什麼）："), [.. r.UnknownControls.Select(u => string.Create(inv, $"{u.Element} ×{u.Count}"))]);
 
-        // ── 每條規則 ──
-        var rules = r.Rules.Where(s => s.Candidates > 0).ToList();
-        if (rules.Count > 0)
+        // ── 每一項檢查 ──
+        var checks = r.Checks.Where(s => s.Candidates > 0).ToList();
+        if (checks.Count > 0)
         {
-            Open(lang.T("By rule", "依規則"), lang.T("Rule", "規則"), lang.T("Findings", "問題"), lang.T("OK", "沒問題"), lang.T("Unknown", "判不出來"), lang.T("Left out", "不判"));
-            foreach (var s in rules)
-                sb.Append(string.Create(inv, $"<tr><th scope=\"row\">{s.Rule} {H(lang.RuleTitle(s.Rule))}{(s.Off ? H(lang.T(" (off)", "（關）")) : "")}</th><td>{s.Findings}</td><td>{s.Pass}</td><td>{s.Blocked}</td><td>{s.NotJudged}</td></tr>\n"));
+            Open(lang.T("What was checked", "查了什麼"), lang.T("Check", "檢查"), lang.T("Findings", "問題"), lang.T("OK", "沒問題"), lang.T("Unknown", "判不出來"), lang.T("Left out", "不判"));
+            foreach (var s in checks)
+                sb.Append(string.Create(inv, $"<tr><th scope=\"row\">{H(lang.CheckTitle(s.Check))}{(s.Off ? H(lang.T(" (off)", "（關）")) : "")}</th><td>{s.Findings}</td><td>{s.Pass}</td><td>{s.Blocked}</td><td>{s.NotJudged}</td></tr>\n"));
             Close();
         }
 
@@ -90,14 +90,14 @@ public static class HtmlReport
             if (files.Count > 15) sb.Append($"<p>{H(lang.T($"… and {(files.Count - 15).ToString(inv)} more files", $"… 還有 {(files.Count - 15).ToString(inv)} 個檔案"))}</p>\n");
         }
 
-        // ── finding ──
+        // ── finding ──：先分組，組裡面先嚴重的
         sb.Append($"<h2>{H(lang.T("Findings", "問題"))}</h2>\n");
         if (reported.Count == 0) sb.Append($"<p>{H(known is { Count: > 0 } ? lang.T("No new ones.", "沒有新的。") : lang.T("None.", "沒有。"))}</p>\n");
-        foreach (var group in reported.GroupBy(f => (f.Severity, f.Kind, f.NameIsEmpty)).OrderByDescending(g => g.Key.Severity).ThenBy(g => Kinds.All.ToList().IndexOf(g.Key.Kind)).ThenByDescending(g => g.Key.NameIsEmpty))
+        foreach (var ((severity, kind, empty), list, part) in Kinds.Groups.SelectMany(part => reported.Where(f => f.Kind.Group == part.Id).GroupBy(f => (f.Severity, f.Kind, f.NameIsEmpty))
+            .OrderByDescending(g => g.Key.Severity).ThenBy(g => Kinds.All.ToList().IndexOf(g.Key.Kind)).ThenByDescending(g => g.Key.NameIsEmpty).Select((g, i) => (g.Key, g.ToList(), i == 0 ? part : null))))
         {
-            var (severity, kind, empty) = group.Key;
-            var list = group.ToList();
-            sb.Append($"<h3><span class=\"badge {Text.Slug(severity)}\">{Text.Slug(severity)}</span> {H(lang.Title(kind))} <small>{kind.Slug} · {list.Count.ToString(inv)}</small></h3>\n");
+            if (part is not null) sb.Append($"<h3>{H(lang.GroupTitle(part))} <small>{reported.Count(f => f.Kind.Group == part.Id).ToString(inv)}</small></h3>\n");
+            sb.Append($"<h4><span class=\"badge {Text.Slug(severity)}\">{Text.Slug(severity)}</span> {H(lang.Title(kind))} <small>{kind.Slug} · {list.Count.ToString(inv)}</small></h4>\n");
             sb.Append($"<p>{H(lang.Help(kind))} <a href=\"{H(kind.Uri(lang.IsZh))}\">{H(lang.T($"Examples for {kind.Slug}", $"{kind.Slug} 的寫法範例"))}</a></p>\n");
             var refs = new List<string>();
             foreach (var c in r.Scope.CriteriaOf(kind).Select(c => Wcag.Criteria[c]))
@@ -123,14 +123,14 @@ public static class HtmlReport
         }
 
         // ── 看不到的 ──
-        var blocked = r.On.SelectMany(s => s.BlockedReasons.Select(b => (s.Rule, b.Key, b.Value))).OrderByDescending(b => b.Value).ThenBy(b => b.Key, StringComparer.Ordinal).ToList();
+        var blocked = r.On.SelectMany(s => s.BlockedReasons.Select(b => (s.Check, b.Key, b.Value))).OrderByDescending(b => b.Value).ThenBy(b => b.Key, StringComparer.Ordinal).ToList();
         if (blocked.Count > 0)
         {
             sb.Append($"<h2>{H(lang.T("Unknown", "判不出來的"))}</h2>\n");
-            var where = r.Judgements.Where(j => j.Verdict == Verdict.Blocked).ToLookup(j => (j.Rule, Context.CutMiddle(j.Reason ?? "", 200)), j => $"{j.File}:{j.Line.ToString(inv)}");
-            Open(lang.T("Why, how often and where", "原因、次數、在哪"), lang.T("Rule", "規則"), lang.T("Reason", "原因"), lang.T("Places", "幾處"), lang.T("Where", "在哪"));
-            foreach (var (rule, reason, n) in blocked.Take(100))
-                sb.Append($"<tr><td>{rule}</td><td>{H(lang.Reason(reason))}</td><td>{n.ToString(inv)}</td><td>{string.Join(", ", where[(rule, reason)].Take(3).Select(x => $"<code>{Path(x)}</code>"))}{(n > 3 ? ", …" : "")}</td></tr>\n");
+            var where = r.Judgements.Where(j => j.Verdict == Verdict.Blocked).ToLookup(j => (j.Check, Context.CutMiddle(j.Reason ?? "", 200)), j => $"{j.File}:{j.Line.ToString(inv)}");
+            Open(lang.T("Why, how often and where", "原因、次數、在哪"), lang.T("Check", "檢查"), lang.T("Reason", "原因"), lang.T("Places", "幾處"), lang.T("Where", "在哪"));
+            foreach (var (check, reason, n) in blocked.Take(100))
+                sb.Append($"<tr><td>{H(lang.CheckTitle(check))}</td><td>{H(lang.Reason(reason))}</td><td>{n.ToString(inv)}</td><td>{string.Join(", ", where[(check, reason)].Take(3).Select(x => $"<code>{Path(x)}</code>"))}{(n > 3 ? ", …" : "")}</td></tr>\n");
             Close();
             if (blocked.Count > 100) sb.Append($"<p>{H(lang.T($"… and {(blocked.Count - 100).ToString(inv)} more reasons — the JSON report has all of them.", $"… 還有 {(blocked.Count - 100).ToString(inv)} 種原因，JSON 報告裡有全部。"))}</p>\n");
         }
@@ -193,9 +193,9 @@ public static class HtmlReport
         ("fail", lang.T("The XAML decides it and the criterion leaves no room. Stops the build by default.", "XAML 就決定了，準則沒有留餘地。預設會擋建置。")),
         ("warn", lang.T("Very likely a problem; something the XAML does not show may make it fine.", "很可能是問題；XAML 看不到的東西可能讓它沒問題。")),
         ("info", lang.T("Worth a look.", "值得看一眼。")),
-        (lang.T("Resolution", "可解析率"), lang.T("Of the names, inputs, focus and mouse-only checks (the ones that can stop a build), the share that could be judged: judged ÷ (judged + unknown). Places that are left out are not in it.", "名稱、輸入框、焦點、只能用滑鼠這四條（會擋建置的）裡，判得出來的比例：判得出來 ÷（判得出來 + 判不出來）。不判的不算在內。")),
+        (lang.T("Resolution", "可解析率"), lang.T("Of the names, inputs, focus and mouse-only checks (the ones that can stop a build), the share that could be judged: judged ÷ (judged + unknown). Places that are left out are not in it.", "名稱、輸入框、焦點、只能用滑鼠這四項（會擋建置的）裡，判得出來的比例：判得出來 ÷（判得出來 + 判不出來）。不判的不算在內。")),
         (lang.T("Unknown", "判不出來"), lang.T("This tool should have been able to tell and could not. Not the same as fine.", "應該判得出來卻判不出來。不等於沒問題。")),
-        (lang.T("Left out", "不判"), lang.T("Only known when the program runs, or not the job of this check.", "執行時才知道，或不歸這條規則管。")),
+        (lang.T("Left out", "不判"), lang.T("Only known when the program runs, or not the job of this check.", "執行時才知道，或不歸這項檢查管。")),
         (lang.T("Accessible name", "名稱"), lang.T("What a screen reader says for a control. Windows hands it out through UI Automation.", "螢幕閱讀器替一個控制項念的字。Windows 透過 UI Automation 提供。")),
         ("AutomationProperties.Name, LabeledBy", lang.T("The XAML properties that set the name, directly or from another element.", "在 XAML 裡設名稱的屬性：直接寫，或拿別的元素的文字。")),
         ("AutomationPeer", lang.T("The class that describes a WPF control to UI Automation. Without one a screen reader does not see the control.", "替 WPF 控制項向 UI Automation 說明自己的類別。沒有它，螢幕閱讀器看不到這個控制項。")),
@@ -214,7 +214,8 @@ public static class HtmlReport
         main, footer { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1rem; }
         h1 { margin: 0 0 .5rem; font-size: 1.6rem; }
         h2 { margin: 2.5rem 0 .5rem; font-size: 1.3rem; border-bottom: 1px solid var(--line); }
-        h3 { margin: 1.75rem 0 .25rem; font-size: 1.1rem; }
+        h3 { margin: 1.75rem 0 .25rem; font-size: 1.15rem; }
+        h4 { margin: 1.5rem 0 .25rem; font-size: 1.05rem; }
         small { font-weight: normal; color: var(--muted); }
         .verdict { display: inline-block; margin: 0; padding: .25rem .9rem; font-weight: 700; border: 2px solid currentColor; border-radius: .4rem; }
         .v0 { color: var(--ok); } .v1 { color: var(--fail); } .v2, .v3 { color: var(--warn); }

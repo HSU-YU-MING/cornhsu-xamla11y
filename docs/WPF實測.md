@@ -1,4 +1,4 @@
-# M1：WPF 實際怎麼做（UIA Oracle 實測）
+# WPF 實際怎麼做（實測）
 
 2026-11-24。每一條都是把 XAML 開成真的 WPF 視窗、從**另一條執行緒的 UIA client** 讀出來的，並用 Axe-Windows 2.4.2 覆核。
 案例檔在 `prototype/UiaOracle/facts/`，重跑：`uiaoracle names --axe`、`templates`、`themes`、`tabs`、`focus`、`label`。
@@ -7,9 +7,9 @@
 
 ---
 
-## 1. 規劃書的假設，哪些被推翻
+## 1. 常見的假設，哪些被推翻
 
-| 規劃書（第 3 節） | 實測 |
+| 假設 | 實測 |
 |---|---|
 | `Label Target` 可能會給 TextBox 名稱，「規則要認得」 | **不會。** Target 有設上、WPF 內部的 `Label.LabeledByProperty` 也指到 Label，但 `UIElementAutomationPeer.GetLabeledByCore` 只讀 `AutomationProperties.LabeledBy`。TextBox、PasswordBox、ComboBox、Slider、DatePicker、Button 都一樣。Axe 也報。 |
 | 範本裡有文字 → 不知道 | **範本裡的文字從不成為名稱**（ControlTemplate 的 TextBlock、ContentTemplate 的文字都是空名稱）。所以範本換成什麼樣不影響名稱判定。 |
@@ -53,7 +53,7 @@
 - `IsTabStop="False"`、`KeyboardNavigation.IsTabStop="False"`、`Focusable="False"`：Tab 不會停。
 - **例外**：可編輯的 ComboBox、DatePicker 設了 `IsTabStop="False"`，裡面的輸入框照樣停；ListBox 設了，項目照樣停。
 - Border／TextBlock／Image 加 `Focusable="True"` 就進 Tab 順序；但 **Border 就算 `Focusable` + `AutomationProperties.Name` 也不在 UIA 樹上** ——
-  鍵盤修好了、螢幕閱讀器還是看不到。所以 R4 的建議是換成 Button，不是加 Focusable。
+  鍵盤修好了、螢幕閱讀器還是看不到。所以 `mouse-only` 的建議是換成 Button，不是加 Focusable。
 - Label、UserControl、GroupBox 預設不進 Tab。`TabNavigation="None"` 的容器裡面都不停。
 
 ## 5. 焦點看得見
@@ -88,13 +88,13 @@
 - 沒有 AutomationPeer 的自訂控制項（MahApps／HandyControl／MaterialDesign 的 NumericUpDown、HandyControl 的 PasswordBox）設了名稱也沒有用：
   UIA 樹上只有裡面那個沒名稱的 TextBox。
 
-## 5c. 清單、表格、樹（facts/lists.txt，R7）
+## 5c. 清單、表格、樹（facts/lists.txt）
 
 - ListBox、ListView、TreeView、DataGrid 沒設名稱：UIA 的 Name 是空的，Axe-Windows 報 NameNotNull。外面的 GroupBox、`Label.Target`、ToolTip 都不算。
 - Axe **也報**：ItemsControl（有項目時）、Menu、ToolBar、ProgressBar、Calendar。**不報**：TabControl、StatusBar、GroupBox、ScrollBar。
 - 鍵盤到不了的（`Focusable="False"`、停用）Axe 不報 → 這支降成 info。
 
-## 5c-2. 資料產生的項目（facts/items.txt，R8）
+## 5c-2. 資料產生的項目（facts/items.txt）
 
 39 案。`ListBox`、`ListView`（含 GridView）、`ComboBox`、`TreeView`、`TabControl`、`Menu`、`DataGrid` 的項目，名稱都是資料物件的 `ToString()`：
 
@@ -104,7 +104,7 @@
 - 收起來的 ComboBox，NVDA 念選到的那一項也是這個名稱（不是畫面上的字）。
 - 真實 App：QuillNest（沙箱複製品）開起來用 UIA 讀，便利貼與記事本的分類下拉式方塊選到的是 `QuillNest.Models.LabelInfo`，跟工具報的一樣。
 
-## 5c-3. 沒聲音的停留點（facts/silent.txt，R9）
+## 5c-3. 沒聲音的停留點（facts/silent.txt）
 
 56 案。Tab 停得到、UIA 樹上沒有（連 `AutomationProperties.Name` 都沒用）：`ContentControl`、`Control`、`HeaderedContentControl`（預設就能聚焦），
 `Focusable="True"` 的面板、Border、圖形、ContentPresenter，以及繼承 `Control`、`ContentControl`、`ButtonBase`、`RangeBase`、`FrameworkElement`、`Panel` 又沒寫
@@ -145,7 +145,7 @@
 | 下拉式方塊、滑桿、清單、樹只有 ToolTip | 下拉式方塊, One, 折疊, Name／滑桿, 0, Name／清單, Name／樹狀檢視, Name |
 | DataGrid 的一列 | System dot Windows dot Controls dot Text Block, 資料項目（列的名稱是資料的 ToString()） |
 
-- **GroupBox 的標題聽得到**（當成群組念），只是不是清單的名稱 —— R7 放在 warn 的另一個理由。
+- **GroupBox 的標題聽得到**（當成群組念），只是不是清單的名稱 —— `list-no-name` 放在 warn 的另一個理由。
 - **DataGrid 的列念的是資料物件的 `ToString()`**：沒覆寫就是型別名。資料的事，XAML 看不到，這支不判。
 - 停用的命令按鈕 Tab 停不到，沒有比。Narrator 與 JAWS 沒跑過。
 

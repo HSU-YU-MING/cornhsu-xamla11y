@@ -14,7 +14,7 @@
 - [ ] `CHANGELOG.md` 的版本段落寫完整，日期填好（0.1.0 現在寫的是 Unreleased）
 - [ ] `bash scripts/verify-readme-facts.sh --update`（README 的 Action 範例釘新版；CI 也會擋不一致）
 - [ ] 動過 console 輸出：`bash scripts/verify-readme-sample.sh --update`
-- [ ] 動過規則：`uiaoracle check`、`check-corpus` 都 0 WRONG（Windows 本機；CI 跑不了），`record` 重錄，README 的表更新
+- [ ] 動過規則：`uiaoracle check`、`check-corpus` 都 0 WRONG（Windows 本機；CI 跑不了），`record` 重錄，`docs/verification.md` 與 `驗證.md` 的表更新
 - [ ] 佈景套件升版：重跑 `uiaoracle themes`、`focus-themes`，改 `data/known-controls.json` 的版本與 `THIRD-PARTY-NOTICES.md`
 - [ ] `docs/four-tools.md` 與 `ci.yml` 的 `four-tools` job 裡三件套的版本
 

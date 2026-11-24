@@ -43,7 +43,7 @@ public class UiaFactsTests
     {
         var f = Case("names", title);
         var result = Auditor.Run(Project.FromText(f.GetProperty("xaml").GetString()!));
-        foreach (var j in result.Judgements.Where(j => j.Rule is "R1" or "R2" or "R7"))
+        foreach (var j in result.Judgements.Where(j => j.Check is "control-names" or "input-names" or "list-names"))
         {
             if (Markup.NameOf(j.Element) is not { } id || !f.GetProperty("uia").TryGetProperty(id, out var node)) continue;
             if (j.Verdict is Verdict.Blocked or Verdict.NotJudged) continue;
@@ -65,7 +65,7 @@ public class UiaFactsTests
     {
         int judged = 0, unknown = 0;
         foreach (var f in Group("names"))
-            foreach (var j in Auditor.Run(Project.FromText(f.GetProperty("xaml").GetString()!)).Judgements.Where(j => j.Rule is "R1" or "R2" or "R7"))
+            foreach (var j in Auditor.Run(Project.FromText(f.GetProperty("xaml").GetString()!)).Judgements.Where(j => j.Check is "control-names" or "input-names" or "list-names"))
                 if (Markup.NameOf(j.Element) is { } id && f.GetProperty("uia").TryGetProperty(id, out _))
                 {
                     if (j.Verdict is Verdict.Blocked or Verdict.NotJudged) unknown++; else judged++;
@@ -79,7 +79,7 @@ public class UiaFactsTests
     {
         var f = Case("focus", title);
         var visible = f.GetProperty("visible").GetBoolean();
-        foreach (var j in Auditor.Run(Project.FromText(f.GetProperty("xaml").GetString()!)).Judgements.Where(j => j.Rule == "R3"))
+        foreach (var j in Auditor.Run(Project.FromText(f.GetProperty("xaml").GetString()!)).Judgements.Where(j => j.Check == "focus"))
         {
             if (j.Verdict is Verdict.Blocked or Verdict.NotJudged) continue;
             Assert.True(visible == (j.Verdict == Verdict.Pass), $"tool: {j.Verdict} ({j.Reason}); focus visible in WPF: {visible}");
@@ -92,11 +92,42 @@ public class UiaFactsTests
         var f = Case("tabs", title);
         var stops = f.GetProperty("stops").EnumerateArray().Select(s => s.GetString()!).ToList();
         var reached = stops.Contains("p") || stops.Any(s => s.StartsWith("PART_", StringComparison.Ordinal));
-        foreach (var j in Auditor.Run(Project.FromText(f.GetProperty("xaml").GetString()!)).Judgements.Where(j => j.Rule is "R4" or "R5" && Markup.NameOf(j.Element) == "p"))
-            if (j.Verdict == Verdict.Finding) Assert.False(reached, $"{j.Rule}: {j.Reason}; stops: {string.Join(" → ", stops)}");
+        foreach (var j in Auditor.Run(Project.FromText(f.GetProperty("xaml").GetString()!)).Judgements.Where(j => j.Check is "mouse" or "tab-order" && Markup.NameOf(j.Element) == "p"))
+            if (j.Verdict == Verdict.Finding) Assert.False(reached, $"{j.Check}: {j.Reason}; stops: {string.Join(" → ", stops)}");
     }
 
     [Fact]
     public void The_recording_covers_every_group() =>
         Assert.True(Group("names").Count() >= 240 && Group("focus").Count() >= 40 && Group("tabs").Count() >= 55);
+
+    public static TheoryData<string> ItemTitles => [.. Facts.RootElement.GetProperty("items").EnumerateArray().Select(x => x.GetProperty("title").GetString()!)];
+
+    public static TheoryData<string> SilentTitles => [.. Facts.RootElement.GetProperty("silent").EnumerateArray().Select(x => x.GetProperty("title").GetString()!)];
+
+    private static (AuditResult Result, JsonElement Case) Fact(string group, string title)
+    {
+        var c = Facts.RootElement.GetProperty(group).EnumerateArray().Single(x => x.GetProperty("title").GetString() == title);
+        return (Kit.AuditWithCode(c.GetProperty("xaml").GetString()!, Facts.RootElement.GetProperty("code").GetString()!), c);
+    }
+
+    [Theory, MemberData(nameof(ItemTitles))]
+    public void Data_items_are_judged_the_way_WPF_names_them(string title)
+    {
+        var (r, c) = Fact("items", title);
+        var typeName = c.GetProperty("name").GetString()!.StartsWith("UiaOracle.", StringComparison.Ordinal);
+        var judged = r.Judgements.Where(j => j.Check == "item-names" && j.Verdict is not (Verdict.NotJudged or Verdict.Blocked)).ToList();
+        Assert.NotEmpty(judged);
+        Assert.All(judged, j => Assert.Equal(typeName, j.Verdict == Verdict.Finding));
+    }
+
+    [Theory, MemberData(nameof(SilentTitles))]
+    public void Silent_tab_stops_are_the_ones_WPF_has(string title)
+    {
+        var (r, c) = Fact("silent", title);
+        var silent = c.GetProperty("stop").GetBoolean() && !c.GetProperty("inTree").GetBoolean();
+        var judged = r.Judgements.Where(j => j.Check == "silent-stops" && (string?)j.Element.Attribute(Markup.XName_) == "p").ToList();
+        if (title.Contains("limits Tab", StringComparison.Ordinal)) { Assert.All(judged, j => Assert.Equal(Verdict.NotJudged, j.Verdict)); return; }
+        Assert.DoesNotContain(judged, j => j.Verdict is Verdict.NotJudged or Verdict.Blocked);
+        Assert.Equal(silent, judged.Any(j => j.Verdict == Verdict.Finding));
+    }
 }

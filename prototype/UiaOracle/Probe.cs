@@ -4,7 +4,7 @@ using System.Windows.Media;
 
 namespace UiaOracle;
 
-/// <summary>M1：規劃書第 3 節每一個 ⚠。只印事實，不判定。案例在 facts/*.txt（「組 | 標題 | XAML | 資源」，引號寫單引號）。</summary>
+/// <summary>WPF 怎麼做：只印事實，不判定。案例在 facts/*.txt（「組 | 標題 | XAML | 資源」，引號寫單引號）。</summary>
 internal static class Probe
 {
     private const string Icon = "<Path Data='M0,0 L10,10 L0,10 Z' Fill='Black' Width='12' Height='12'/>";

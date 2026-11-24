@@ -5,7 +5,7 @@ using XamlA11y.Core.Xaml;
 namespace XamlA11y.Core.Rules;
 
 /// <summary>
-/// R3：FocusVisualStyle 關掉了，而且沒有別的東西畫出焦點。
+/// focus-not-visible：FocusVisualStyle 關掉了，而且沒有別的東西畫出焦點。
 ///
 /// 報在「關掉它的那一行」（樣式的 Setter 或元素），不是報在每一個用到樣式的元素上 —— 修的地方只有一個。
 /// 樣式要看**實際用到它的元素**（元素可能自己換了範本、把焦點框加回來、或根本不能聚焦），以及沿用它的衍生樣式
@@ -13,7 +13,7 @@ namespace XamlA11y.Core.Rules;
 /// </summary>
 internal static class FocusRule
 {
-    /// <summary>預設範本在焦點框關掉之後完全看不出焦點的控制項（實測，docs/M1-UIA實測.md 第 5 節）。</summary>
+    /// <summary>預設範本在焦點框關掉之後完全看不出焦點的控制項（實測，docs/WPF實測.md 第 5 節）。</summary>
     private static readonly HashSet<string> Eligible = new(StringComparer.Ordinal)
     { "Button", "ToggleButton", "RepeatButton", "CheckBox", "RadioButton", "ComboBox", "Slider", "Hyperlink" };
 
@@ -84,8 +84,8 @@ internal static class FocusRule
         Dictionary<string, (int All, int InTemplates)> usedKeys, Dictionary<StyleRecord, List<(XElement Element, StyleChain Chain)>> users)
     {
         if (!s.Setters.TryGetValue("FocusVisualStyle", out var setter)) return;
-        if (Removed(ctx, ctx.Project.Styles.SetterValue(setter)) is not { } removed) { ctx.Blocked("R3", setter, "FocusVisualStyle is set to a style this tool cannot read"); return; }
-        if (!removed) { ctx.Pass("R3", setter); return; }
+        if (Removed(ctx, ctx.Project.Styles.SetterValue(setter)) is not { } removed) { ctx.Blocked(Checks.Focus, setter, "FocusVisualStyle is set to a style this tool cannot read"); return; }
+        if (!removed) { ctx.Pass(Checks.Focus, setter); return; }
 
         bool Applied(StyleRecord r, bool hasDerived) => r.Key is null || usedKeys.ContainsKey(r.Key) || !hasDerived;
         var derived = all.Where(d => d != s && chains[d].Any(c => c.Styles.Contains(s) && c.Setter("FocusVisualStyle") == setter)).ToList();
@@ -116,9 +116,9 @@ internal static class FocusRule
                 }
         }
 
-        if (unknown is not null) ctx.Blocked("R3", setter, unknown, unknown == UnknownControl ? s.TargetType : null);
-        else if (passed) ctx.Pass("R3", setter);
-        else ctx.NotJudged("R3", setter, skipped ?? "a style that nothing uses");
+        if (unknown is not null) ctx.Blocked(Checks.Focus, setter, unknown, unknown == UnknownControl ? s.TargetType : null);
+        else if (passed) ctx.Pass(Checks.Focus, setter);
+        else ctx.NotJudged(Checks.Focus, setter, skipped ?? "a style that nothing uses");
     }
 
     private const string UnknownControl = "a control this tool does not know (declare it in treatAs)";
@@ -177,19 +177,19 @@ internal static class FocusRule
     private static void CheckElement(Context ctx, XamlDoc doc, XElement e, Resolved value)
     {
         if (e.Parent is null) return;       // x:Class 的根是定義，用它的地方才判
-        if (Removed(ctx, value) is not { } removed) { ctx.Blocked("R3", e, "FocusVisualStyle is set to a style this tool cannot read"); return; }
-        if (!removed) { ctx.Pass("R3", e); return; }
+        if (Removed(ctx, value) is not { } removed) { ctx.Blocked(Checks.Focus, e, "FocusVisualStyle is set to a style this tool cannot read"); return; }
+        if (!removed) { ctx.Pass(Checks.Focus, e); return; }
 
         var styles = ctx.Project.Styles;
         if (ctx.Project.BaseOf(e) is not { } control)
         {
-            if (NameRules.LooksInteractive(e.Name.LocalName) || NameRules.LooksInput(e.Name.LocalName)) ctx.Blocked("R3", e, UnknownControl, e.Name.LocalName);
-            else ctx.NotJudged("R3", e, "not a control the keyboard goes to");
+            if (NameRules.LooksInteractive(e.Name.LocalName) || NameRules.LooksInput(e.Name.LocalName)) ctx.Blocked(Checks.Focus, e, UnknownControl, e.Name.LocalName);
+            else ctx.NotJudged(Checks.Focus, e, "not a control the keyboard goes to");
             return;
         }
-        if (styles.Resolve(e, "Focusable").IsFalse || styles.Resolve(e, "IsTabStop").IsFalse) { ctx.NotJudged("R3", e, "it cannot take keyboard focus"); return; }
-        if (control == "ComboBox" && styles.Resolve(e, "IsEditable").IsTrue) { ctx.Pass("R3", e); return; }
-        if (Context.ControlTemplateOf(e) is not null) { ctx.NotJudged("R3", e, "a template part (the whole control may show focus)"); return; }
+        if (styles.Resolve(e, "Focusable").IsFalse || styles.Resolve(e, "IsTabStop").IsFalse) { ctx.NotJudged(Checks.Focus, e, "it cannot take keyboard focus"); return; }
+        if (control == "ComboBox" && styles.Resolve(e, "IsEditable").IsTrue) { ctx.Pass(Checks.Focus, e); return; }
+        if (Context.ControlTemplateOf(e) is not null) { ctx.NotJudged(Checks.Focus, e, "a template part (the whole control may show focus)"); return; }
 
         string? unknown = null, skipped = null;
         foreach (var chain in styles.ChainsOf(e))
@@ -203,9 +203,9 @@ internal static class FocusRule
             if (seen == Seen.Unknown) unknown ??= why;
             if (seen == Seen.Skip) skipped ??= why;
         }
-        if (unknown is not null) ctx.Blocked("R3", e, unknown);
-        else if (skipped is not null) ctx.NotJudged("R3", e, skipped);
-        else ctx.Pass("R3", e);
+        if (unknown is not null) ctx.Blocked(Checks.Focus, e, unknown);
+        else if (skipped is not null) ctx.NotJudged(Checks.Focus, e, skipped);
+        else ctx.Pass(Checks.Focus, e);
     }
 
     // ───────────────────────── 焦點框還在嗎 ─────────────────────────

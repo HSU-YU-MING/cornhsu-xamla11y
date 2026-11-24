@@ -6,7 +6,7 @@ using XamlA11y.Core.Xaml;
 namespace XamlA11y.Core.Rules;
 
 /// <summary>
-/// R4：滑鼠按得到、鍵盤按不到。只看 XAML 裡寫的處理器（程式碼裡 += 的看不到，報告有講）。
+/// mouse-only：滑鼠按得到、鍵盤按不到。只看 XAML 裡寫的處理器（程式碼裡 += 的看不到，報告有講）。
 ///
 /// 誤報最多的情形逐一排除：拖動視窗的標題列、拖曳手勢（同時有 MouseMove）、容器底下有真的控制項、
 /// 根元素、Preview 事件（通道事件多半是旁聽，不是「按這裡」）。
@@ -22,7 +22,7 @@ internal static partial class MouseRule
     public static void Check(Context ctx, XamlDoc doc, XElement e)
     {
         var control = ctx.Project.BaseOf(e);
-        // 不認得的元素掛了滑鼠處理器：不知道鍵盤到不到得了（看起來是控制項的，R1／R2 已經數了）
+        // 不認得的元素掛了滑鼠處理器：不知道鍵盤到不到得了（看起來是控制項的，名稱的檢查已經數了）
         var unknown = control is null && !Markup.IsWpf(e) && !NameRules.LooksInteractive(e.Name.LocalName) && !NameRules.LooksInput(e.Name.LocalName);
         if (!unknown && (control is null || !Wpf.NonControls.Contains(control))) return;
 
@@ -30,11 +30,11 @@ internal static partial class MouseRule
         if (gesture is null) return;
         var local = e.Name.LocalName;
 
-        if (e.Parent is null) { ctx.NotJudged("R4", e, "a handler on the root element"); return; }
+        if (e.Parent is null) { ctx.NotJudged(Checks.Mouse, e, "a handler on the root element"); return; }
 
         if (handler is not null && IsWindowDrag(ctx, doc, handler))
         {
-            ctx.NotJudged("R4", e, "a handler that moves the window (the system menu does it from the keyboard)");
+            ctx.NotJudged(Checks.Mouse, e, "a handler that moves the window (the system menu does it from the keyboard)");
             return;
         }
 
@@ -42,16 +42,16 @@ internal static partial class MouseRule
         if (HasAny(e, "MouseMove", "PreviewMouseMove", "DragDelta")
             || (handler is not null && LooksLikeDrag(ctx, doc, handler)))
         {
-            ctx.NotJudged("R4", e, "looks like a drag gesture (it also handles mouse movement)");
+            ctx.NotJudged(Checks.Mouse, e, "looks like a drag gesture (it also handles mouse movement)");
             return;
         }
 
-        if (control is "Run" or "Span" && e.Ancestors().Any(a => a.Name.LocalName == "Hyperlink")) { ctx.Pass("R4", e); return; }
+        if (control is "Run" or "Span" && e.Ancestors().Any(a => a.Name.LocalName == "Hyperlink")) { ctx.Pass(Checks.Mouse, e); return; }
 
         // 底下有真的控制項：處理器多半是「點背景」「順便記住哪一列」，按得到的事由那些控制項做
         if (HasControls(ctx, e) || (ctx.Project.DocOfClass(e) is { } inner && HasControls(ctx, inner.Root)))
         {
-            ctx.NotJudged("R4", e, "a container around real controls");
+            ctx.NotJudged(Checks.Mouse, e, "a container around real controls");
             return;
         }
 
@@ -59,7 +59,7 @@ internal static partial class MouseRule
         // （裡面那一塊做的可能是另一件事：頁籤上的 ✕。看不出來，不說沒問題）
         if (e.Ancestors().Any(a => !Markup.IsPropertyElement(a) && ctx.Project.BaseOf(a) is { } c && (Wpf.Buttons.Contains(c) || c is "MenuItem" or "Hyperlink")))
         {
-            ctx.NotJudged("R4", e, "inside a control that the keyboard reaches (whether both do the same is not visible)");
+            ctx.NotJudged(Checks.Mouse, e, "inside a control that the keyboard reaches (whether both do the same is not visible)");
             return;
         }
 
@@ -69,7 +69,7 @@ internal static partial class MouseRule
         var focusable = ctx.Project.Styles.Resolve(e, "Focusable");
         if (keyboard && (focusable.IsTrue || (control == "ContentControl" && !focusable.IsFalse)))
         {
-            ctx.NotJudged("R4", e, "has its own keyboard handler (which keys it handles is not visible)");
+            ctx.NotJudged(Checks.Mouse, e, "has its own keyboard handler (which keys it handles is not visible)");
             return;
         }
 
@@ -77,34 +77,34 @@ internal static partial class MouseRule
         if (Context.ControlTemplateOf(e) is { } template)
         {
             var target = ctx.TemplateTarget(template);
-            ctx.NotJudged("R4", e, target is "Window" ? "window chrome" : "a part of a control template (the control may handle the keyboard itself)");
+            ctx.NotJudged(Checks.Mouse, e, target is "Window" ? "window chrome" : "a part of a control template (the control may handle the keyboard itself)");
             return;
         }
 
         // 清單項目的範本：項目本身拿得到焦點，鍵盤處理可能寫在清單上
         if (InItemTemplate(ctx, e))
         {
-            ctx.NotJudged("R4", e, "inside a list item template (the list may handle Enter or Space)");
+            ctx.NotJudged(Checks.Mouse, e, "inside a list item template (the list may handle Enter or Space)");
             return;
         }
 
-        if (preview) { ctx.NotJudged("R4", e, "only a Preview (tunnelling) handler"); return; }
+        if (preview) { ctx.NotJudged(Checks.Mouse, e, "only a Preview (tunnelling) handler"); return; }
 
         // 同一個動作也綁在鍵盤到得了的控制項上（MAA 的 TooltipBlock 疊在按鈕上、點了做一樣的事）
         if (handler is not null && SameAction(ctx, e, handler))
         {
-            ctx.NotJudged("R4", e, "a control in the same file that the keyboard reaches has the same action");
+            ctx.NotJudged(Checks.Mouse, e, "a control in the same file that the keyboard reaches has the same action");
             return;
         }
 
         // 程式碼改了 Focusable 或掛了鍵盤事件
         if (ctx.Project.CodeSets(e, "KeyDown", "PreviewKeyDown", "KeyUp", "Focusable"))
         {
-            ctx.Blocked("R4", e, "the code-behind handles keys for it");
+            ctx.Blocked(Checks.Mouse, e, "the code-behind handles keys for it");
             return;
         }
 
-        if (unknown) { ctx.Blocked("R4", e, "a control this tool does not know (declare it in treatAs)", local); return; }
+        if (unknown) { ctx.Blocked(Checks.Mouse, e, "a control this tool does not know (declare it in treatAs)", local); return; }
 
         ctx.Report(Kinds.MouseOnly, e, $"<{local}> reacts to {gesture}{(handler is null ? "" : $" ({Context.Show(handler)})")} but the keyboard cannot reach it");
     }

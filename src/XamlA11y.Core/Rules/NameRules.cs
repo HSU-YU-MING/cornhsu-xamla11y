@@ -4,10 +4,10 @@ using XamlA11y.Core.Xaml;
 
 namespace XamlA11y.Core.Rules;
 
-/// <summary>R1（互動元件的名稱）、R2（輸入框的名稱）與 R7（清單、表格、樹的名稱，警告）。</summary>
+/// <summary>控制項、輸入框、清單與進度條的名稱（最後一項是警告）。</summary>
 internal static class NameRules
 {
-    /// <summary>這些控制項範本裡的零件不在 UIA 樹上、或 Axe-Windows 不報（實測，docs/M1-UIA實測.md 第 3 節）。</summary>
+    /// <summary>這些控制項範本裡的零件不在 UIA 樹上、或 Axe-Windows 不報（實測，docs/WPF實測.md 第 3 節）。</summary>
     private static readonly HashSet<string> SilentTemplates = new(StringComparer.Ordinal) { "ComboBox", "ScrollBar", "Slider" };
 
     public static void Check(Context ctx, XamlDoc doc, XElement e)
@@ -21,29 +21,29 @@ internal static class NameRules
             var behaves = ctx.Project.BaseOf(e);
             if (behaves is not null)
             {
-                if (Wpf.Interactive.Contains(behaves)) ctx.Blocked("R1", e, "a class that sets its own accessible name in code", local);
-                else if (Wpf.Inputs.Contains(behaves)) ctx.Blocked("R2", e, "a class that sets its own accessible name in code", local);
-                else if (Wpf.Lists.Contains(behaves)) ctx.Blocked("R7", e, "a class that sets its own accessible name in code", local);
+                if (Wpf.Interactive.Contains(behaves)) ctx.Blocked(Checks.ControlNames, e, "a class that sets its own accessible name in code", local);
+                else if (Wpf.Inputs.Contains(behaves)) ctx.Blocked(Checks.InputNames, e, "a class that sets its own accessible name in code", local);
+                else if (Wpf.Lists.Contains(behaves)) ctx.Blocked(Checks.ListNames, e, "a class that sets its own accessible name in code", local);
                 return;
             }
             // 不認得的控制項：名字看起來是互動元件才算候選（其他的連是不是控制項都不知道）
-            if (LooksInteractive(local)) ctx.Blocked("R1", e, "a control this tool does not know (declare it in treatAs)", local);
-            else if (LooksInput(local)) ctx.Blocked("R2", e, "a control this tool does not know (declare it in treatAs)", local);
-            else if (LooksList(local)) ctx.Blocked("R7", e, "a control this tool does not know (declare it in treatAs)", local);
+            if (LooksInteractive(local)) ctx.Blocked(Checks.ControlNames, e, "a control this tool does not know (declare it in treatAs)", local);
+            else if (LooksInput(local)) ctx.Blocked(Checks.InputNames, e, "a control this tool does not know (declare it in treatAs)", local);
+            else if (LooksList(local)) ctx.Blocked(Checks.ListNames, e, "a control this tool does not know (declare it in treatAs)", local);
             return;
         }
 
         // NVDA 把有欄位的 ListView 念成資料格（實跑）
         var spoken = SpokenAs(ctx, e, control);
 
-        var rule = Wpf.Interactive.Contains(control) ? "R1" : Wpf.Inputs.Contains(control) ? "R2" : Wpf.Lists.Contains(control) || Wpf.Widgets.Contains(control) ? "R7" : null;
-        if (rule is null)
+        var check = Wpf.Interactive.Contains(control) ? Checks.ControlNames : Wpf.Inputs.Contains(control) ? Checks.InputNames : Wpf.Lists.Contains(control) || Wpf.Widgets.Contains(control) ? Checks.ListNames : null;
+        if (check is null)
         {
             // WPF 命名空間裡沒量過的控制項（RibbonButton、RibbonTextBox…）：不知道，不是沒事
             if (Markup.IsWpf(e) && Wpf.NameSourceOf(control) == NameSource.Unknown && !Markup.IsPropertyElement(e) && e.Parent is not null)
             {
-                if (LooksInteractive(local)) ctx.Blocked("R1", e, "a control that was not measured", local);
-                else if (LooksInput(local)) ctx.Blocked("R2", e, "a control that was not measured", local);
+                if (LooksInteractive(local)) ctx.Blocked(Checks.ControlNames, e, "a control that was not measured", local);
+                else if (LooksInput(local)) ctx.Blocked(Checks.InputNames, e, "a control that was not measured", local);
             }
             return;
         }
@@ -56,17 +56,17 @@ internal static class NameRules
             var target = ctx.TemplateTarget(template);
             if (target is not null && SilentTemplates.Contains(ctx.Project.BaseOfName(target)))
             {
-                ctx.NotJudged(rule, e, $"a part of a {target} template (not exposed as a control of its own)");
+                ctx.NotJudged(check, e, $"a part of a {target} template (not exposed as a control of its own)");
                 return;
             }
             if (ctx.IsFalse(e, "Focusable"))
             {
-                ctx.NotJudged(rule, e, "a template part that cannot take focus");
+                ctx.NotJudged(check, e, "a template part that cannot take focus");
                 return;
             }
-            if (rule is "R2" or "R7" && Markup.NameOf(e) is { } part && part.StartsWith("PART_", StringComparison.Ordinal))
+            if (check is Checks.InputNames or Checks.ListNames && Markup.NameOf(e) is { } part && part.StartsWith("PART_", StringComparison.Ordinal))
             {
-                ctx.NotJudged(rule, e, "a template part that its control names in code");
+                ctx.NotJudged(check, e, "a template part that its control names in code");
                 return;
             }
         }
@@ -74,13 +74,13 @@ internal static class NameRules
         var name = ctx.Names.Resolve(e, control);
         switch (name.Kind)
         {
-            case NameKind.Named: ctx.Pass(rule, e); return;
-            case NameKind.DataBound: ctx.NotJudged(rule, e, "the name comes from data at run time"); return;
+            case NameKind.Named: ctx.Pass(check, e); return;
+            case NameKind.DataBound: ctx.NotJudged(check, e, "the name comes from data at run time"); return;
             case NameKind.Unknown:
-                ctx.Blocked(rule, e, name.Why ?? "unknown", UnknownContent(ctx, e, name));
+                ctx.Blocked(check, e, name.Why ?? "unknown", UnknownContent(ctx, e, name));
                 return;
             case NameKind.SymbolOnly:
-                ctx.Report(Kinds.SymbolName, e, $"<{local}> is named only by the symbol \"{Context.Show(name.Text)}\"", rule: rule);
+                ctx.Report(Kinds.SymbolName, e, $"<{local}> is named only by the symbol \"{Context.Show(name.Text)}\"", check: check);
                 return;
         }
 
@@ -88,14 +88,14 @@ internal static class NameRules
         if (name.Kind == NameKind.Missing && Context.ControlTemplateOf(e) is not null && Markup.NameOf(e) is { } p && p.StartsWith("PART_", StringComparison.Ordinal)
             && Markup.ContentElements(e).Count == 0 && e.Attribute("Content") is null)
         {
-            ctx.NotJudged(rule, e, "a template part that its control fills in code");
+            ctx.NotJudged(check, e, "a template part that its control fills in code");
             return;
         }
 
         // 收合的項目：藏起標籤列的精靈頁（TabItem Visibility="Collapsed"）、佔位的項目
         if (Wpf.Items.Contains(control) && (string?)e.Attribute("Visibility") is "Collapsed" or "Hidden")
         {
-            ctx.NotJudged(rule, e, "a collapsed item (its header is never shown)");
+            ctx.NotJudged(check, e, "a collapsed item (its header is never shown)");
             return;
         }
 
@@ -107,17 +107,17 @@ internal static class NameRules
             : "";
         Severity? lowered = note.Length > 0 ? Severity.Warn : null;
         // 警告的種類降下來是 info，不用說「是警告」
-        if (rule == "R7") note = "";
+        if (check == Checks.ListNames) note = "";
 
         if (Wpf.Widgets.Contains(control))
         {
             // 範本裡的進度條：控制項的一部分；ContextMenu 不在這裡
-            if (Context.ControlTemplateOf(e) is not null) { ctx.NotJudged(rule, e, "a template part"); return; }
+            if (Context.ControlTemplateOf(e) is not null) { ctx.NotJudged(check, e, "a template part"); return; }
             ctx.Report(Kinds.WidgetNoName, e, $"<{local}> has no accessible name{(control is "Menu" or "ToolBar" ? "" : HintFor(ctx, e))}", lowered: control is "Menu" or "ToolBar" || lowered is not null ? Severity.Info : null, unreadable: name.Kind == NameKind.Meaningless);
             return;
         }
 
-        if (rule == "R7")
+        if (check == Checks.ListNames)
         {
             ctx.Report(Kinds.ListNoName, e, name.Kind == NameKind.Meaningless
                 ? $"<{local}> has an unreadable accessible name: {name.Why}"
@@ -125,7 +125,7 @@ internal static class NameRules
             return;
         }
 
-        if (rule == "R2" && name.Kind != NameKind.Meaningless)
+        if (check == Checks.InputNames && name.Kind != NameKind.Meaningless)
         {
             ctx.Report(Kinds.InputNoName, e, $"<{local}> has no accessible name{HintFor(ctx, e)}{note}", lowered: lowered, control: spoken);
             return;
@@ -141,7 +141,7 @@ internal static class NameRules
         {
             // 項目容器沒文字：名稱是型別名（自己的子類別是它自己的型別名，念法不猜）
             var typeName = Wpf.Items.Contains(control) && spoken is not null && name.Text is null && name.Why?.EndsWith("type name", StringComparison.Ordinal) == true;
-            ctx.Report(Kinds.MeaninglessName, e, $"<{local}> has an unreadable accessible name{(name.Text is { Length: > 0 } t && t.Trim().Length > 0 ? $" ({Context.Show(t)})" : "")}: {name.Why}{note}", lowered: lowered, rule: rule, control: typeName ? control : null, spokenName: typeName ? control : null);
+            ctx.Report(Kinds.MeaninglessName, e, $"<{local}> has an unreadable accessible name{(name.Text is { Length: > 0 } t && t.Trim().Length > 0 ? $" ({Context.Show(t)})" : "")}: {name.Why}{note}", lowered: lowered, check: check, control: typeName ? control : null, spokenName: typeName ? control : null);
             return;
         }
 

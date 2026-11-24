@@ -103,8 +103,8 @@ public sealed class A11yConfig
         foreach (var (slug, severity) in config.Rules ?? [])
         {
             if (Kinds.BySlug(slug) is null)
-                problems.Add(new Problem($"rules[\"{slug}\"]", Kinds.Rules.Contains(slug)
-                    ? $"is a group; name its findings instead: {string.Join(", ", Kinds.CountedIn(slug).Select(k => k.Slug))}"
+                problems.Add(new Problem($"rules[\"{slug}\"]", Kinds.All.Where(k => k.Check == slug || k.Group == slug).Select(k => k.Slug).ToList() is { Count: > 0 } members
+                    ? $"is a group; name its findings instead: {string.Join(", ", members)}"
                     : $"is not a finding; they are {string.Join(", ", Kinds.All.Select(k => k.Slug))}"));
             if (ParseSeverity(severity) is null)
                 problems.Add(new Problem($"rules[\"{slug}\"]", "must be off, info, warn or fail"));
