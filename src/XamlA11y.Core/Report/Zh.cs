@@ -230,6 +230,7 @@ public static partial class Zh
         (R("it has no (?<p>\\w+) and no AutomationProperties\\.Name"), "沒有 ${p}，也沒有 AutomationProperties.Name"),
         (R("it has no (?<p>\\w+) until a trigger sets one"), "觸發器成立之前沒有 ${p}"),
         (R("it has no (?<p>\\w+), so its name is the type name"), "沒有 ${p}，名稱是型別名"),
+        (R("it is an item of an ItemsControl, so its name is the type name"), "直接放在 ItemsControl 裡，名稱是型別名"),
         (R("its content is only <(?<t>[^<>]+)>, which looks like an icon"), "內容只有 <${t}>，看起來是圖示"),
         (R("its content is <(?<t>[^<>]+)>, which gives no text"), "內容是 <${t}>，給不出文字"),
         (R("<(?<t>[^<>]+)> gives no text"), "<${t}> 給不出文字"),

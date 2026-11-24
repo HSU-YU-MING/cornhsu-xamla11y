@@ -167,6 +167,8 @@ internal static class NameRules
     {
         var styles = ctx.Project.Styles;
         if (!Markup.IsWpf(e) || e.Name.LocalName != control) return null;
+        // 念成「資料項目」（實跑）
+        if (NameResolver.IsDirectItem(ctx.Project, e)) return null;
         if (ctx.IsFalse(e, "Focusable") || ctx.IsFalse(e, "IsTabStop") || styles.Resolve(e, "IsEnabled") is { Kind: not ResolveKind.NotSet, IsTrue: false }) return null;
         if (styles.Resolve(e, "AutomationProperties.AccessKey").IsSet || styles.Resolve(e, "AutomationProperties.AcceleratorKey").IsSet) return null;
         if (e.Descendants().Any(d => d.Name.LocalName == "AccessText")) return null;

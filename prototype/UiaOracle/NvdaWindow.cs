@@ -17,6 +17,7 @@ internal static class NvdaWindow
 {
     public static int Run(string file)
     {
+        var walk = file == "nvda-walk.txt";
         var cases = Probe.Load(file);
         var panel = new StackPanel { Margin = new Thickness(8) };
         var first = new Button { Content = "Start" };
@@ -25,7 +26,9 @@ internal static class NvdaWindow
         var markers = new List<Border>();
         for (var i = 0; i < cases.Count; i++)
         {
-            var host = (FrameworkElement)XamlReader.Parse($"<StackPanel {Host.Ns} Margin=\"0,4\">{cases[i].Body.Replace("[O]", Items.O)}</StackPanel>");
+            // 走訪的案例：自己一組，TabIndex 不跟別案混在一起
+            var resources = cases[i].Resources.Length > 0 ? $"<StackPanel.Resources>{cases[i].Resources}</StackPanel.Resources>" : "";
+            var host = (FrameworkElement)XamlReader.Parse($"<StackPanel {Host.Ns} Margin=\"0,4\"{(walk ? " KeyboardNavigation.TabNavigation=\"Local\"" : "")}>{resources}{cases[i].Body.Replace("[O]", Items.O)}</StackPanel>");
             hosts.Add(host);
             var marker = new Border { Focusable = true, Height = 1 };
             KeyboardNavigation.SetIsTabStop(marker, false);
@@ -35,7 +38,7 @@ internal static class NvdaWindow
             // 工具對同一段的判定
             var audit = Auditor.Run(Project.FromText($"<Window {Host.Ns}><StackPanel>{cases[i].Body.Replace("[O]", Items.O)}</StackPanel></Window>"));
             var verdicts = audit.Judgements.Where(j => j.Check is "control-names" or "input-names" or "list-names" && XamlMarkup.NameOf(j.Element) == "p").Select(j => j.Kind?.Slug ?? j.Verdict.ToString());
-            Console.WriteLine($"case\t{i}\t{cases[i].Title}\t{string.Join(",", verdicts)}\t{cases[i].Body.Replace("[O]", Items.O)}");
+            Console.WriteLine($"case\t{i}\t{cases[i].Title}\t{string.Join(",", verdicts)}\t{cases[i].Body.Replace("[O]", Items.O)}\t{cases[i].Resources}");
         }
         panel.Children.Add(new Button { Content = "End", Tag = "end" });
         var window = new Window { Title = "XamlA11y NVDA", Width = 700, Height = 700, Left = 60, Top = 40, Topmost = true, Content = new ScrollViewer { Content = panel, Focusable = false } };
@@ -70,7 +73,15 @@ internal static class NvdaWindow
             for (DependencyObject? d = e.OriginalSource as DependencyObject; d is not null; d = d is Visual ? VisualTreeHelper.GetParent(d) ?? LogicalTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
                 if (d is FrameworkElement fe && hosts.IndexOf(fe) is >= 0 and var i) { at = i; break; }
             var end = e.OriginalSource is FrameworkElement { Tag: "end" };
-            Say($"focus\t{(end ? "end" : at)}\t{e.OriginalSource.GetType().Name}");
+            Say($"focus\t{(end ? "end" : at)}\t{e.OriginalSource.GetType().Name}\t{(at < 0 ? "" : NameIn(cases[at].Body, e.OriginalSource as DependencyObject))}");
+        }
+
+        // 焦點可能在範本的零件上（Expander 的標題、DatePicker 的輸入框）：往上找 XAML 裡寫了名字的
+        static string NameIn(string body, DependencyObject? d)
+        {
+            for (; d is not null; d = d is Visual ? VisualTreeHelper.GetParent(d) ?? LogicalTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+                if (((d as FrameworkElement)?.Name ?? (d as FrameworkContentElement)?.Name) is { Length: > 0 } name && body.Contains($"x:Name=\"{name}\"", StringComparison.Ordinal)) return name;
+            return "";
         }
 
         static void Say(string s) { Console.WriteLine(s); Console.Out.Flush(); }

@@ -58,7 +58,8 @@ public static partial class Nvda
         // 清單、頁籤一站會連項目與位置一起念，不是這個樣子
         if (!Roles.TryGetValue(control, out var role) || control is "TabItem" or "ListBox" or "ListView" or "DataGrid" or "MenuItem" || description is null) return null;
         var type = lang.T(role.En, role.Zh);
-        if (description.Length > 0)
+        // 提示跟名稱一樣的不念第二次（實跑過按鈕）
+        if (description.Length > 0 && !(control == "Button" && description == name.Text))
         {
             if (!Described.Contains(control) || !PlainRegex().IsMatch(description) || description == name.Text) return null;
             type += ", " + description;

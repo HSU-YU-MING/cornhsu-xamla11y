@@ -3935,6 +3935,294 @@
       }
     },
     {
+      "file": "round3-names.txt",
+      "title": "Button icon in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CPath Data=\u0022M0,0 L10,10 L0,10 Z\u0022 Fill=\u0022Black\u0022 Width=\u002212\u0022 Height=\u002212\u0022/\u003E\u003C/Button\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Controls.Button",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Button icon, ToolTip, in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CButton x:Name=\u0022p\u0022 ToolTip=\u0022Delete\u0022\u003E\u003CPath Data=\u0022M0,0 L10,10 L0,10 Z\u0022 Fill=\u0022Black\u0022 Width=\u002212\u0022 Height=\u002212\u0022/\u003E\u003C/Button\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Controls.Button",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Button text in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CButton x:Name=\u0022p\u0022 Content=\u0022Save\u0022/\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "Save",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Button panel text in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CStackPanel\u003E\u003CTextBlock Text=\u0022Save\u0022/\u003E\u003C/StackPanel\u003E\u003C/Button\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Controls.Button",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Button Name in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CButton x:Name=\u0022p\u0022 AutomationProperties.Name=\u0022Delete\u0022\u003E\u003CPath Data=\u0022M0,0 L10,10 L0,10 Z\u0022 Fill=\u0022Black\u0022 Width=\u002212\u0022 Height=\u002212\u0022/\u003E\u003C/Button\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "Delete",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Button glyph in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CButton x:Name=\u0022p\u0022 FontFamily=\u0022Segoe MDL2 Assets\u0022 Content=\u0022\u0026#xE74D;\u0022/\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "\uE74D",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Button icon in ItemsControl.Items",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CItemsControl.Items\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CPath Data=\u0022M0,0 L10,10 L0,10 Z\u0022 Fill=\u0022Black\u0022 Width=\u002212\u0022 Height=\u002212\u0022/\u003E\u003C/Button\u003E\u003C/ItemsControl.Items\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Controls.Button",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Button icon deeper in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CStackPanel\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CPath Data=\u0022M0,0 L10,10 L0,10 Z\u0022 Fill=\u0022Black\u0022 Width=\u002212\u0022 Height=\u002212\u0022/\u003E\u003C/Button\u003E\u003C/StackPanel\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Button icon in a HeaderedItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CHeaderedItemsControl\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CPath Data=\u0022M0,0 L10,10 L0,10 Z\u0022 Fill=\u0022Black\u0022 Width=\u002212\u0022 Height=\u002212\u0022/\u003E\u003C/Button\u003E\u003C/HeaderedItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Controls.Button",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Button icon in a StatusBar",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CStatusBar\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CPath Data=\u0022M0,0 L10,10 L0,10 Z\u0022 Fill=\u0022Black\u0022 Width=\u002212\u0022 Height=\u002212\u0022/\u003E\u003C/Button\u003E\u003C/StatusBar\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Button icon in a ToolBar",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CToolBar\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CPath Data=\u0022M0,0 L10,10 L0,10 Z\u0022 Fill=\u0022Black\u0022 Width=\u002212\u0022 Height=\u002212\u0022/\u003E\u003C/Button\u003E\u003C/ToolBar\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Button icon in a Menu",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CMenu\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CPath Data=\u0022M0,0 L10,10 L0,10 Z\u0022 Fill=\u0022Black\u0022 Width=\u002212\u0022 Height=\u002212\u0022/\u003E\u003C/Button\u003E\u003C/Menu\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Button icon in a ListBox",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListBox\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CPath Data=\u0022M0,0 L10,10 L0,10 Z\u0022 Fill=\u0022Black\u0022 Width=\u002212\u0022 Height=\u002212\u0022/\u003E\u003C/Button\u003E\u003C/ListBox\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "Button",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "TextBox in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CTextBox x:Name=\u0022p\u0022/\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Controls.TextBox",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "TextBox Name in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CTextBox x:Name=\u0022p\u0022 AutomationProperties.Name=\u0022City\u0022/\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "City",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "TextBox LabeledBy in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CTextBlock x:Name=\u0022l\u0022 Text=\u0022City\u0022/\u003E\u003CTextBox x:Name=\u0022p\u0022 AutomationProperties.LabeledBy=\u0022{Binding ElementName=l}\u0022/\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "City",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "CheckBox in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CCheckBox x:Name=\u0022p\u0022/\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Controls.CheckBox \u5167\u5BB9: IsChecked:False",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "CheckBox text in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CCheckBox x:Name=\u0022p\u0022 Content=\u0022On\u0022/\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "On",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Expander header in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CExpander x:Name=\u0022p\u0022 Header=\u0022More\u0022/\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "More",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Expander no header in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CExpander x:Name=\u0022p\u0022/\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Controls.Expander \u6A19\u982D: \u5167\u5BB9:",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "ListBox in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CListBox x:Name=\u0022p\u0022/\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Controls.ListBox Items.Count:0",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "ComboBox in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CComboBox x:Name=\u0022p\u0022/\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Controls.ComboBox Items.Count:0",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Slider in an ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CSlider x:Name=\u0022p\u0022/\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Controls.Slider \u4E0B\u9650:0 \u4E0A\u9650: 10 \u503C:0",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "round3-names.txt",
+      "title": "Button icon in an ItemsControl with a panel",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl\u003E\u003CItemsControl.ItemsPanel\u003E\u003CItemsPanelTemplate\u003E\u003CWrapPanel/\u003E\u003C/ItemsPanelTemplate\u003E\u003C/ItemsControl.ItemsPanel\u003E\u003CButton x:Name=\u0022p\u0022\u003E\u003CPath Data=\u0022M0,0 L10,10 L0,10 Z\u0022 Fill=\u0022Black\u0022 Width=\u002212\u0022 Height=\u002212\u0022/\u003E\u003C/Button\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "System.Windows.Controls.Button",
+          "type": "DataItem",
+          "control": true
+        }
+      }
+    },
+    {
       "file": "lists.txt",
       "title": "ListBox empty",
       "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListBox x:Name=\u0022p\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
@@ -6109,6 +6397,44 @@
       "stops": [
         "a",
         "b1",
+        "z"
+      ]
+    },
+    {
+      "title": "TabItem Focusable False",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022a\u0022/\u003E\u003CTabControl x:Name=\u0022tc\u0022\u003E\u003CTabItem x:Name=\u0022h1\u0022 Header=\u00221\u0022 Focusable=\u0022False\u0022\u003E\u003CButton x:Name=\u0022b1\u0022/\u003E\u003C/TabItem\u003E\u003CTabItem x:Name=\u0022h2\u0022 Header=\u00222\u0022\u003E\u003CButton x:Name=\u0022b2\u0022/\u003E\u003C/TabItem\u003E\u003C/TabControl\u003E\u003CButton x:Name=\u0022z\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "stops": [
+        "a",
+        "b1",
+        "z"
+      ]
+    },
+    {
+      "title": "TabItem IsTabStop False",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022a\u0022/\u003E\u003CTabControl x:Name=\u0022tc\u0022\u003E\u003CTabItem x:Name=\u0022h1\u0022 Header=\u00221\u0022 IsTabStop=\u0022False\u0022\u003E\u003CButton x:Name=\u0022b1\u0022/\u003E\u003C/TabItem\u003E\u003CTabItem x:Name=\u0022h2\u0022 Header=\u00222\u0022\u003E\u003CButton x:Name=\u0022b2\u0022/\u003E\u003C/TabItem\u003E\u003C/TabControl\u003E\u003CButton x:Name=\u0022z\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "stops": [
+        "a",
+        "b1",
+        "z"
+      ]
+    },
+    {
+      "title": "ComboBoxItem in a ListBox",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022a\u0022/\u003E\u003CListBox x:Name=\u0022l\u0022\u003E\u003CComboBoxItem x:Name=\u0022i1\u0022 Focusable=\u0022True\u0022 Content=\u00221\u0022/\u003E\u003C/ListBox\u003E\u003CButton x:Name=\u0022z\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "stops": [
+        "a",
+        "i1",
+        "z"
+      ]
+    },
+    {
+      "title": "SelectedIndex out of range",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022a\u0022/\u003E\u003CStackPanel\u003E\u003CTabControl x:Name=\u0022tc\u0022 SelectedIndex=\u00222\u0022\u003E\u003CTabItem x:Name=\u0022h1\u0022 Header=\u00221\u0022\u003E\u003CButton x:Name=\u0022b1\u0022/\u003E\u003C/TabItem\u003E\u003CTabItem x:Name=\u0022h2\u0022 Header=\u00222\u0022\u003E\u003CButton x:Name=\u0022b2\u0022/\u003E\u003C/TabItem\u003E\u003C/TabControl\u003E\u003CListBox x:Name=\u0022l\u0022 SelectedIndex=\u00222\u0022\u003E\u003CListBoxItem x:Name=\u0022i1\u0022 Content=\u00221\u0022/\u003E\u003CListBoxItem x:Name=\u0022i2\u0022 Content=\u00222\u0022/\u003E\u003C/ListBox\u003E\u003C/StackPanel\u003E\u003CButton x:Name=\u0022z\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "stops": [
+        "a",
+        "h1",
+        "b1",
+        "i1",
         "z"
       ]
     },

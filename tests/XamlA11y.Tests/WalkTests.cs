@@ -79,6 +79,19 @@ public sealed class WalkTests
     [InlineData("<DatePicker x:Name=\"a\" Focusable=\"False\"/><ComboBox x:Name=\"b\" IsEditable=\"True\" Focusable=\"False\"/><ComboBox x:Name=\"c\" Focusable=\"False\"/>", "", "a b")]
     [InlineData("<HeaderedContentControl x:Name=\"a\" Style=\"{StaticResource NotHere}\"/><Control x:Name=\"b\" Style=\"{StaticResource NotHere}\"/><Button x:Name=\"c\" Style=\"{StaticResource NotHere}\"/>", "", "?a ?b c")]
     [InlineData("<Button x:Name=\"a\"><Button.ToolTip><StackPanel><Button x:Name=\"b\"/></StackPanel></Button.ToolTip><Button.Resources><Button x:Key=\"c\" x:Name=\"c\"/></Button.Resources></Button>", "", "a")]
+    [InlineData("<ListBox><ListBoxItem x:Name=\"a\" Visibility=\"{Binding V}\"/></ListBox>", "", "?a")]
+    [InlineData("<ListBox><ListBoxItem x:Name=\"a\" IsEnabled=\"{Binding V}\"/></ListBox>", "", "?a")]
+    [InlineData("<ListBox><ComboBoxItem x:Name=\"a\" Focusable=\"True\"/></ListBox>", "", "a")]
+    [InlineData("<ListView><ListViewItem x:Name=\"a\" Focusable=\"True\"/></ListView>", "", "a")]
+    [InlineData("<TabControl><TabItem x:Name=\"a\" Focusable=\"False\"><Button x:Name=\"b\"/></TabItem></TabControl>", "", "b")]
+    [InlineData("<TabControl><TabItem x:Name=\"a\" IsTabStop=\"False\"><Button x:Name=\"b\"/></TabItem></TabControl>", "", "b")]
+    [InlineData("<WindowsFormsHost x:Name=\"a\"/><ElementHost x:Name=\"b\"/><FlowDocumentPageViewer x:Name=\"c\"/><DocumentViewer x:Name=\"d\"/>", "", "??a ??b ??c ??d")]
+    [InlineData("<StackPanel KeyboardNavigation.TabNavigation=\"Local\"><StackPanel KeyboardNavigation.TabNavigation=\"Local\"><StackPanel KeyboardNavigation.TabNavigation=\"Cycle\"><Button x:Name=\"a\"/></StackPanel><Button x:Name=\"b\"/></StackPanel><Button x:Name=\"c\"/></StackPanel><Button x:Name=\"d\"/>", "", "a")]
+    [InlineData("<Button x:Name=\"a\" Visibility=\"Visible\" IsEnabled=\"True\"/>", "", "a")]
+    [InlineData("<ListBox><ListBoxItem x:Name=\"a\" Visibility=\"Visible\" IsEnabled=\"True\"/></ListBox>", "", "a")]
+    [InlineData("<UserControl x:Name=\"a\" Content=\"{Binding N}\"/>", "", "??a")]
+    [InlineData("<TabControl SelectedIndex=\"1\"><TabItem x:Name=\"a\"><Button x:Name=\"b\"/></TabItem></TabControl>", "", "a b")]
+    [InlineData("<StackPanel KeyboardNavigation.TabNavigation=\"Cycle\"><Button x:Name=\"a\"/></StackPanel><StackPanel KeyboardNavigation.TabNavigation=\"Local\"><Button x:Name=\"b\"/></StackPanel>", "", "a")]
     public void What_depends_on_the_run(string body, string code, string expected) => Assert.Equal(expected, Walk(body, code));
 
     [Fact]
@@ -140,13 +153,22 @@ public sealed class WalkTests
         Assert.Contains("Tab stays inside <ToolBar> (line 1): 1 stop(s) after it need Ctrl+Tab", r.Out, StringComparison.Ordinal);
         Assert.Contains("not listed: 1 in popups", r.Out, StringComparison.Ordinal);
         // 面板型的不算進「藏起來的」數字
-        f.Add("Views/P.xaml", Kit.Window("<StackPanel Visibility=\"Collapsed\"><Button/><ContentControl/><ItemsControl/><TextBox/></StackPanel>"));
+        f.Add("Views/P.xaml", Kit.Window("<StackPanel Visibility=\"Collapsed\"><Button/><ContentControl/><ItemsControl/><Control/><HeaderedContentControl/><TextBox/></StackPanel>"));
         Assert.Contains("not listed: 2 hidden or disabled", f.Run("walk", f.At("Views/P.xaml")).Out, StringComparison.Ordinal);
         Assert.Contains("not listed: 1 hidden or disabled", r.Out, StringComparison.Ordinal);
         var zh = f.Run("walk", f.At("Views/Main.xaml"), "--lang", "zh-Hant").Out;
         Assert.Contains("Tab 停 4 站", zh, StringComparison.Ordinal);
         Assert.Contains("<TextBox>（沒有名稱）　NVDA：編輯區  !! input-no-name", zh, StringComparison.Ordinal);
         Assert.Contains("（第 1 行）就在裡面繞：後面 1 站", zh, StringComparison.Ordinal);
+    }
+
+    /// <summary>項目容器是 WPF 包的：那一站念的不是裡面那顆按鈕。自己的類別是它的基底那一種，名稱照寫。</summary>
+    [Fact]
+    public void A_wrapped_item_has_no_name_of_its_own()
+    {
+        using var f = new Folder().Add("Main.xaml", Kit.Window("<ListBox AutomationProperties.Name=\"l\"><Button Content=\"Save\"/></ListBox><local:Mine Content=\"Open\"/><ListBox AutomationProperties.Name=\"m\"><ListBoxItem Content=\"Alpha\"/></ListBox>")).Add("Mine.cs", "namespace App; class Mine : System.Windows.Controls.Button { }");
+        var lines = f.Run("walk", f.At("Main.xaml")).Out.Split('\n').Select(l => l.TrimEnd()).Where(l => l.Contains('<', StringComparison.Ordinal)).ToList();
+        Assert.Equal(["    1  1      <Button>", "    2  1      <Button> \"Save\"  NVDA: Save, button", "    3  1      <Mine> \"Open\"", "    4  1      <ListBoxItem> \"Alpha\""], lines);
     }
 
     [Fact]

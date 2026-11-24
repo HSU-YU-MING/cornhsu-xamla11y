@@ -86,4 +86,8 @@ walk | Expander inside an Expander | <Expander Header='h' IsExpanded='True'><Exp
 walk | Button in a DataGrid header area | <StackPanel><DataGrid x:Name='dg' Height='40'/><Button x:Name='b1'/></StackPanel>
 walk | GroupBox in a Border with TabIndex | <Border KeyboardNavigation.TabIndex='1'><GroupBox Header='g'><TextBox x:Name='t1'/></GroupBox></Border>
 walk | ContentControl IsTabStop False | <ContentControl x:Name='cc' IsTabStop='False'><Button x:Name='b1'/></ContentControl>
+walk | TabItem Focusable False | <TabControl x:Name='tc'><TabItem x:Name='h1' Header='1' Focusable='False'><Button x:Name='b1'/></TabItem><TabItem x:Name='h2' Header='2'><Button x:Name='b2'/></TabItem></TabControl>
+walk | TabItem IsTabStop False | <TabControl x:Name='tc'><TabItem x:Name='h1' Header='1' IsTabStop='False'><Button x:Name='b1'/></TabItem><TabItem x:Name='h2' Header='2'><Button x:Name='b2'/></TabItem></TabControl>
+walk | ComboBoxItem in a ListBox | <ListBox x:Name='l'><ComboBoxItem x:Name='i1' Focusable='True' Content='1'/></ListBox>
+walk | SelectedIndex out of range | <StackPanel><TabControl x:Name='tc' SelectedIndex='2'><TabItem x:Name='h1' Header='1'><Button x:Name='b1'/></TabItem><TabItem x:Name='h2' Header='2'><Button x:Name='b2'/></TabItem></TabControl><ListBox x:Name='l' SelectedIndex='2'><ListBoxItem x:Name='i1' Content='1'/><ListBoxItem x:Name='i2' Content='2'/></ListBox></StackPanel>
 walk | Hidden panel | <StackPanel Visibility='Hidden'><Button x:Name='b1'/></StackPanel>

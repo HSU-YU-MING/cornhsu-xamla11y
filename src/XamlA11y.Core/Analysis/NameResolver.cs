@@ -85,7 +85,20 @@ public sealed partial class NameResolver(Project project)
         // 名稱只在觸發器裡設：有時候有、有時候沒有
         if (result.Kind is NameKind.Missing or NameKind.TextNotUsed or NameKind.Meaningless && TriggerSets(e, NameProperty))
             return NameResult.Unknown("a trigger sets its accessible name");
+
+        // 直接放在 ItemsControl 裡的自己就是項目：UIA 的名稱在沒有的時候是 ToString()（UiaOracle「direct」）
+        if (depth == 0 && result.Kind is (NameKind.Missing or NameKind.TextNotUsed) && IsDirectItem(project, e))
+            return result.Kind == NameKind.TextNotUsed
+                ? new NameResult(NameKind.Meaningless, result.Text, result.Why + "; its name becomes the type name")
+                : new NameResult(NameKind.Meaningless, null, "it is an item of an ItemsControl, so its name is the type name");
         return result;
+    }
+
+    /// <summary>直接放在 ItemsControl、HeaderedItemsControl 裡：元素自己就是項目容器，UIA 給的是「資料項目」（NVDA 走訪時發現）。清單、選單、狀態列會另外包一層，不算。</summary>
+    internal static bool IsDirectItem(Project project, XElement e)
+    {
+        var parent = e.Parent is { } p && Markup.IsPropertyElement(p) && p.Name.LocalName.EndsWith(".Items", StringComparison.Ordinal) ? p.Parent : e.Parent;
+        return parent is not null && project.BaseOf(parent) is "ItemsControl" or "HeaderedItemsControl";
     }
 
     // ───────────────────────── 明寫的名稱 ─────────────────────────

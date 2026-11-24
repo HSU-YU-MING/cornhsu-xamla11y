@@ -47,7 +47,7 @@
 2. `dotnet build prototype/UiaOracle -c Release`，跑 `uiaoracle check`（約 4 分鐘，會在螢幕左上角開小視窗、搶焦點）。**任何一個 WRONG 都不能放過。**
 3. `uiaoracle check-corpus <專案資料夾…>`：真實專案的形狀。`uiaoracle check-windows <專案資料夾…>`：整個檔案連樣式、資源載進真的 WPF（視窗在螢幕外，不搶焦點；49 個專案約 40 分鐘，開四個平行約 15 分鐘）。
    別人的 XAML 一律過 `SafeMarkup`（白名單）才交給 XamlReader；改它之後跑 `uiaoracle check-hostile`。
-   名稱的規則大改之後，用真的 NVDA 再走一次：`node prototype/UiaOracle/nvda.mjs … zh_TW` 與 `… en`（各約 4 分鐘，會出聲、搶焦點，先講；只在自己的視窗是前景時按鍵），`nvda-merge.mjs` 合成 `nvda-facts.json`。
+   名稱的規則大改之後，用真的 NVDA 再走一次：`node prototype/UiaOracle/nvda.mjs … zh_TW` 與 `… en`（各約 4 分鐘，會出聲、搶焦點，先講；只在自己的視窗是前景時按鍵），`nvda-merge.mjs` 合成 `nvda-facts.json`。走訪的另外跑：最後加 `nvda-walk.txt`（各約 3 分鐘），`nvda-merge.mjs --walk` 合成 `nvda-walk-facts.json`。
 4. `uiaoracle record tests/XamlA11y.Tests/uia-facts.json`：把 WPF 的答案錄給跨平台的測試。**只錄真值，不錄工具的答案。**
 5. `scripts/corpus-fetch.sh` 抓語料（`docs/corpus.tsv`，commit 釘死），`scripts/corpus-run.sh <輸出資料夾>` 前後各一次，`node scripts/corpus-diff.mjs 前 後` 逐類抽樣看原始碼，`node scripts/docs-corpus.mjs <輸出> --update` 重貼 `docs/verification.md`、`驗證.md` 的表。Oracle 抓規則想錯，語料抓規則想漏 —— 兩個都要。
 
@@ -140,6 +140,8 @@
 | 72 | 記憶路徑只限深度 | 控制項包自己 40 次，843 位元組跑不完。記住走在哪些檔案裡，站數也有上限 | 對抗式審查 |
 | 73 | 讀 `.git` 也是讀別人的檔案 | `gitdir: \\\\server\\share` 會替他連線、`ref: ../../x` 讀到外面。只認 refs/、不碰網路、只讀一小段 | 對抗式審查 |
 | 74 | 資源比值 | 好幾種語言的資源，看到的只是其中一份。`SameNameRule` 早就寫了，`name-differs` 又犯 | 對抗式審查 |
+| 75 | 沒名稱的控制項直接放在 `ItemsControl` 裡 | 名稱不是空的，是型別名；NVDA 念「資料項目」不念「按鈕」。`NameResolver.IsDirectItem`。清單、選單、狀態列另外包一層，不算 | NVDA 走訪 → Oracle 確認 |
+| 76 | 走訪只用 `MoveFocus` 驗過 | 真的 Tab 鍵與 NVDA 沒跑過，念法就有一條說錯。`nvda.mjs … nvda-walk.txt` | NVDA 走訪 |
 | 68 | 文件裡手寫的「幾種、幾條」沒人守 | 加一種要改的地方漏一半。`The_numbers_in_the_documents_are_right`、`Links_lead_somewhere` | 第三次審查 |
 | 69 | README 的相對連結 | nuget.org 不解析。README.md 一律寫完整網址（測試守） | 第三次審查 |
 

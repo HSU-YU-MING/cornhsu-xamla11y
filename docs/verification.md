@@ -13,14 +13,15 @@ Insights and of Visual Studio's checker.
 | compared with | cases | answered | unknown | **contradictions** |
 |---|---:|---:|---:|---:|
 | what NVDA 2026.2 says when Tab reaches it, in English and in Traditional Chinese | 86 | 81 | 5 | **0** |
-| UI Automation names, hand-written | 359 | 344 | 15 | **0** |
+| the real Tab key through whole windows: where it stops (`walk`), and what NVDA says there in both languages | 88 | 69 | 19 | **0** |
+| UI Automation names, hand-written | 383 | 368 | 15 | **0** |
 | UI Automation names, every control × content × way of naming | 8,218 | 7,843 | 375 | **0** |
 | UI Automation names, distinct shapes from 19 real projects | 2,172 | 2,172 | 0 | **0** |
 | UI Automation names, whole files of 49 public projects and 3 apps, with their styles and resources | 10,398 | 10,398 | – | **0** |
 | names under MahApps, MaterialDesign, HandyControl, WPF-UI, Fluent | 97 | 74 | 23 | **0** |
 | focus visible (pixels), default theme and the five themes | 107 | 84 | 23 | **0** |
 | tab order | 29 | 27 | 2 | **0** |
-| the order of all Tab stops in a window (`walk`) | 88 | 84 | 4 | **0** |
+| the order of all Tab stops in a window (`walk`) | 92 | 88 | 4 | **0** |
 | whether the name contains the visible text (`name-differs`) | 27 | 22 | 5 | **0** |
 | items made from data (UI Automation name) | 39 | 39 | 0 | **0** |
 | Tab stops that are not in the UI Automation tree | 56 | 55 | 1 | **0** |
@@ -32,7 +33,7 @@ for: two independent reviews then found some forty more ways to fool the tool, a
 are 1,919 that a real WPF window could load without running any of the projects' code; elements that need their code, a
 theme that was not measured or an open menu are left out of that row.
 
-The recorded answers of WPF and of NVDA ship with the tests (`tests/XamlA11y.Tests/uia-facts.json`, `nvda-facts.json`), so
+The recorded answers of WPF and of NVDA ship with the tests (`tests/XamlA11y.Tests/uia-facts.json`, `nvda-facts.json`, `nvda-walk-facts.json`), so
 CI on Linux checks the same facts. "NVDA says" in the reports is only written for what was run. Narrator and JAWS were not run. Details: [WPF實測.md](WPF實測.md) (Chinese).
 
 ## How much it sees
@@ -73,7 +74,7 @@ Out of the box, no configuration:
 | VisualHFT | 49 | **100.0%** | 14 | 96 | 0 | 0 | 0 | 13 | 7 |
 | WPF-Samples (Microsoft) | 745 | **99.2%** | 122 | 397 | 0 | 10 | 30 | 128 | 16 |
 | AvalonDock (library) | 73 | **100.0%** | 19 | 18 | 0 | 0 | 4 | 9 | 5 |
-| Fluent.Ribbon (library) | 70 | **29.2%** | 15 | 5 | 0 | 0 | 0 | 10 | 6 |
+| Fluent.Ribbon (library) | 70 | **29.2%** | 16 | 4 | 0 | 0 | 0 | 10 | 6 |
 | HandyControl (library) | 342 | **91.5%** | 390 | 205 | 0 | 0 | 0 | 48 | 5 |
 | MahApps.Metro (library) | 312 | **87.6%** | 161 | 379 | 1 | 0 | 0 | 104 | 27 |
 | MaterialDesignInXaml (library) | 368 | **95.3%** | 444 | 239 | 0 | 0 | 0 | 163 | 165 |

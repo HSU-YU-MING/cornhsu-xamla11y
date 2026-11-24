@@ -45,9 +45,13 @@ public sealed class FixTests
     [InlineData("<Button FontFamily=\"Segoe MDL2 Assets\" Content=\"&#xE74D;\" ToolTip=\"Delete\"/>", "AutomationProperties.Name=\"Delete\"")]
     [InlineData("<Button Content=\"×\" ToolTip=\"Close\"/>", "AutomationProperties.Name=\"Close\"")]
     [InlineData("<TextBox ToolTip=\"Search\"/>", "AutomationProperties.Name=\"Search\"")]
+    [InlineData("<ItemsControl><Button ToolTip=\"Delete\"><Image/></Button></ItemsControl>", "AutomationProperties.Name=\"Delete\"")]
+    [InlineData("<ItemsControl><Button><StackPanel><Image/><TextBlock Text=\"Save\"/></StackPanel></Button></ItemsControl>", "AutomationProperties.Name=\"Save\"")]
+    [InlineData("<ItemsControl><Label x:Name=\"l\" Content=\"Mail\" Target=\"{Binding ElementName=u}\"/><TextBox x:Name=\"u\"/></ItemsControl>", "AutomationProperties.LabeledBy=\"{Binding ElementName=l}\"")]
     [InlineData("<ListBox ToolTip=\"Files\"/>", "AutomationProperties.Name=\"Files\"")]
     [InlineData("<ProgressBar ToolTip=\"Progress\"/>", "AutomationProperties.Name=\"Progress\"")]
     [InlineData("<Button ToolTip=\"{StaticResource s}\"><Image/></Button>", "AutomationProperties.Name=\"{StaticResource s}\"")]
+    [InlineData("<Button ToolTip=\"{DynamicResource s}\"><Image/></Button>", "AutomationProperties.Name=\"{DynamicResource s}\"")]
     public void What_is_already_there(string xaml, string added)
     {
         var after = Fixed(xaml, resources: "<x:String x:Key=\"s\">Delete</x:String>");
@@ -67,7 +71,10 @@ public sealed class FixTests
     [InlineData("<Button ToolTip=\"×\"><Image/></Button>")]
     [InlineData("<Button ToolTip=\"{StaticResource t}\"><Image/></Button>")]
     [InlineData("<Button ToolTip=\"{StaticResource nothere}\"><Image/></Button>")]
+    [InlineData("<Button ToolTip=\"{DynamicResource t}\"><Image/></Button>")]
     [InlineData("<Button ToolTip=\"{x:Null}\"><Image/></Button>")]
+    [InlineData("<Button ToolTip=\"{TemplateBinding ToolTip}\"><Image/></Button>")]
+    [InlineData("<Button ToolTip=\"{x:Type Button}\"><Image/></Button>")]
     [InlineData("<TextBlock Text=\"Name\"/><TextBox/>")]
     [InlineData("<Button><StackPanel><Image/><TextBlock Text=\"{Binding Title}\"/></StackPanel></Button>")]                              // 可能是徽章
     [InlineData("<Button ToolTip=\"{Binding Tip}\"><Image/></Button>")]
@@ -255,6 +262,7 @@ public sealed class FixTests
     [Theory]
     [InlineData("<Button><StackPanel><Image/><TextBlock Text=\"{Binding Title}\"/></StackPanel></Button>", "AutomationProperties.Name=\"{Binding Title}\"")]
     [InlineData("<Button ToolTip=\"{Binding Tip}\"><Image/></Button>", "AutomationProperties.Name=\"{Binding Tip}\"")]
+    [InlineData("<TextBlock><Hyperlink ToolTip=\"{Binding Tip}\"><InlineUIContainer><Image/></InlineUIContainer></Hyperlink></TextBlock>", "AutomationProperties.Name=\"{Binding Tip}\"")]
     [InlineData("<Button Tag=\"{Binding Tip}\" ToolTip=\"{Binding Tip}\"><Image/></Button>", null)]
     [InlineData("<Slider Value=\"{Binding Volume}\" ToolTip=\"{Binding Volume}\"/>", null)]
     [InlineData("<TextBox ToolTip=\"{Binding Error}\"/>", null)]
@@ -337,6 +345,29 @@ public sealed class FixTests
         using var f = new Folder().Add("U.xaml", $"<UserControl {Kit.Ns} x:Class=\"App.U\"/>").Add("Fancy.cs", "namespace App; public class Fancy : U { }")
             .Add("Main.xaml", Kit.Window("<local:Fancy><StackPanel><TextBlock Text=\"Mail\"/><TextBox/></StackPanel></local:Fancy>"));
         Assert.Contains("0 change(s)", f.Run("fix", f.Root, "--guess").Out, StringComparison.Ordinal);
+    }
+
+    /// <summary>標籤是接對的，前面那段字是猜的：要印得出來。</summary>
+    [Fact]
+    public void Only_the_text_before_is_a_guess()
+    {
+        using var f = Kit.Files("<Label Content=\"Mail\" Target=\"{Binding ElementName=u}\"/><TextBox x:Name=\"u\"/><TextBlock Text=\"Name\"/><TextBox/>");
+        var plan = Fixer.Plan(r => Project.Load(f.Root, [], null, r), x => File.ReadAllBytes(f.At(x)), new AuditOptions(), guess: true);
+        Assert.Equal([(FixSource.Label, false), (FixSource.TextBefore, true)], plan.Edits.Select(e => (e.Source, e.Guess)));
+    }
+
+    /// <summary>有一處改了沒有用：那一處不改，同一個檔案的別處照改。</summary>
+    [Fact]
+    public void The_rest_of_the_file_is_still_changed()
+    {
+        using var f = Kit.Files("<Button ToolTip=\"Delete\"><Image/></Button><TextBox ToolTip=\"Search\"/>");
+        // 「Delete」寫進去之後看起來還是沒名稱
+        Project Load(IReadOnlyDictionary<string, string> replaced) =>
+            Project.Load(f.Root, [], null, replaced.ToDictionary(p => p.Key, p => p.Value.Replace("AutomationProperties.Name=\"Delete\"", "", StringComparison.Ordinal)));
+        var plan = Fixer.Plan(Load, x => File.ReadAllBytes(f.At(x)), new AuditOptions(), guess: false);
+        Assert.Equal(["Search"], plan.Edits.Select(e => e.Value));
+        Assert.Equal(1, plan.Left);
+        Assert.Empty(plan.Untouched);
     }
 
     /// <summary>改完沒有用、弄出別的問題的那一處不改，別的照改。</summary>

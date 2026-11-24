@@ -23,7 +23,7 @@ First version.
   real windows; other themes and versions are unknown unless `themeShowsFocus` vouches for them.
 - Subclasses are followed through the project's own C# (`class ExtendedButton : Button`); `treatAs` declares the rest.
 - `xamla11y fix`: connects the label, text or ToolTip that is already there, checks every change in memory first, writes only with `--write`.
-  `xamla11y walk`: the Tab stops of one file in order, with the name and what NVDA reads, compared with real WPF windows.
+  `xamla11y walk`: the Tab stops of one file in order, with the name and what NVDA reads, compared with real WPF windows and with NVDA.
 - A `.csproj`, `.sln` or single `.xaml` in place of the folder; `--only`. `--prune-baseline` drops what is fixed and accepts nothing new.
 - The reports say what was accepted with `xamla11y-ignore` and why, which of those comments are no longer needed, and how many controls are built in C# (not checked).
 - JSON, SARIF, Markdown, MSBuild output, baseline without line numbers, resolution gate (exit 3), and a

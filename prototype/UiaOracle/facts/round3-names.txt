@@ -77,3 +77,28 @@ r3 | GeometryGroup content | <Button x:Name='p'><Button.Content><GeometryGroup><
 r3 | CombinedGeometry content | <Button x:Name='p'><Button.Content><CombinedGeometry/></Button.Content></Button>
 r3 | SolidColorBrush content | <Button x:Name='p'><Button.Content><SolidColorBrush Color='Red'/></Button.Content></Button>
 r3 | Color resource | <Button x:Name='p' Content='{StaticResource G}'/> | <Color x:Key='G'>Red</Color>
+# 直接放在 ItemsControl 裡的：自己就是項目容器，UIA 給的是「資料項目」，不是它自己（NVDA 走訪時發現）
+direct | Button icon in an ItemsControl | <ItemsControl><Button x:Name='p'>[ICON]</Button></ItemsControl>
+direct | Button icon, ToolTip, in an ItemsControl | <ItemsControl><Button x:Name='p' ToolTip='Delete'>[ICON]</Button></ItemsControl>
+direct | Button text in an ItemsControl | <ItemsControl><Button x:Name='p' Content='Save'/></ItemsControl>
+direct | Button panel text in an ItemsControl | <ItemsControl><Button x:Name='p'><StackPanel><TextBlock Text='Save'/></StackPanel></Button></ItemsControl>
+direct | Button Name in an ItemsControl | <ItemsControl><Button x:Name='p' AutomationProperties.Name='Delete'>[ICON]</Button></ItemsControl>
+direct | Button glyph in an ItemsControl | <ItemsControl><Button x:Name='p' FontFamily='Segoe MDL2 Assets' Content='&#xE74D;'/></ItemsControl>
+direct | Button icon in ItemsControl.Items | <ItemsControl><ItemsControl.Items><Button x:Name='p'>[ICON]</Button></ItemsControl.Items></ItemsControl>
+direct | Button icon deeper in an ItemsControl | <ItemsControl><StackPanel><Button x:Name='p'>[ICON]</Button></StackPanel></ItemsControl>
+direct | Button icon in a HeaderedItemsControl | <HeaderedItemsControl><Button x:Name='p'>[ICON]</Button></HeaderedItemsControl>
+direct | Button icon in a StatusBar | <StatusBar><Button x:Name='p'>[ICON]</Button></StatusBar>
+direct | Button icon in a ToolBar | <ToolBar><Button x:Name='p'>[ICON]</Button></ToolBar>
+direct | Button icon in a Menu | <Menu><Button x:Name='p'>[ICON]</Button></Menu>
+direct | Button icon in a ListBox | <ListBox><Button x:Name='p'>[ICON]</Button></ListBox>
+direct | TextBox in an ItemsControl | <ItemsControl><TextBox x:Name='p'/></ItemsControl>
+direct | TextBox Name in an ItemsControl | <ItemsControl><TextBox x:Name='p' AutomationProperties.Name='City'/></ItemsControl>
+direct | TextBox LabeledBy in an ItemsControl | <ItemsControl><TextBlock x:Name='l' Text='City'/><TextBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=l}'/></ItemsControl>
+direct | CheckBox in an ItemsControl | <ItemsControl><CheckBox x:Name='p'/></ItemsControl>
+direct | CheckBox text in an ItemsControl | <ItemsControl><CheckBox x:Name='p' Content='On'/></ItemsControl>
+direct | Expander header in an ItemsControl | <ItemsControl><Expander x:Name='p' Header='More'/></ItemsControl>
+direct | Expander no header in an ItemsControl | <ItemsControl><Expander x:Name='p'/></ItemsControl>
+direct | ListBox in an ItemsControl | <ItemsControl><ListBox x:Name='p'/></ItemsControl>
+direct | ComboBox in an ItemsControl | <ItemsControl><ComboBox x:Name='p'/></ItemsControl>
+direct | Slider in an ItemsControl | <ItemsControl><Slider x:Name='p'/></ItemsControl>
+direct | Button icon in an ItemsControl with a panel | <ItemsControl><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel><Button x:Name='p'>[ICON]</Button></ItemsControl>

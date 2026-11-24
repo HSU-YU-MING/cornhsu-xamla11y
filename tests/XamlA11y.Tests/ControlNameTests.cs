@@ -6,6 +6,31 @@ namespace XamlA11y.Tests;
 /// <summary>控制項的名稱：什麼內容給得出名稱、什麼給不出、訊息怎麼說。WPF 的答案在 uia-facts.json。</summary>
 public sealed class ControlNameTests
 {
+    /// <summary>直接放在 ItemsControl 裡：UIA 的名稱是 ToString()，不是空的（UiaOracle「direct」）。清單、選單、工具列不是。</summary>
+    [Theory]
+    [InlineData("<ItemsControl><Button><Image/></Button></ItemsControl>", "meaningless-name")]
+    [InlineData("<ItemsControl><ItemsControl.Items><Button><Image/></Button></ItemsControl.Items></ItemsControl>", "meaningless-name")]
+    [InlineData("<HeaderedItemsControl><Button ToolTip=\"x\"><Image/></Button></HeaderedItemsControl>", "meaningless-name")]
+    [InlineData("<ItemsControl><CheckBox/></ItemsControl>", "meaningless-name")]
+    [InlineData("<ItemsControl><Button><StackPanel><TextBlock Text=\"Save\"/></StackPanel></Button></ItemsControl>", "text-not-in-name")]
+    [InlineData("<ItemsControl><Button Content=\"Save\"/></ItemsControl>", "Pass")]
+    [InlineData("<ItemsControl><StackPanel><Button><Image/></Button></StackPanel></ItemsControl>", "missing-name")]
+    [InlineData("<StatusBar><Button><Image/></Button></StatusBar>", "missing-name")]
+    [InlineData("<ToolBar><Button><Image/></Button></ToolBar>", "missing-name")]
+    [InlineData("<ListBox><Button><Image/></Button></ListBox>", "missing-name")]
+    public void Directly_in_an_ItemsControl(string xaml, string expected) => Assert.Equal(expected, Kit.Verdict("control-names", xaml));
+
+    [Fact]
+    public void Inputs_and_lists_directly_in_an_ItemsControl()
+    {
+        Assert.Equal("meaningless-name,Pass", Kit.Verdict("input-names", "<ItemsControl><TextBox/><Slider AutomationProperties.Name=\"Volume\"/></ItemsControl>"));
+        Assert.Equal("list-no-name", Kit.Verdict("list-names", "<ItemsControl><ListBox/></ItemsControl>"));
+        var r = Kit.Audit("<ItemsControl><Button><StackPanel><TextBlock Text=\"Save\"/></StackPanel></Button><TextBox/></ItemsControl>");
+        Assert.All(r.Findings, f => Assert.False(f.NameIsEmpty));
+        Assert.Contains(r.Findings, f => f.Message == "<TextBox> has an unreadable accessible name: it is an item of an ItemsControl, so its name is the type name");
+        Assert.All(r.Findings, f => Assert.Null(XamlA11y.Core.Report.Nvda.Says(f, XamlA11y.Core.Report.Lang.En)));
+    }
+
     [Fact]
     public void Tooltip_is_not_a_name_and_the_message_says_so()
     {

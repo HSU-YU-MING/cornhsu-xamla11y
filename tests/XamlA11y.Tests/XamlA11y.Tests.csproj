@@ -9,6 +9,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1" />
     <None Include="uia-facts.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="nvda-facts.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="nvda-walk-facts.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="wcag22.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>

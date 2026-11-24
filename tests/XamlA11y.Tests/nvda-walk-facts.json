@@ -1,0 +1,655 @@
+{
+ "nvda": "0.2.1-2026.2",
+ "languages": [
+  "zh_TW",
+  "en"
+ ],
+ "cases": [
+  {
+   "title": "sign in form",
+   "xaml": "<Label x:Name=\"l1\" Content=\"User name\" Target=\"{Binding ElementName=t1}\"/><TextBox x:Name=\"t1\" AutomationProperties.LabeledBy=\"{Binding ElementName=l1}\"/><TextBlock Text=\"Password\"/><PasswordBox x:Name=\"p1\"/><CheckBox x:Name=\"c1\" Content=\"Remember me\"/><Button x:Name=\"b1\" Content=\"Sign in\"/><Button x:Name=\"b2\" Content=\"Cancel\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "t1",
+     "zh": "User name, 編輯區, 英文 (不支援), 空白",
+     "en": "User name, edit, 英文 (not supported), blank"
+    },
+    {
+     "name": "p1",
+     "zh": "編輯區, 受保護, 空白",
+     "en": "edit, protected, blank"
+    },
+    {
+     "name": "c1",
+     "zh": "Remember me, 核取方塊, 沒勾選",
+     "en": "Remember me, check box, not checked"
+    },
+    {
+     "name": "b1",
+     "zh": "Sign in, 按鈕",
+     "en": "Sign in, button"
+    },
+    {
+     "name": "b2",
+     "zh": "Cancel, 按鈕",
+     "en": "Cancel, button"
+    }
+   ]
+  },
+  {
+   "title": "icon buttons",
+   "xaml": "<StackPanel Orientation=\"Horizontal\"><Button x:Name=\"b1\" ToolTip=\"Delete\"><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></Button><Button x:Name=\"b2\"><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></Button><Button x:Name=\"b3\" AutomationProperties.Name=\"Open the folder\"><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></Button><Button x:Name=\"b4\" AutomationProperties.Name=\"Copy\" ToolTip=\"Copy the path\"><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></Button><Button x:Name=\"b5\"><StackPanel><TextBlock Text=\"Save\"/></StackPanel></Button></StackPanel>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "b1",
+     "zh": "按鈕, Delete",
+     "en": "button, Delete"
+    },
+    {
+     "name": "b2",
+     "zh": "按鈕",
+     "en": "button"
+    },
+    {
+     "name": "b3",
+     "zh": "Open the folder, 按鈕",
+     "en": "Open the folder, button"
+    },
+    {
+     "name": "b4",
+     "zh": "Copy, 按鈕, Copy the path",
+     "en": "Copy, button, Copy the path"
+    },
+    {
+     "name": "b5",
+     "zh": "按鈕",
+     "en": "button"
+    }
+   ]
+  },
+  {
+   "title": "the same text as name and tool tip",
+   "xaml": "<Button x:Name=\"b1\" AutomationProperties.Name=\"Copy\" ToolTip=\"Copy\"><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></Button><Button x:Name=\"b2\" Content=\"Paste\" ToolTip=\"Paste\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "b1",
+     "zh": "Copy, 按鈕",
+     "en": "Copy, button"
+    },
+    {
+     "name": "b2",
+     "zh": "Paste, 按鈕",
+     "en": "Paste, button"
+    }
+   ]
+  },
+  {
+   "title": "TabIndex turns the order around",
+   "xaml": "<Button x:Name=\"b1\" Content=\"One\" TabIndex=\"3\"/><Button x:Name=\"b2\" Content=\"Two\" TabIndex=\"1\"/><TextBox x:Name=\"t1\" AutomationProperties.Name=\"Three\" TabIndex=\"2\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "b2",
+     "zh": "Two, 按鈕",
+     "en": "Two, button"
+    },
+    {
+     "name": "t1",
+     "zh": "Three, 編輯區, 空白",
+     "en": "Three, edit, blank"
+    },
+    {
+     "name": "b1",
+     "zh": "One, 按鈕",
+     "en": "One, button"
+    }
+   ]
+  },
+  {
+   "title": "not stops are passed over",
+   "xaml": "<Button x:Name=\"b1\" Content=\"One\"/><Button x:Name=\"b2\" Content=\"Two\" IsTabStop=\"False\"/><Button x:Name=\"b3\" Content=\"Three\" Focusable=\"False\"/><Button x:Name=\"b4\" Content=\"Four\" IsEnabled=\"False\"/><Button x:Name=\"b5\" Content=\"Five\" Visibility=\"Collapsed\"/><Label x:Name=\"l1\" Content=\"Six\"/><TextBlock Text=\"Seven\"/><Button x:Name=\"b6\" Content=\"Eight\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "b1",
+     "zh": "One, 按鈕",
+     "en": "One, button"
+    },
+    {
+     "name": "b6",
+     "zh": "Eight, 按鈕",
+     "en": "Eight, button"
+    }
+   ]
+  },
+  {
+   "title": "choices",
+   "xaml": "<RadioButton x:Name=\"r1\" Content=\"Small\"/><RadioButton x:Name=\"r2\" Content=\"Large\" IsChecked=\"True\"/><CheckBox x:Name=\"c1\"/><CheckBox x:Name=\"c2\" Content=\"Wrap lines\" IsChecked=\"True\"/><ToggleButton x:Name=\"g1\" Content=\"Bold\"/><RepeatButton x:Name=\"e1\" Content=\"More\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "r1",
+     "zh": "Small, 選擇鈕, 沒勾選",
+     "en": "Small, radio button, not checked"
+    },
+    {
+     "name": "r2",
+     "zh": "Large, 選擇鈕, 勾選",
+     "en": "Large, radio button, checked"
+    },
+    {
+     "name": "c1",
+     "zh": "核取方塊, 沒勾選",
+     "en": "check box, not checked"
+    },
+    {
+     "name": "c2",
+     "zh": "Wrap lines, 核取方塊, 勾選",
+     "en": "Wrap lines, check box, checked"
+    },
+    {
+     "name": "g1",
+     "zh": "Bold, 切換按鈕, 沒按下",
+     "en": "Bold, toggle button, not pressed"
+    },
+    {
+     "name": "e1",
+     "zh": "More, 按鈕",
+     "en": "More, button"
+    }
+   ]
+  },
+  {
+   "title": "fields",
+   "xaml": "<TextBox x:Name=\"t1\"/><TextBox x:Name=\"t2\" ToolTip=\"Search\"/><TextBox x:Name=\"t3\" AutomationProperties.Name=\"City\" Text=\"Paris\"/><RichTextBox x:Name=\"t4\" AutomationProperties.Name=\"Notes\" Height=\"30\"/><PasswordBox x:Name=\"p1\" AutomationProperties.Name=\"Password\"/><Slider x:Name=\"s1\" AutomationProperties.Name=\"Volume\" Value=\"3\"/><Slider x:Name=\"s2\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "t1",
+     "zh": "編輯區, 空白",
+     "en": "edit, blank"
+    },
+    {
+     "name": "t2",
+     "zh": "編輯區, Search, 空白",
+     "en": "edit, Search, blank"
+    },
+    {
+     "name": "t3",
+     "zh": "City, 編輯區, Paris",
+     "en": "City, edit, Paris"
+    },
+    {
+     "name": "t4",
+     "zh": "Notes, 文件, 空白",
+     "en": "Notes, document, blank"
+    },
+    {
+     "name": "p1",
+     "zh": "Password, 編輯區, 受保護, 空白",
+     "en": "Password, edit, protected, blank"
+    },
+    {
+     "name": "s1",
+     "zh": "Volume, 滑桿, 3",
+     "en": "Volume, slider, 3"
+    },
+    {
+     "name": "s2",
+     "zh": "滑桿, 0",
+     "en": "slider, 0"
+    }
+   ]
+  },
+  {
+   "title": "combo boxes",
+   "xaml": "<ComboBox x:Name=\"c1\" AutomationProperties.Name=\"Size\" SelectedIndex=\"0\"><ComboBoxItem Content=\"Small\"/><ComboBoxItem Content=\"Large\"/></ComboBox><ComboBox x:Name=\"c2\" SelectedIndex=\"0\"><ComboBoxItem Content=\"Small\"/></ComboBox><ComboBox x:Name=\"c3\" IsEditable=\"True\" AutomationProperties.Name=\"Font\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "c1",
+     "zh": "Size, 下拉式方塊, Small, 折疊",
+     "en": "Size, combo box, Small, collapsed"
+    },
+    {
+     "name": "c2",
+     "zh": "下拉式方塊, Small, 折疊",
+     "en": "combo box, Small, collapsed"
+    },
+    {
+     "name": "c3",
+     "zh": "Font, 下拉式方塊, 折疊. Font, 編輯區, 空白",
+     "en": "Font, combo box, collapsed. Font, edit, blank"
+    }
+   ]
+  },
+  {
+   "title": "dates",
+   "xaml": "<DatePicker x:Name=\"d1\" AutomationProperties.Name=\"From\"/><DatePicker x:Name=\"d2\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "d1",
+     "zh": "From, 編輯區, 空白",
+     "en": "From, edit, blank"
+    },
+    {
+     "name": "d2",
+     "zh": "編輯區, 空白",
+     "en": "edit, blank"
+    }
+   ]
+  },
+  {
+   "title": "list",
+   "xaml": "<ListBox x:Name=\"l1\" AutomationProperties.Name=\"Files\"><ListBoxItem x:Name=\"i1\" Content=\"Alpha\"/><ListBoxItem x:Name=\"i2\" Content=\"Beta\"/></ListBox><Button x:Name=\"b1\" Content=\"After\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "i1",
+     "zh": "Files, 清單. Alpha, 沒選取, 2 之 1",
+     "en": "Files, list. Alpha, not selected, 1 of 2"
+    },
+    {
+     "name": "b1",
+     "zh": "After, 按鈕",
+     "en": "After, button"
+    }
+   ]
+  },
+  {
+   "title": "list with a selected item",
+   "xaml": "<ListBox x:Name=\"l1\" AutomationProperties.Name=\"Files\"><ListBoxItem x:Name=\"i1\" Content=\"Alpha\"/><ListBoxItem x:Name=\"i2\" Content=\"Beta\" IsSelected=\"True\"/></ListBox><Button x:Name=\"b1\" Content=\"After\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "i2",
+     "zh": "Files, 清單. Beta, 2 之 2",
+     "en": "Files, list. Beta, 2 of 2"
+    },
+    {
+     "name": "b1",
+     "zh": "After, 按鈕",
+     "en": "After, button"
+    }
+   ]
+  },
+  {
+   "title": "list with a button in the item",
+   "xaml": "<ListBox x:Name=\"l1\" AutomationProperties.Name=\"Files\"><ListBoxItem x:Name=\"i1\" AutomationProperties.Name=\"Alpha\"><Button x:Name=\"b1\" Content=\"Open\"/></ListBoxItem><ListBoxItem x:Name=\"i2\" AutomationProperties.Name=\"Beta\"><Button x:Name=\"b2\" Content=\"Open\"/></ListBoxItem></ListBox><Button x:Name=\"b3\" Content=\"After\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "i1",
+     "zh": "Files, 清單. Alpha, 沒選取, 2 之 1",
+     "en": "Files, list. Alpha, not selected, 1 of 2"
+    },
+    {
+     "name": "b1",
+     "zh": "Open, 按鈕",
+     "en": "Open, button"
+    },
+    {
+     "name": "b3",
+     "zh": "After, 按鈕",
+     "en": "After, button"
+    }
+   ]
+  },
+  {
+   "title": "empty list, tree, tabs",
+   "xaml": "<ListBox x:Name=\"l1\" Height=\"20\" AutomationProperties.Name=\"Files\"/><TreeView x:Name=\"v1\" Height=\"20\" AutomationProperties.Name=\"Folders\"/><TabControl x:Name=\"k1\"><TabItem x:Name=\"h1\" Header=\"General\"><StackPanel><Button x:Name=\"b1\" Content=\"Apply\"/><TextBox x:Name=\"t1\" AutomationProperties.Name=\"Name\"/></StackPanel></TabItem><TabItem x:Name=\"h2\" Header=\"Advanced\"><Button x:Name=\"b2\" Content=\"Reset\"/></TabItem></TabControl>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "v1",
+     "zh": "Folders, 樹狀檢視",
+     "en": "Folders, tree view"
+    },
+    {
+     "name": "h1",
+     "zh": "索引標籤控制項. General, 索引標籤, 已選取, 2 之 1",
+     "en": "tab control. General, tab, selected, 1 of 2"
+    },
+    {
+     "name": "b1",
+     "zh": "Apply, 按鈕",
+     "en": "Apply, button"
+    },
+    {
+     "name": "t1",
+     "zh": "Name, 編輯區, 空白",
+     "en": "Name, edit, blank"
+    }
+   ]
+  },
+  {
+   "title": "second tab selected",
+   "xaml": "<TabControl x:Name=\"k1\" SelectedIndex=\"1\"><TabItem x:Name=\"h1\" Header=\"General\"><Button x:Name=\"b1\" Content=\"Apply\"/></TabItem><TabItem x:Name=\"h2\" Header=\"Advanced\"><Button x:Name=\"b2\" Content=\"Reset\"/></TabItem></TabControl>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "h2",
+     "zh": "索引標籤控制項. Advanced, 索引標籤, 已選取, 2 之 2",
+     "en": "tab control. Advanced, tab, selected, 2 of 2"
+    },
+    {
+     "name": "b2",
+     "zh": "Reset, 按鈕",
+     "en": "Reset, button"
+    }
+   ]
+  },
+  {
+   "title": "tab header that is not a stop",
+   "xaml": "<TabControl x:Name=\"k1\"><TabItem x:Name=\"h1\" Header=\"General\" Focusable=\"False\"><Button x:Name=\"b1\" Content=\"Apply\"/></TabItem><TabItem x:Name=\"h2\" Header=\"Advanced\"><Button x:Name=\"b2\" Content=\"Reset\"/></TabItem></TabControl><Button x:Name=\"b3\" Content=\"After\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "b1",
+     "zh": "索引標籤控制項. General, 索引標籤, 已選取, 2 之 1. Apply, 按鈕",
+     "en": "tab control. General, tab, selected, 1 of 2. Apply, button"
+    },
+    {
+     "name": "b3",
+     "zh": "After, 按鈕",
+     "en": "After, button"
+    }
+   ]
+  },
+  {
+   "title": "tab header with IsTabStop False",
+   "xaml": "<TabControl x:Name=\"k1\"><TabItem x:Name=\"h1\" Header=\"General\" IsTabStop=\"False\"><Button x:Name=\"b1\" Content=\"Apply\"/></TabItem><TabItem x:Name=\"h2\" Header=\"Advanced\"><Button x:Name=\"b2\" Content=\"Reset\"/></TabItem></TabControl><Button x:Name=\"b3\" Content=\"After\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "b1",
+     "zh": "索引標籤控制項. General, 索引標籤, 已選取, 2 之 1. Apply, 按鈕",
+     "en": "tab control. General, tab, selected, 1 of 2. Apply, button"
+    },
+    {
+     "name": "b3",
+     "zh": "After, 按鈕",
+     "en": "After, button"
+    }
+   ]
+  },
+  {
+   "title": "expanders",
+   "xaml": "<Expander x:Name=\"e1\" Header=\"Closed\"><Button x:Name=\"b1\" Content=\"Hidden\"/></Expander><Expander x:Name=\"e2\" Header=\"Open\" IsExpanded=\"True\"><Button x:Name=\"b2\" Content=\"Shown\"/></Expander><Button x:Name=\"b3\" Content=\"After\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "e1",
+     "zh": "Closed, 群組, 折疊",
+     "en": "Closed, grouping, collapsed"
+    },
+    {
+     "name": "e2",
+     "zh": "Open, 群組, 展開",
+     "en": "Open, grouping, expanded"
+    },
+    {
+     "name": "b2",
+     "zh": "Shown, 按鈕",
+     "en": "Shown, button"
+    },
+    {
+     "name": "b3",
+     "zh": "After, 按鈕",
+     "en": "After, button"
+    }
+   ]
+  },
+  {
+   "title": "group box",
+   "xaml": "<GroupBox Header=\"Danger\"><StackPanel><Button x:Name=\"b1\" Content=\"Reset\"/><TextBox x:Name=\"t1\"/></StackPanel></GroupBox><Button x:Name=\"b2\" Content=\"After\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "b1",
+     "zh": "Danger, 群組. Reset, 按鈕",
+     "en": "Danger, grouping. Reset, button"
+    },
+    {
+     "name": "t1",
+     "zh": "編輯區, 空白",
+     "en": "edit, blank"
+    },
+    {
+     "name": "b2",
+     "zh": "After, 按鈕",
+     "en": "After, button"
+    }
+   ]
+  },
+  {
+   "title": "links in a text",
+   "xaml": "<TextBlock>Read <Hyperlink x:Name=\"h1\">the guide</Hyperlink> or <Hyperlink x:Name=\"h2\">the news</Hyperlink>.</TextBlock><Button x:Name=\"b1\" Content=\"After\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "h1",
+     "zh": "Read the guide or the news.. the guide, 連結",
+     "en": "Read the guide or the news.. the guide, link"
+    },
+    {
+     "name": "h2",
+     "zh": "the news, 連結",
+     "en": "the news, link"
+    },
+    {
+     "name": "b1",
+     "zh": "After, 按鈕",
+     "en": "After, button"
+    }
+   ]
+  },
+  {
+   "title": "tool bar keeps Tab",
+   "xaml": "<ToolBar><Button x:Name=\"b1\" Content=\"Cut\"/><Button x:Name=\"b2\" Content=\"Copy\"/></ToolBar><Button x:Name=\"b3\" Content=\"After\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "b1",
+     "zh": "工具列. Cut, 按鈕",
+     "en": "tool bar. Cut, button"
+    },
+    {
+     "name": "b2",
+     "zh": "Copy, 按鈕",
+     "en": "Copy, button"
+    },
+    {
+     "name": "b1",
+     "zh": "Cut, 按鈕",
+     "en": "Cut, button"
+    }
+   ]
+  },
+  {
+   "title": "menu keeps Tab",
+   "xaml": "<Menu x:Name=\"m1\"><MenuItem x:Name=\"m2\" Header=\"File\"/><MenuItem x:Name=\"m3\" Header=\"Edit\"/></Menu><Button x:Name=\"b1\" Content=\"After\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "m2",
+     "zh": "File, 2 之 1",
+     "en": "File, 1 of 2"
+    },
+    {
+     "name": "m3",
+     "zh": "Edit, 2 之 2",
+     "en": "Edit, 2 of 2"
+    },
+    {
+     "name": "b1",
+     "zh": "After, 按鈕",
+     "en": "After, button"
+    }
+   ]
+  },
+  {
+   "title": "Once is one stop",
+   "xaml": "<StackPanel KeyboardNavigation.TabNavigation=\"Once\"><Button x:Name=\"b1\" Content=\"One\"/><Button x:Name=\"b2\" Content=\"Two\"/></StackPanel><Button x:Name=\"b3\" Content=\"Three\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "b1",
+     "zh": "One, 按鈕",
+     "en": "One, button"
+    },
+    {
+     "name": "b3",
+     "zh": "Three, 按鈕",
+     "en": "Three, button"
+    }
+   ]
+  },
+  {
+   "title": "Cycle keeps Tab",
+   "xaml": "<StackPanel KeyboardNavigation.TabNavigation=\"Cycle\"><Button x:Name=\"b1\" Content=\"One\"/><Button x:Name=\"b2\" Content=\"Two\"/></StackPanel><Button x:Name=\"b3\" Content=\"Three\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "b1",
+     "zh": "One, 按鈕",
+     "en": "One, button"
+    },
+    {
+     "name": "b2",
+     "zh": "Two, 按鈕",
+     "en": "Two, button"
+    },
+    {
+     "name": "b1",
+     "zh": "One, 按鈕",
+     "en": "One, button"
+    }
+   ]
+  },
+  {
+   "title": "content control around a button",
+   "xaml": "<ContentControl x:Name=\"c1\"><Button x:Name=\"b1\" Content=\"One\"/></ContentControl><ContentControl x:Name=\"c2\" Focusable=\"False\"><Button x:Name=\"b2\" Content=\"Two\"/></ContentControl>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "c1",
+     "zh": "",
+     "en": ""
+    },
+    {
+     "name": "b1",
+     "zh": "One, 按鈕",
+     "en": "One, button"
+    },
+    {
+     "name": "b2",
+     "zh": "Two, 按鈕",
+     "en": "Two, button"
+    }
+   ]
+  },
+  {
+   "title": "items control with buttons",
+   "xaml": "<ItemsControl x:Name=\"c1\"><Button x:Name=\"b1\" Content=\"One\"/><Button x:Name=\"b2\" Content=\"Two\"/></ItemsControl>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "c1",
+     "zh": "清單",
+     "en": "list"
+    },
+    {
+     "name": "b1",
+     "zh": "One, 資料項目, 2 之 1",
+     "en": "One, data item, 1 of 2"
+    },
+    {
+     "name": "b2",
+     "zh": "Two, 資料項目, 2 之 2",
+     "en": "Two, data item, 2 of 2"
+    }
+   ]
+  },
+  {
+   "title": "names that are not plain",
+   "xaml": "<Button x:Name=\"b1\" Content=\"Save…\"/><Button x:Name=\"b2\" Content=\"×\"/><Button x:Name=\"b3\" Content=\"C++\"/><Button x:Name=\"b4\" Content=\"_Open\"/><Button x:Name=\"b5\" Content=\"Save &amp; close\"/><Button x:Name=\"b6\" Content=\"儲存檔案\"/><Button x:Name=\"b7\" Content=\"Are you sure?\"/><Button x:Name=\"b8\" Content=\"Step 2, next\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "b1",
+     "zh": "Save..., 按鈕",
+     "en": "Save..., button"
+    },
+    {
+     "name": "b2",
+     "zh": "乘以, 按鈕",
+     "en": "乘以, button"
+    },
+    {
+     "name": "b3",
+     "zh": "C plus plus, 按鈕",
+     "en": "C plus plus, button"
+    },
+    {
+     "name": "b4",
+     "zh": "Open, 按鈕, O",
+     "en": "Open, button, O"
+    },
+    {
+     "name": "b5",
+     "zh": "Save and close, 按鈕",
+     "en": "Save and close, button"
+    },
+    {
+     "name": "b6",
+     "zh": "儲存檔案, 按鈕",
+     "en": "儲存檔案, button"
+    },
+    {
+     "name": "b7",
+     "zh": "Are you sure?, 按鈕",
+     "en": "Are you sure?, button"
+    },
+    {
+     "name": "b8",
+     "zh": "Step 2, next, 按鈕",
+     "en": "Step 2, next, button"
+    }
+   ]
+  },
+  {
+   "title": "name from a style",
+   "xaml": "<Button x:Name=\"b2\" Style=\"{StaticResource S}\"><Path Data=\"M0,0 L10,10 L0,10 Z\" Fill=\"Black\" Width=\"12\" Height=\"12\"/></Button>",
+   "resources": "<Style x:Key=\"S\" TargetType=\"Button\"><Setter Property=\"AutomationProperties.Name\" Value=\"Refresh\"/></Style>",
+   "stops": [
+    {
+     "name": "b2",
+     "zh": "Refresh, 按鈕",
+     "en": "Refresh, button"
+    }
+   ]
+  },
+  {
+   "title": "data grid, splitter, scroll viewer",
+   "xaml": "<DataGrid x:Name=\"g1\" Height=\"40\" AutomationProperties.Name=\"Rows\"/><ScrollViewer x:Name=\"s1\" Height=\"20\"><Button x:Name=\"b1\" Content=\"Inside\"/></ScrollViewer><Button x:Name=\"b2\" Content=\"After\"/>",
+   "resources": "",
+   "stops": [
+    {
+     "name": "b1",
+     "zh": "Inside, 按鈕",
+     "en": "Inside, button"
+    },
+    {
+     "name": "b2",
+     "zh": "After, 按鈕",
+     "en": "After, button"
+    }
+   ]
+  }
+ ]
+}

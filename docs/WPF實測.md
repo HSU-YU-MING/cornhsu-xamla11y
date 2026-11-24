@@ -129,7 +129,16 @@
 
 27 案，比 UIA 的名稱與視覺樹裡畫出來的字。`LabeledBy` 贏過自己的字，所以標籤寫「輸入資料夾」、按鈕寫「瀏覽」的也是不包含。
 
+## 5c-6. 直接放在 ItemsControl 裡（facts/round3-names.txt「direct」）
+
+`<ItemsControl><Button>圖示</Button></ItemsControl>`：按鈕自己就是項目容器，UIA 給的是「資料項目」，NVDA 念「Save, 資料項目, 2 之 1」，不是「Save, 按鈕」。
+沒有名稱的不是空的，是 `ToString()`：`System.Windows.Controls.Button`、`System.Windows.Controls.CheckBox 內容: IsChecked:False`。輸入框、清單、Slider 一樣。
+中間隔一個面板就不是；`ListBox`、`Menu`、`StatusBar`、`ToolBar` 另外包一層，也不是。2026-11-25 NVDA 走訪時發現，之前報成「沒有名稱」。
+
 ## 5d. NVDA 怎麼念
+
+2026-11-25 另外按真的 Tab 鍵走過 28 個整個的視窗、88 站（`facts/nvda-walk.txt`，逐站記在 `nvda-walk-facts.json`）：停的地方與順序 `walk` 全部說對；
+有寫念法的 69 站，兩種語言都跟 NVDA 念的一樣。抓到的就是上面那一條。提示跟名稱一樣的按鈕，NVDA 不念第二次。
 
 2026-11-24，NVDA 2026.2，繁體中文與英文各一遍，用 Tab 走過 87 種寫法的真視窗（86 種拿得到念法；一種停用，Tab 停不到）（`prototype/UiaOracle/nvda.mjs` + `facts/nvda.txt`，逐句記在
 `tests/XamlA11y.Tests/nvda-facts.json`）。工具判得出來的 81 案跟 NVDA 念的沒有一案矛盾，兩種語言一樣；報告上的「NVDA 會念」也逐案比過。第一次跑抓到一個判錯種類的：按鈕內容是 EllipseGeometry
