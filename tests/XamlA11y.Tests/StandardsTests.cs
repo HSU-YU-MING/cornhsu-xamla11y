@@ -40,6 +40,10 @@ public class StandardsTests
     [InlineData("not-in-tab-order", "2.1.1 (A)")]                    // 不是 2.4.3：那條管的是順序
     [InlineData("small-target", "2.5.8 (AA)")]
     [InlineData("list-no-name", "4.1.2 (A), 1.3.1 (A)")]
+    [InlineData("widget-no-name", "4.1.2 (A)")]
+    [InlineData("item-type-name", "4.1.2 (A)")]
+    [InlineData("silent-tab-stop", "4.1.2 (A)")]
+    [InlineData("same-name", "2.4.6 (AA)")]
     public void Each_finding_names_its_criteria(string slug, string expected) => Assert.Equal(expected, Kinds.BySlug(slug)!.WcagWithLevels);
 
     [Theory]

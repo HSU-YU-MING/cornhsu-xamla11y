@@ -86,7 +86,7 @@ jobs:
           test "$OUTCOME" = failure || { echo "expected the demo to fail the gate, got $OUTCOME"; exit 1; }
           test -s "$report" || { echo "no JSON report"; exit 1; }
           n=$(jq '.findings | length' "$report" | tr -d '\r')
-          test "$n" -eq 11 || { echo "expected 11 findings, got $n"; exit 1; }
+          test "$n" -eq 15 || { echo "expected 15 findings, got $n"; exit 1; }
           got=$(jq -r '.toolVersion' "$report" | tr -d '\r')
           test "$got" = "$VERSION" || { echo "expected tool $VERSION, the report says $got"; exit 1; }
           test "$(head -n 1 "$md" | tr -d '\r')" = "## XamlA11y — accessibility audit" || { echo "unexpected Markdown header"; exit 1; }

@@ -253,7 +253,7 @@ public class PinnedTests
     [InlineData("<StackPanel><Label Content=\"Name\"/><TextBox/></StackPanel>", "Name")]
     [InlineData("<StackPanel><TextBlock Text=\"Name\"/><StackPanel.ToolTip>t</StackPanel.ToolTip><TextBox/></StackPanel>", "Name")]
     public void The_text_before_an_input_is_suggested(string xaml, string label) =>
-        Assert.Contains($"\"{label}\" before it", Kit.Audit(xaml).Findings.Single(f => f.Kind.Slug == "input-no-name").Message, StringComparison.Ordinal);
+        Assert.Contains($"\"{label}\" at line 1 is its label", Kit.Audit(xaml).Findings.Single(f => f.Kind.Slug == "input-no-name").Message, StringComparison.Ordinal);
 
     [Fact]
     public void Resources_of_one_key_that_differ_are_unknown()

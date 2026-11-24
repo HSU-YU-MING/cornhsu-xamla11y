@@ -378,6 +378,23 @@ public sealed class StyleIndex
         return Expand(ImplicitStyles(element, Markup.TypeIdOf(element), null), element);
     }
 
+    /// <summary>專案裡給這個型別名字的樣式（不管命名空間怎麼寫），照檔名排。</summary>
+    public IReadOnlyList<StyleRecord> StylesFor(string type) =>
+        [.. _implicit.Where(p => p.Key == type || p.Key.EndsWith("#" + type, StringComparison.Ordinal)).SelectMany(p => p.Value).OrderBy(s => s.File, StringComparer.Ordinal)];
+
+    /// <summary>清單產生的容器會套到的樣式：ItemContainerStyle（DataGrid 是 RowStyle）整個取代隱含樣式。</summary>
+    public IReadOnlyList<StyleChain> ContainerChains(XElement list, string container)
+    {
+        foreach (var property in container == "DataGridRow" ? (ReadOnlySpan<string>)["RowStyle", "ItemContainerStyle"] : ["ItemContainerStyle"])
+        {
+            var r = Resolve(list, property);
+            if (r.IsNull) continue;
+            if (r.Element is { Name.LocalName: "Style" } style) return Expand([RecordOf(style)], list);
+            if (r.IsValue || r.IsUnreadable && r.Origin is not null) return [new StyleChain([], "the ItemContainerStyle of its list is something this tool cannot read")];
+        }
+        return Expand(ImplicitStyles(list, container, null), list);
+    }
+
     public bool HasKeyContaining(string part) => _byKey.Keys.Any(k => k.Contains(part, StringComparison.Ordinal));
 
     private static XElement? VisualParent(XElement e) =>

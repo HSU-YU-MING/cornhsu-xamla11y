@@ -29,7 +29,7 @@ internal static class Check
     }
 
     /// <summary>寫進暫存資料夾、照正式流程載入（App.xaml 合併佈景、csproj 寫套件版本）。</summary>
-    private static AuditResult Audit(string windowXaml, string? theme)
+    private static AuditResult Audit(string windowXaml, string? theme, string? code = null)
     {
         var dir = Directory.CreateTempSubdirectory("xamla11y-oracle-").FullName;
         try
@@ -42,6 +42,7 @@ internal static class Check
                 File.WriteAllText(Path.Combine(dir, "App.csproj"),
                     "<Project><ItemGroup><PackageReference Include=\"MahApps.Metro\" Version=\"2.4.11\"/><PackageReference Include=\"MaterialDesignThemes\" Version=\"5.3.0\"/><PackageReference Include=\"HandyControl\" Version=\"3.5.1\"/><PackageReference Include=\"WPF-UI\" Version=\"4.3.0\"/></ItemGroup></Project>");
             }
+            if (code is not null) File.WriteAllText(Path.Combine(dir, "Code.cs"), code);
             return Auditor.Run(Project.Load(dir, []));
         }
         finally { Directory.Delete(dir, recursive: true); }
@@ -79,7 +80,7 @@ internal static class Check
     {
         null or "symbol-name" => Meaningful(node.Name),
         "missing-name" or "text-not-in-name" or "input-no-name" => string.IsNullOrWhiteSpace(node.Name),
-        "list-no-name" => !Meaningful(node.Name),
+        "list-no-name" or "widget-no-name" => !Meaningful(node.Name),
         "meaningless-name" => !Meaningful(node.Name) || j.Reason?.Contains("font", StringComparison.Ordinal) == true,
         _ => true,
     };
@@ -96,6 +97,8 @@ internal static class Check
         wrong += FocusCases("focus.txt", null);
         wrong += ThemeFocusCases();
         wrong += Sizes();
+        wrong += ItemCases();
+        wrong += SilentCases();
         Console.WriteLine(wrong == 0 ? "\nOK — the tool never contradicts WPF" : $"\n{wrong} WRONG");
         return wrong == 0 ? 0 : 1;
     }
@@ -156,13 +159,27 @@ internal static class Check
             using var shown = Host.Show(body, c.Resources);
             tabs.Add(new { title = c.Title, xaml = WindowXaml(body, c.Resources), stops = Host.TabStops(shown) });
         }
+        var items = new List<object>();
+        foreach (var c in Probe.Load("items.txt"))
+        {
+            using var shown = Host.Show(c.Body.Replace("[O]", Items.O), c.Resources);
+            items.Add(new { title = c.Title, xaml = WindowXaml(Items.ToolXaml(c.Body.Replace("[O]", Items.O)), c.Resources), name = Items.ItemName(Host.Tree(shown.Handle), c.Title) });
+        }
+        var silent = new List<object>();
+        foreach (var c in Probe.Load("silent.txt"))
+        {
+            var body = "<Button x:Name=\"a\"/>" + c.Body.Replace("[O]", Items.O) + "<Button x:Name=\"z\"/>";
+            using var shown = Host.Show(body, c.Resources);
+            var inTree = Host.Tree(shown.Handle).Any(n => n.Id == "p");
+            silent.Add(new { title = c.Title, xaml = WindowXaml(body, c.Resources), stop = Host.TabStops(shown).Contains("p"), inTree });
+        }
         var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
         File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(new
         {
             recordedWith = $".NET {Environment.Version}, Windows {Environment.OSVersion.Version}, UI language {System.Globalization.CultureInfo.CurrentUICulture.Name}",
-            names = list, focus, tabs,
+            names = list, focus, tabs, code = Items.Code.Replace("\r\n", "\n"), items, silent,
         }, options).Replace("\r\n", "\n") + "\n");
-        Console.WriteLine($"recorded {list.Count} names, {focus.Count} focus, {tabs.Count} tab cases → {path}");
+        Console.WriteLine($"recorded {list.Count} names, {focus.Count} focus, {tabs.Count} tab, {items.Count} item, {silent.Count} silent cases → {path}");
     }
 
     public static int Themes()
@@ -364,6 +381,56 @@ internal static class Check
         Probe.SettleMilliseconds = 0;
         Parts.UseTheme(null);
         return wrong;
+    }
+
+    /// <summary>R8：資料產生的項目念出來是不是型別名。</summary>
+    public static int ItemCases()
+    {
+        var t = new Tally();
+        foreach (var c in Probe.Load("items.txt"))
+        {
+            try
+            {
+                var body = c.Body.Replace("[O]", Items.O);
+                var result = Audit(WindowXaml(Items.ToolXaml(body), c.Resources), null, Items.Code);
+                using var shown = Host.Show(body, c.Resources);
+                var name = Items.ItemName(Host.Tree(shown.Handle), c.Title) ?? "";
+                foreach (var j in result.Judgements.Where(x => x.Rule == "R8" && XamlMarkup.NameOf(x.Element) == "p"))
+                {
+                    if (j.Verdict is Verdict.Blocked or Verdict.NotJudged) { t.Skip(j.Reason); continue; }
+                    var ok = (j.Verdict == Verdict.Finding) == name.StartsWith("UiaOracle.", StringComparison.Ordinal);
+                    if (ok) t.Ok++;
+                    else { t.Wrong++; Console.WriteLine($"  WRONG {c.Title}: tool {j.Verdict} ({j.Reason}); WPF '{name}'"); }
+                }
+            }
+            catch (Exception ex) { Console.WriteLine($"  !! {c.Title}: {ex.GetBaseException().Message.Split('\n')[0]}"); t.Wrong++; }
+        }
+        t.Print("items from data");
+        return t.Wrong;
+    }
+
+    /// <summary>R9：Tab 停得到、UIA 樹上沒有。</summary>
+    public static int SilentCases()
+    {
+        var t = new Tally();
+        foreach (var c in Probe.Load("silent.txt"))
+        {
+            try
+            {
+                var body = "<Button x:Name=\"a\"/>" + c.Body.Replace("[O]", Items.O) + "<Button x:Name=\"z\"/>";
+                var result = Audit(WindowXaml(body, c.Resources), null, Items.Code);
+                using var shown = Host.Show(body, c.Resources);
+                var silent = !Host.Tree(shown.Handle).Any(n => n.Id == "p") && Host.TabStops(shown).Contains("p");
+                var judged = result.Judgements.Where(x => x.Rule == "R9" && XamlMarkup.NameOf(x.Element) == "p").ToList();
+                var found = judged.Any(j => j.Verdict == Verdict.Finding);
+                if (judged.Any(j => j.Verdict is Verdict.NotJudged or Verdict.Blocked)) t.Skip(judged[0].Reason);
+                else if (found == silent) t.Ok++;
+                else { t.Wrong++; Console.WriteLine($"  WRONG {c.Title}: tool {(found ? "finding" : "nothing")}; WPF {(silent ? "silent" : "not silent")}"); }
+            }
+            catch (Exception ex) { Console.WriteLine($"  !! {c.Title}: {ex.GetBaseException().Message.Split('\n')[0]}"); t.Wrong++; }
+        }
+        t.Print("silent tab stops");
+        return t.Wrong;
     }
 
     /// <summary>R6：工具算的上界 ≥ 真的大小（BoundingRectangle），而且工具報的真的小於 24。</summary>

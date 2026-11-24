@@ -94,10 +94,27 @@
 - Axe **也報**：ItemsControl（有項目時）、Menu、ToolBar、ProgressBar、Calendar。**不報**：TabControl、StatusBar、GroupBox、ScrollBar。
 - 鍵盤到不了的（`Focusable="False"`、停用）Axe 不報 → 這支降成 info。
 
+## 5c-2. 資料產生的項目（facts/items.txt，R8）
+
+39 案。`ListBox`、`ListView`（含 GridView）、`ComboBox`、`TreeView`、`TabControl`、`Menu`、`DataGrid` 的項目，名稱都是資料物件的 `ToString()`：
+
+- 沒覆寫的 class、struct → 型別名（`UiaOracle.Row`）；record → `RecordRow { Title = Inbox }`；覆寫成空字串 → 空的。
+- **`DisplayMemberPath`、`ItemTemplate`、`TextSearch.TextPath`、`ItemStringFormat`、範本根元素的 Name、容器的 ToolTip 都不會變成名稱。**
+- 會的：容器樣式（`ItemContainerStyle`、`RowStyle`、隱含樣式）設的 `AutomationProperties.Name`，或容器的 `Content`／`Header`。
+- 收起來的 ComboBox，NVDA 念選到的那一項也是這個名稱（不是畫面上的字）。
+- 真實 App：QuillNest（沙箱複製品）開起來用 UIA 讀，便利貼與記事本的分類下拉式方塊選到的是 `QuillNest.Models.LabelInfo`，跟工具報的一樣。
+
+## 5c-3. 沒聲音的停留點（facts/silent.txt，R9）
+
+56 案。Tab 停得到、UIA 樹上沒有（連 `AutomationProperties.Name` 都沒用）：`ContentControl`、`Control`、`HeaderedContentControl`（預設就能聚焦），
+`Focusable="True"` 的面板、Border、圖形、ContentPresenter，以及繼承 `Control`、`ContentControl`、`ButtonBase`、`RangeBase`、`FrameworkElement`、`Panel` 又沒寫
+`OnCreateAutomationPeer` 的類別。**有** peer 的：`UserControl`、`ItemsControl`（停得到，是沒名稱的 List）、`Selector`、`Thumb`、`Frame`、`GroupBox`。
+`Popup` 設 `Focusable` 也停不到；自己的 `TabNavigation="None"` 不影響自己。
+
 ## 5d. NVDA 怎麼念
 
-2026-11-24，NVDA 2026.2，繁體中文與英文各一遍，用 Tab 走過 76 種寫法的真視窗（`prototype/UiaOracle/nvda.mjs` + `facts/nvda.txt`，逐句記在
-`tests/XamlA11y.Tests/nvda-facts.json`）。工具判得出來的 72 案跟 NVDA 念的沒有一案矛盾，兩種語言一樣；報告上的「NVDA 會念」也逐案比過。第一次跑抓到一個判錯種類的：按鈕內容是 EllipseGeometry
+2026-11-24，NVDA 2026.2，繁體中文與英文各一遍，用 Tab 走過 87 種寫法的真視窗（`prototype/UiaOracle/nvda.mjs` + `facts/nvda.txt`，逐句記在
+`tests/XamlA11y.Tests/nvda-facts.json`）。工具判得出來的 81 案跟 NVDA 念的沒有一案矛盾，兩種語言一樣；報告上的「NVDA 會念」也逐案比過。第一次跑抓到一個判錯種類的：按鈕內容是 EllipseGeometry
 時念的是型別名，工具說「沒有名稱」（已修，同類的漸層筆刷、Color 一起）。
 
 | 寫法 | NVDA 念 |
@@ -116,6 +133,10 @@
 | 清單有名稱 | Files, 清單. One, … |
 | 只有圖示的 TabItem | 索引標籤控制項. System dot Windows dot Controls dot Tab Item 標頭: 內容:, 索引標籤… |
 | 可聚焦的 Border 設了 Name | （什麼都沒念） |
+| ContentControl、繼承 ButtonBase 沒寫 peer 的類別 | （什麼都沒念） |
+| 資料物件的 ListBox（有 DisplayMemberPath） | Notes, 清單. Uia Oracle dot Row, 沒選取, 1 之 1 |
+| 同上，容器樣式設了 Name，或類別有 ToString | Notes, 清單. Inbox, 沒選取, 1 之 1 |
+| 收起來的 ComboBox，資料物件（DisplayMemberPath、ItemTemplate、TextPath 都一樣） | Note, 下拉式方塊, Uia Oracle dot Row, 折疊 |
 | RichTextBox | 文件, 空白（不是「編輯區」） |
 | ListView：沒有 View／有欄位 | 清單／資料格 |
 | 內容是 AccessText 的按鈕 | 按鈕, O（快速鍵會念） |

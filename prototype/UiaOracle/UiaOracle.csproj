@@ -21,4 +21,7 @@
     <PackageReference Include="WPF-UI" Version="4.3.0" />
     <None Include="facts/*.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Items.cs" LogicalName="Items.cs" />
+  </ItemGroup>
 </Project>

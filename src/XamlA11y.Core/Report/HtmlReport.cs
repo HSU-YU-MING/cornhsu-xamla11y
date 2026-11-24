@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using XamlA11y.Core.Analysis;
+using XamlA11y.Core.Rules;
 
 namespace XamlA11y.Core.Report;
 
@@ -15,7 +16,7 @@ public static class HtmlReport
     private const int RowsPerKind = 500;
     private const int ListMax = 50;
 
-    public static string Create(AuditResult r, IReadOnlyList<Finding> reported, int exitCode, int baselined, string? why, string toolVersion, Lang? lang = null, int stale = 0)
+    public static string Create(AuditResult r, IReadOnlyList<Finding> reported, int exitCode, int baselined, string? why, string toolVersion, Lang? lang = null, int stale = 0, IReadOnlyList<Finding>? known = null)
     {
         lang ??= Lang.En;
         var inv = CultureInfo.InvariantCulture;
@@ -41,6 +42,7 @@ public static class HtmlReport
 
         var verdict = exitCode switch
         {
+            0 when known is { Count: > 0 } => lang.T("PASS (no new findings)", "通過（沒有新的問題）"),
             0 => lang.T("PASS", "通過"),
             1 => lang.T("FAIL", "沒通過"),
             3 => lang.T("NOT TRUSTWORTHY (exit 3)", "結果不可信（exit 3）"),
@@ -51,7 +53,7 @@ public static class HtmlReport
         Term(lang.T("Findings", "問題"), string.Create(inv, $"{Count(Severity.Fail)} fail, {Count(Severity.Warn)} warn, {Count(Severity.Info)} info"));
         Term(lang.T("Resolution", "可解析率"), lang.IsZh
             ? string.Create(inv, $"{r.Resolution:F1}%（判得出來 {r.Judged}、判不出來 {r.Blocked}、不判 {r.NotJudged}）")
-            : string.Create(inv, $"{r.Resolution:F1}% ({r.Judged} judged, {r.Blocked} blocked, {r.NotJudged} not judged)"));
+            : string.Create(inv, $"{r.Resolution:F1}% ({r.Judged} judged, {r.Blocked} unknown, {r.NotJudged} left out)"));
         Term(lang.T("XAML files", "XAML 檔"), r.Files.ToString(inv));
         if (baselined > 0) Term(lang.T("In the baseline", "在 baseline 裡"), baselined.ToString(inv));
         if (stale > 0) Term(lang.T("In the baseline, not found this time", "在 baseline 裡、這次沒有的"), stale.ToString(inv));
@@ -59,41 +61,50 @@ public static class HtmlReport
         if (r.Gaps.Excluded > 0) Term(lang.T("Excluded files", "排除的檔案"), r.Gaps.Excluded.ToString(inv));
         if (r.Foreign.Count > 0) Term(lang.T("XAML that is not WPF", "不是 WPF 的 XAML"), r.Foreign.Count.ToString(inv));
         sb.Append("</dl>\n");
+        if (Summary.KnownDebt(known, exitCode, lang) is { } debt) sb.Append($"<p class=\"note\"><strong>{H(debt)}</strong></p>\n");
+        sb.Append($"<p>{H(Summary.Coverage(r.Scope, lang))}</p>\n");
         if (exitCode == 3) sb.Append($"<p class=\"note\"><strong>{H(lang.T("The result can't be trusted.", "結果不可信。"))}</strong> {H(why ?? "")}</p>\n");
         Notes(lang.T("Files that could not be parsed — they are missing from the audit:", "讀不懂的檔案，沒有稽核到："), [.. r.ParseErrors.Select(f => r.ParseWhy.TryGetValue(f, out var p) ? $"{f}: {p}" : f)]);
         Notes(lang.T("Folders that could not be read:", "讀不到的資料夾："), r.Gaps.Unreadable);
-        Notes(lang.T("xamla11y-ignore comments that do nothing:", "沒作用的 xamla11y-ignore："), r.InvalidIgnores);
-        Notes(lang.T("Controls it does not know (declare them in treatAs):", "不認得的控制項（用 treatAs 宣告）："), [.. r.UnknownControls.Select(u => string.Create(inv, $"{u.Element} ×{u.Count}"))]);
+        Notes(lang.T("xamla11y-ignore comments that do nothing:", "沒作用的 xamla11y-ignore："), [.. r.InvalidIgnores.Select(lang.Ignore)]);
+        Notes(lang.T("Controls it does not know (say what they are with treatAs in xamla11y.config.json):", "不認得的控制項（在 xamla11y.config.json 用 treatAs 說明它是什麼）："), [.. r.UnknownControls.Select(u => string.Create(inv, $"{u.Element} ×{u.Count}"))]);
 
         // ── 每條規則 ──
         var rules = r.Rules.Where(s => s.Candidates > 0).ToList();
         if (rules.Count > 0)
         {
-            Open(lang.T("By rule", "依規則"), lang.T("Rule", "規則"), lang.T("Findings", "問題"), lang.T("OK", "沒問題"), lang.T("Could not be judged", "判不出來"), lang.T("Not judged", "不判"));
+            Open(lang.T("By rule", "依規則"), lang.T("Rule", "規則"), lang.T("Findings", "問題"), lang.T("OK", "沒問題"), lang.T("Unknown", "判不出來"), lang.T("Left out", "不判"));
             foreach (var s in rules)
                 sb.Append(string.Create(inv, $"<tr><th scope=\"row\">{s.Rule} {H(lang.RuleTitle(s.Rule))}{(s.Off ? H(lang.T(" (off)", "（關）")) : "")}</th><td>{s.Findings}</td><td>{s.Pass}</td><td>{s.Blocked}</td><td>{s.NotJudged}</td></tr>\n"));
             Close();
         }
 
+        // ── 檔案 ──：該從哪裡開始
+        var files = reported.GroupBy(f => f.File).Select(g => (File: g.Key, Fail: g.Count(f => f.Severity == Severity.Fail), Warn: g.Count(f => f.Severity == Severity.Warn), Info: g.Count(f => f.Severity == Severity.Info)))
+            .OrderByDescending(x => x.Fail).ThenByDescending(x => x.Warn).ThenBy(x => x.File, StringComparer.Ordinal).ToList();
+        if (files.Count > 1)
+        {
+            Open(lang.T("Files with the most findings", "問題最多的檔案"), lang.T("File", "檔案"), "fail", "warn", "info");
+            foreach (var x in files.Take(15)) sb.Append(string.Create(inv, $"<tr><th scope=\"row\">{Path(x.File)}</th><td>{x.Fail}</td><td>{x.Warn}</td><td>{x.Info}</td></tr>\n"));
+            Close();
+            if (files.Count > 15) sb.Append($"<p>{H(lang.T($"… and {(files.Count - 15).ToString(inv)} more files", $"… 還有 {(files.Count - 15).ToString(inv)} 個檔案"))}</p>\n");
+        }
+
         // ── finding ──
         sb.Append($"<h2>{H(lang.T("Findings", "問題"))}</h2>\n");
-        if (reported.Count == 0) sb.Append($"<p>{H(lang.T("None.", "沒有。"))}</p>\n");
+        if (reported.Count == 0) sb.Append($"<p>{H(known is { Count: > 0 } ? lang.T("No new ones.", "沒有新的。") : lang.T("None.", "沒有。"))}</p>\n");
         foreach (var group in reported.GroupBy(f => (f.Severity, f.Kind, f.NameIsEmpty)).OrderByDescending(g => g.Key.Severity).ThenBy(g => Kinds.All.ToList().IndexOf(g.Key.Kind)).ThenByDescending(g => g.Key.NameIsEmpty))
         {
             var (severity, kind, empty) = group.Key;
             var list = group.ToList();
             sb.Append($"<h3><span class=\"badge {Text.Slug(severity)}\">{Text.Slug(severity)}</span> {H(lang.Title(kind))} <small>{kind.Slug} · {list.Count.ToString(inv)}</small></h3>\n");
-            sb.Append($"<p>{H(lang.Help(kind))}</p>\n");
+            sb.Append($"<p>{H(lang.Help(kind))} <a href=\"{H(kind.Uri(lang.IsZh))}\">{H(lang.T($"Examples for {kind.Slug}", $"{kind.Slug} 的寫法範例"))}</a></p>\n");
             var refs = new List<string>();
             foreach (var c in r.Scope.CriteriaOf(kind).Select(c => Wcag.Criteria[c]))
                 refs.Add($"WCAG {c.Number} {H(lang.Criterion(c))} ({c.Level})");
             foreach (var s in r.Scope.Standard.HasClauses ? [r.Scope.Standard] : Standard.All.Where(s => s.HasClauses))
                 if (s.ClausesOf(new Scope(s, r.Scope.Level).CriteriaOf(kind).Where(r.Scope.Has), empty) is { Count: > 0 } clauses)
                     refs.Add($"{s.Title}: {string.Join(", ", clauses)}");
-            sb.Append(refs.Count > 0
-                ? $"<ul class=\"refs\">\n{string.Concat(refs.Select(x => $"<li>{x}</li>\n"))}</ul>\n"
-                : $"<p class=\"refs\">{H(lang.T($"Not in {r.Scope.Title}; the config file turns it on.", $"{r.Scope.Title} 沒有這一條，是設定檔打開的。"))}</p>\n");
-
             // 清單不是表格：路徑與說明都長，窄視窗裡擠成一欄一個字
             sb.Append("<ol class=\"items\">\n");
             foreach (var f in list.Take(RowsPerKind))
@@ -103,6 +114,10 @@ public static class HtmlReport
                 sb.Append("</li>\n");
             }
             sb.Append("</ol>\n");
+            // 條文放在後面：先看問題在哪
+            sb.Append(refs.Count > 0
+                ? $"<ul class=\"refs\">\n{string.Concat(refs.Select(x => $"<li>{x}</li>\n"))}</ul>\n"
+                : $"<p class=\"refs\">{H(lang.T($"Not in {r.Scope.Title}; the config file turns it on.", $"{r.Scope.Title} 沒有這一條，是設定檔打開的。"))}</p>\n");
             if (list.Count > RowsPerKind)
                 sb.Append($"<p>{H(lang.T($"… and {(list.Count - RowsPerKind).ToString(inv)} more — the JSON report has all of them.", $"… 還有 {(list.Count - RowsPerKind).ToString(inv)} 筆，JSON 報告裡有全部。"))}</p>\n");
         }
@@ -111,12 +126,19 @@ public static class HtmlReport
         var blocked = r.On.SelectMany(s => s.BlockedReasons.Select(b => (s.Rule, b.Key, b.Value))).OrderByDescending(b => b.Value).ThenBy(b => b.Key, StringComparer.Ordinal).ToList();
         if (blocked.Count > 0)
         {
-            sb.Append($"<h2>{H(lang.T("Could not be judged", "判不出來的"))}</h2>\n");
-            Open(lang.T("Why, and how often", "原因與次數"), lang.T("Rule", "規則"), lang.T("Reason", "原因"), lang.T("Places", "幾處"));
-            foreach (var (rule, reason, n) in blocked.Take(100)) sb.Append($"<tr><td>{rule}</td><td>{H(lang.Reason(reason))}</td><td>{n.ToString(inv)}</td></tr>\n");
+            sb.Append($"<h2>{H(lang.T("Unknown", "判不出來的"))}</h2>\n");
+            var where = r.Judgements.Where(j => j.Verdict == Verdict.Blocked).ToLookup(j => (j.Rule, Context.CutMiddle(j.Reason ?? "", 200)), j => $"{j.File}:{j.Line.ToString(inv)}");
+            Open(lang.T("Why, how often and where", "原因、次數、在哪"), lang.T("Rule", "規則"), lang.T("Reason", "原因"), lang.T("Places", "幾處"), lang.T("Where", "在哪"));
+            foreach (var (rule, reason, n) in blocked.Take(100))
+                sb.Append($"<tr><td>{rule}</td><td>{H(lang.Reason(reason))}</td><td>{n.ToString(inv)}</td><td>{string.Join(", ", where[(rule, reason)].Take(3).Select(x => $"<code>{Path(x)}</code>"))}{(n > 3 ? ", …" : "")}</td></tr>\n");
             Close();
             if (blocked.Count > 100) sb.Append($"<p>{H(lang.T($"… and {(blocked.Count - 100).ToString(inv)} more reasons — the JSON report has all of them.", $"… 還有 {(blocked.Count - 100).ToString(inv)} 種原因，JSON 報告裡有全部。"))}</p>\n");
         }
+
+        // ── 用語 ──
+        sb.Append($"<h2>{H(lang.T("What the words mean", "用語"))}</h2>\n<dl class=\"words\">\n");
+        foreach (var (word, meaning) in Words(lang)) Term(word, meaning);
+        sb.Append("</dl>\n");
 
         // ── 人工檢查 ──
         sb.Append($"<h2>{H(lang.T("Checks a person has to do", "要人檢查的"))}</h2>\n");
@@ -166,6 +188,20 @@ public static class HtmlReport
         return WebUtility.HtmlEncode(visible);
     }
 
+    private static IEnumerable<(string, string)> Words(Lang lang) =>
+    [
+        ("fail", lang.T("The XAML decides it and the criterion leaves no room. Stops the build by default.", "XAML 就決定了，準則沒有留餘地。預設會擋建置。")),
+        ("warn", lang.T("Very likely a problem; something the XAML does not show may make it fine.", "很可能是問題；XAML 看不到的東西可能讓它沒問題。")),
+        ("info", lang.T("Worth a look.", "值得看一眼。")),
+        (lang.T("Resolution", "可解析率"), lang.T("Of the names, inputs, focus and mouse-only checks (the ones that can stop a build), the share that could be judged: judged ÷ (judged + unknown). Places that are left out are not in it.", "名稱、輸入框、焦點、只能用滑鼠這四條（會擋建置的）裡，判得出來的比例：判得出來 ÷（判得出來 + 判不出來）。不判的不算在內。")),
+        (lang.T("Unknown", "判不出來"), lang.T("This tool should have been able to tell and could not. Not the same as fine.", "應該判得出來卻判不出來。不等於沒問題。")),
+        (lang.T("Left out", "不判"), lang.T("Only known when the program runs, or not the job of this check.", "執行時才知道，或不歸這條規則管。")),
+        (lang.T("Accessible name", "名稱"), lang.T("What a screen reader says for a control. Windows hands it out through UI Automation.", "螢幕閱讀器替一個控制項念的字。Windows 透過 UI Automation 提供。")),
+        ("AutomationProperties.Name, LabeledBy", lang.T("The XAML properties that set the name, directly or from another element.", "在 XAML 裡設名稱的屬性：直接寫，或拿別的元素的文字。")),
+        ("AutomationPeer", lang.T("The class that describes a WPF control to UI Automation. Without one a screen reader does not see the control.", "替 WPF 控制項向 UI Automation 說明自己的類別。沒有它，螢幕閱讀器看不到這個控制項。")),
+        ("NVDA", lang.T("A free screen reader for Windows.", "Windows 上免費的螢幕閱讀器。")),
+    ];
+
     /// <summary>路徑在斜線後面可以斷行。</summary>
     private static string Path(string s) => H(s).Replace("/", "/<wbr/>", StringComparison.Ordinal);
 
@@ -189,6 +225,8 @@ public static class HtmlReport
         .note { padding: .5rem .75rem; border-left: 4px solid var(--warn); background: var(--soft); }
         .note p { margin: 0; } .note ul { margin: .25rem 0 0; padding-left: 1.2rem; }
         .items li { margin: 0 0 .6rem; overflow-wrap: anywhere; } .says { color: var(--muted); }
+        a { color: var(--info); }
+        .words { grid-template-columns: 1fr; } .words dt { color: var(--fg); font-weight: 600; } .words dd { font-weight: normal; }
         .refs { margin: .25rem 0 .75rem; padding-left: 1.2rem; color: var(--muted); }
         table { border-collapse: collapse; width: 100%; margin: .5rem 0 1rem; }
         caption { text-align: left; color: var(--muted); padding: .25rem 0; }

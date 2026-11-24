@@ -25,7 +25,7 @@ internal static class NvdaWindow
         var markers = new List<Border>();
         for (var i = 0; i < cases.Count; i++)
         {
-            var host = (FrameworkElement)XamlReader.Parse($"<StackPanel {Host.Ns} Margin=\"0,4\">{cases[i].Body}</StackPanel>");
+            var host = (FrameworkElement)XamlReader.Parse($"<StackPanel {Host.Ns} Margin=\"0,4\">{cases[i].Body.Replace("[O]", Items.O)}</StackPanel>");
             hosts.Add(host);
             var marker = new Border { Focusable = true, Height = 1 };
             KeyboardNavigation.SetIsTabStop(marker, false);
@@ -33,9 +33,9 @@ internal static class NvdaWindow
             panel.Children.Add(marker);
             panel.Children.Add(host);
             // 工具對同一段的判定
-            var audit = Auditor.Run(Project.FromText($"<Window {Host.Ns}><StackPanel>{cases[i].Body}</StackPanel></Window>"));
+            var audit = Auditor.Run(Project.FromText($"<Window {Host.Ns}><StackPanel>{cases[i].Body.Replace("[O]", Items.O)}</StackPanel></Window>"));
             var verdicts = audit.Judgements.Where(j => j.Rule is "R1" or "R2" or "R7" && XamlMarkup.NameOf(j.Element) == "p").Select(j => j.Kind?.Slug ?? j.Verdict.ToString());
-            Console.WriteLine($"case\t{i}\t{cases[i].Title}\t{string.Join(",", verdicts)}\t{cases[i].Body}");
+            Console.WriteLine($"case\t{i}\t{cases[i].Title}\t{string.Join(",", verdicts)}\t{cases[i].Body.Replace("[O]", Items.O)}");
         }
         panel.Children.Add(new Button { Content = "End", Tag = "end" });
         var window = new Window { Title = "XamlA11y NVDA", Width = 700, Height = 700, Left = 60, Top = 40, Topmost = true, Content = new ScrollViewer { Content = panel, Focusable = false } };

@@ -73,7 +73,8 @@ for (let i = 0; i < cases.length * 3; i++) {
     list.push({ type: focus.type, said });
     heard.set(focus.at, list);
     // ToolBar、DataGrid 的 Tab 會在裡面繞圈：跳到下一案
-    if (list.length >= 3 && Number(focus.at) + 1 < cases.length) { host.stdin.write(`goto ${Number(focus.at) + 1}` + String.fromCharCode(10)); await sleep(1500); await nvda.clearSpokenPhraseLog(); }
+    if (list.length >= 3 && Number(focus.at) + 1 >= cases.length) break;
+    if (list.length >= 3) { host.stdin.write(`goto ${Number(focus.at) + 1}` + String.fromCharCode(10)); await sleep(1500); await nvda.clearSpokenPhraseLog(); }
   }
 }
 const result = cases.map((c, i) => ({ ...c, heard: heard.get(String(i)) ?? [] }));

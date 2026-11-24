@@ -178,6 +178,7 @@ public static class JsonReport
             identity = f.Identity,
             message = f.Message,
             help = f.Kind.Help,
+            helpUri = f.Kind.Uri(),
             nvda = Nvda.Says(f, Lang.En),
         }),
     }, Json.Options) + "\n";
@@ -192,13 +193,35 @@ public static class JsonReport
 
 public static class Summary
 {
+    /// <summary>baseline 蓋住的要跟「通過」放在一起講：通過的是「沒有新的」，不是沒有問題。</summary>
+    public static string? KnownDebt(IReadOnlyList<Finding>? known, int exitCode, Lang lang)
+    {
+        if (known is not { Count: > 0 }) return null;
+        int Count(Severity s) => known.Count(f => f.Severity == s);
+        var inv = CultureInfo.InvariantCulture;
+        var pass = exitCode == 0 ? lang.T("Pass means no new findings. ", "通過的意思是沒有新的問題。") : "";
+        return pass + lang.T(
+            string.Create(inv, $"{known.Count} known problem(s) in the baseline are not fixed: {Count(Severity.Fail)} fail, {Count(Severity.Warn)} warn, {Count(Severity.Info)} info."),
+            string.Create(inv, $"baseline 裡還有 {known.Count} 個已知的問題沒修：{Count(Severity.Fail)} fail、{Count(Severity.Warn)} warn、{Count(Severity.Info)} info。"));
+    }
+
+    /// <summary>查了多少：幾條準則裡的幾條。</summary>
+    public static string Coverage(Scope scope, Lang lang)
+    {
+        var total = Wcag.Total(scope.Standard.Wcag, scope.Level);
+        var here = Kinds.All.SelectMany(scope.CriteriaOf).Distinct(StringComparer.Ordinal).Count();
+        return lang.T(
+            string.Create(CultureInfo.InvariantCulture, $"This checks {here} of the {total} success criteria of WCAG {scope.Standard.Wcag} {(scope.Level == "A" ? "A" : "A and AA")}, and only as far as the XAML decides them. Passing is not a claim of conformance."),
+            string.Create(CultureInfo.InvariantCulture, $"WCAG {scope.Standard.Wcag} 的 {(scope.Level == "A" ? "A" : "A 與 AA")} 共 {total} 條成功準則，這裡查其中 {here} 條，而且只查到 XAML 決定得了的部分。通過不等於符合規範。"));
+    }
+
     public static string Manual(Lang lang) => lang.T(
         "This tool cannot do these. They are the ones that go wrong most in desktop software, not the rest of WCAG.",
         "這支查不到這些。是桌面軟體最常出問題的，不是 WCAG 剩下的全部。");
 
     /// <summary>每一份報告都要講的：看了什麼、沒看什麼。</summary>
     public const string Scope =
-        "Static: the XAML was read, nothing was run; of the code, only class declarations and each XAML file's own code-behind (does it set a name, a content or a key handler?). Passing is not a claim of WCAG or EAA conformance.";
+        "Static: the XAML was read, nothing was run; of the code, only type and property declarations and each XAML file's own code-behind (does it set a name, a content or a key handler?). Passing is not a claim of WCAG or EAA conformance.";
 }
 
 /// <summary>SARIF 2.1.0。依選的標準標條文。info 不輸出：不是缺陷，灌進 Security 分頁是噪音（JSON 裡照樣有）。</summary>
@@ -228,6 +251,7 @@ public static class SarifReport
                                 name = string.Concat(k.Slug.Split('-').Select(p => char.ToUpperInvariant(p[0]) + p[1..])),
                                 shortDescription = new { text = k.Title },
                                 fullDescription = new { text = k.Help },
+                                helpUri = k.Uri(),
                                 help = new { text = $"{k.Help} ({scope.Title}: {scope.WcagOf(k)})" },
                                 defaultConfiguration = new { level = Level(k.Default) },
                                 properties = new { tags = scope.CriteriaOf(k).Select(c => "WCAG " + c).Prepend("accessibility"), clauses = JsonReport.Clauses(k, k.NameIsEmpty) },
@@ -301,7 +325,7 @@ public static class MarkdownReport
     private const int RowsPerSection = 50;
     private const int ListMax = 20;
 
-    public static string Create(AuditResult r, IReadOnlyList<Finding> reported, int exitCode, int baselined, string? why, Lang? lang = null)
+    public static string Create(AuditResult r, IReadOnlyList<Finding> reported, int exitCode, int baselined, string? why, Lang? lang = null, IReadOnlyList<Finding>? known = null)
     {
         lang ??= Lang.En;
         var inv = CultureInfo.InvariantCulture;
@@ -314,12 +338,13 @@ public static class MarkdownReport
             ? string.Create(inv, $"{verdict} · **{Count(Severity.Fail)} fail**、{Count(Severity.Warn)} warn、{Count(Severity.Info)} info · {r.Files} 個 XAML 檔、判了 {r.Judged} 處 · 可解析率 {r.Resolution:F1}% · {r.Scope.Title}")
             : string.Create(inv, $"{verdict} · **{Count(Severity.Fail)} fail**, {Count(Severity.Warn)} warn, {Count(Severity.Info)} info · {r.Judged} check(s) in {r.Files} XAML file(s) · resolution {r.Resolution:F1}% · {r.Scope.Title}")).AppendLine();
 
+        if (Summary.KnownDebt(known, exitCode, lang) is { } debt) sb.AppendLine($"> {debt}").AppendLine();
         if (exitCode == 3)
             sb.AppendLine($"> ⚠️ **{lang.T("The result can't be trusted.", "結果不可信。")}** {Code(why ?? lang.T("see the console output of the run", "原因看這次執行的輸出"), table: false)}").AppendLine();
         foreach (var f in r.ParseErrors.Take(ListMax))
             sb.AppendLine($"> ⚠️ **{lang.T("Parse failed:", "讀不懂：")}** {Code(f, table: false)} — {lang.T("this file is missing from the audit.", "這個檔案沒有稽核到。")}").AppendLine();
         if (r.ParseErrors.Count > ListMax) sb.AppendLine(string.Create(inv, $"> ⚠️ {lang.T($"… and {r.ParseErrors.Count - ListMax} more file(s) that could not be parsed.", $"… 還有 {r.ParseErrors.Count - ListMax} 個檔案讀不懂。")}")).AppendLine();
-        foreach (var i in r.InvalidIgnores.Take(ListMax)) sb.AppendLine($"> ⚠️ {Code(i, table: false)}").AppendLine();
+        foreach (var i in r.InvalidIgnores.Take(ListMax)) sb.AppendLine($"> ⚠️ {Code(lang.Ignore(i), table: false)}").AppendLine();
         if (r.InvalidIgnores.Count > ListMax) sb.AppendLine(string.Create(inv, $"> ⚠️ {lang.T($"… and {r.InvalidIgnores.Count - ListMax} more xamla11y-ignore that do nothing.", $"… 還有 {r.InvalidIgnores.Count - ListMax} 個沒作用的 xamla11y-ignore。")}")).AppendLine();
         if (r.Blocked > 0)
         {

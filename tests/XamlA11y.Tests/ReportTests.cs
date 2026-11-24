@@ -22,6 +22,8 @@ public class ReportTests
         <Button Content="a" IsTabStop="False"/>
         <Button Content="b" FocusVisualStyle="{x:Null}" Template="{StaticResource T}"/>
         <GroupBox Header="Files"><ListBox/></GroupBox>
+        <ProgressBar/><ContentControl/>
+        <StackPanel><Button Content="Edit" Click="A"/><Button Content="Edit" Click="B"/></StackPanel>
         <StackPanel Orientation="Horizontal"><Button Content="c" Width="18" Height="30"/><Button Content="d" Width="18" Height="30"/></StackPanel>
         """;
 
@@ -30,12 +32,15 @@ public class ReportTests
     private static AuditResult All(Scope? scope = null, Dictionary<string, Severity>? rules = null) =>
         Kit.Audit(Everything, T, options: new AuditOptions { Scope = scope ?? Scope.Default, Severities = rules ?? [] });
 
+    /// <summary>上面那一組有的種類（item-type-name 要有 C#）。</summary>
+    private static IEnumerable<string> Here => Kinds.All.Select(k => k.Slug).Where(s => s != "item-type-name");
+
     private static string[] Slugs(AuditResult r) => [.. r.Findings.Select(f => f.Kind.Slug).Distinct().Order(StringComparer.Ordinal)];
 
     // ───────────────────────── 標準與等級 ─────────────────────────
 
     [Fact]
-    public void Every_kind_is_found_by_default() => Assert.Equal(Kinds.All.Select(k => k.Slug).Order(StringComparer.Ordinal), Slugs(All()));
+    public void Every_kind_is_found_by_default() => Assert.Equal(Here.Order(StringComparer.Ordinal), Slugs(All()));
 
     [Theory]
     [InlineData("wcag22", "AA", "")]
@@ -44,12 +49,12 @@ public class ReportTests
     [InlineData("en301549", "AA", "small-target")]                   // V3.2.1 用 WCAG 2.1
     [InlineData("en301549-v4", "AA", "")]
     [InlineData("section508", "AA", "small-target")]
-    [InlineData("wcag22", "A", "focus-not-visible,small-target")]    // 2.4.7、2.5.8 是 AA
-    [InlineData("section508", "A", "focus-not-visible,small-target")]
+    [InlineData("wcag22", "A", "focus-not-visible,same-name,small-target")]    // 2.4.7、2.4.6、2.5.8 是 AA
+    [InlineData("section508", "A", "focus-not-visible,same-name,small-target")]
     public void A_standard_decides_what_is_reported(string id, string level, string missing)
     {
         var found = Slugs(All(new Scope(Standard.ById(id)!, level)));
-        Assert.Equal(missing, string.Join(",", Kinds.All.Select(k => k.Slug).Except(found).Order(StringComparer.Ordinal)));
+        Assert.Equal(missing, string.Join(",", Here.Except(found).Order(StringComparer.Ordinal)));
     }
 
     [Fact]
@@ -101,6 +106,11 @@ public class ReportTests
     [InlineData("focus-not-visible", "en301549-v4", "11.2.4.7")]
     [InlineData("mouse-only", "en301549-v4", "11.2.1.1")]
     [InlineData("small-target", "en301549-v4", "11.2.5.8")]
+    [InlineData("same-name", "en301549", "11.2.4.6")]
+    [InlineData("same-name", "section508", "E207.2")]
+    [InlineData("widget-no-name", "en301549-v4", "11.4.1.2,11.5.2.5")]
+    [InlineData("item-type-name", "en301549-v4", "11.4.1.2")]
+    [InlineData("silent-tab-stop", "section508", "E207.2")]
     [InlineData("missing-name", "section508", "E207.2,502.3.1")]
     [InlineData("text-not-in-name", "section508", "E207.2,502.3.1")]
     [InlineData("meaningless-name", "section508", "E207.2")]
@@ -359,7 +369,7 @@ public class ReportTests
     public void Every_kind_and_rule_has_chinese()
     {
         Assert.Equal(Kinds.All.Select(k => k.Slug).Order(StringComparer.Ordinal), Zh.Kinds.Keys.Order(StringComparer.Ordinal));
-        Assert.Equal(Kinds.Rules, Zh.Rules.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(Kinds.Rules, Zh.Rules.Keys);
         Assert.All(Zh.Kinds.Values, v => Assert.True(v.Title.Length > 0 && v.Why.Length > 0 && v.How.Length > 0));
     }
 
@@ -456,7 +466,7 @@ public class ReportTests
     [InlineData("<Button> has no accessible name: its content is <Path>, which gives no text; its ToolTip is the help text, not the name", "<Button> 沒有名稱：內容是 <Path>，給不出文字；ToolTip 是說明文字，不是名稱")]
     [InlineData("<ExtendedButton> has no accessible name: it has no Content and no AutomationProperties.Name; its Text property belongs to the class and is not the name", "<ExtendedButton> 沒有名稱：沒有 Content，也沒有 AutomationProperties.Name；Text 是它自己的屬性，不是名稱")]
     [InlineData("<TextBox> has no accessible name", "<TextBox> 沒有名稱")]
-    [InlineData("<TextBox> has no accessible name; the Label \"a\" before it could label it (AutomationProperties.LabeledBy)", "<TextBox> 沒有名稱；前面的 Label「a」可以標示它（AutomationProperties.LabeledBy）")]
+    [InlineData("<TextBox> has no accessible name; if the Label \"a\" at line 3 is its label, use AutomationProperties.LabeledBy", "<TextBox> 沒有名稱；第 3 行的 Label「a」如果是它的標籤，用 AutomationProperties.LabeledBy 接起來")]
     [InlineData("<Border> reacts to a LeftClick MouseBinding ({Binding Open}) but the keyboard cannot reach it", "<Border> 處理 LeftClick 的 MouseBinding ({Binding Open})，鍵盤到不了")]
     [InlineData("<Button> is 18.5 DIP high and 2 DIP away from <Button> 'b'; targets under 24 need more space around them", "<Button> 高 18.5 DIP，離 <Button> 'b' 只有 2 DIP；小於 24 的要留更多空間")]
     [InlineData("<Button> has Focusable=\"False\" (from the style at a b.xaml:3), so Tab never reaches it", "<Button> 設了 Focusable=\"False\"（樣式在 a b.xaml:3），Tab 到不了")]
@@ -533,8 +543,10 @@ public class ReportTests
         Assert.DoesNotContain("tabindex", html, StringComparison.Ordinal);
         Assert.DoesNotContain("<script", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("http://", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("https://", html, StringComparison.Ordinal);
-        foreach (var k in Kinds.All) Assert.Contains(k.Slug, html, StringComparison.Ordinal);
+        // 連結只有「寫法範例」；沒有任何東西會自己載入
+        Assert.DoesNotContain("https://", Regex.Replace(html, "<a href=\"https://github\\.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/[^\"]+\">", ""), StringComparison.Ordinal);
+        Assert.DoesNotContain(root.Descendants(), e => e.Attribute("src") is not null || e.Name.LocalName is "link" or "img" or "iframe");
+        foreach (var slug in Here) Assert.Contains(slug, html, StringComparison.Ordinal);
     }
 
     [Fact]

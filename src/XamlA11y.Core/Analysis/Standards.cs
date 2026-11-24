@@ -39,6 +39,17 @@ public static class Wcag
         new("4.1.3", "AA", "2.1", "Status Messages", "狀態訊息"),
     }.ToDictionary(c => c.Number, StringComparer.Ordinal);
 
+    /// <summary>這一版這個等級（AA 連 A）共幾條。2.2 拿掉了 4.1.1。</summary>
+    public static int Total(string version, string level) => (version, level) switch
+    {
+        ("2.0", "A") => 25,
+        ("2.0", _) => 38,
+        ("2.1", "A") => 30,
+        ("2.1", _) => 50,
+        (_, "A") => 31,
+        _ => 55,
+    };
+
     public static string Level(string criterion) => Criteria[criterion].Level;
 }
 
@@ -58,18 +69,18 @@ public sealed record Standard(string Id, string Title, string Wcag, IReadOnlyDic
     // V3.2.1 的軟體章把「非封閉功能」另編一層（.1）；V4.1.1 拿掉了那一層
     private static readonly Dictionary<string, string> En3 = new(StringComparer.Ordinal)
     {
-        ["1.1.1"] = "11.1.1.1.1", ["1.3.1"] = "11.1.3.1.1", ["2.1.1"] = "11.2.1.1.1", ["2.4.7"] = "11.2.4.7", ["2.5.3"] = "11.2.5.3.1", ["4.1.2"] = "11.4.1.2.1",
+        ["1.1.1"] = "11.1.1.1.1", ["1.3.1"] = "11.1.3.1.1", ["2.1.1"] = "11.2.1.1.1", ["2.4.6"] = "11.2.4.6", ["2.4.7"] = "11.2.4.7", ["2.5.3"] = "11.2.5.3.1", ["4.1.2"] = "11.4.1.2.1",
     };
 
     private static readonly Dictionary<string, string> En4 = new(StringComparer.Ordinal)
     {
-        ["1.1.1"] = "11.1.1.1", ["1.3.1"] = "11.1.3.1", ["2.1.1"] = "11.2.1.1", ["2.4.7"] = "11.2.4.7", ["2.5.3"] = "11.2.5.3", ["2.5.8"] = "11.2.5.8", ["4.1.2"] = "11.4.1.2",
+        ["1.1.1"] = "11.1.1.1", ["1.3.1"] = "11.1.3.1", ["2.1.1"] = "11.2.1.1", ["2.4.6"] = "11.2.4.6", ["2.4.7"] = "11.2.4.7", ["2.5.3"] = "11.2.5.3", ["2.5.8"] = "11.2.5.8", ["4.1.2"] = "11.4.1.2",
     };
 
     // 軟體的 508 走 E207.2（整套 WCAG 2.0），沒有逐條的編號
     private static readonly Dictionary<string, string> S508 = new(StringComparer.Ordinal)
     {
-        ["1.1.1"] = "E207.2", ["1.3.1"] = "E207.2", ["2.1.1"] = "E207.2", ["2.4.7"] = "E207.2", ["4.1.2"] = "E207.2",
+        ["1.1.1"] = "E207.2", ["1.3.1"] = "E207.2", ["2.1.1"] = "E207.2", ["2.4.6"] = "E207.2", ["2.4.7"] = "E207.2", ["4.1.2"] = "E207.2",
     };
 
     public static readonly Standard Wcag22 = new("wcag22", "WCAG 2.2", "2.2", None);
@@ -140,7 +151,7 @@ public sealed record ManualCheck(IReadOnlyList<string> Criteria, string En, stri
         new(["2.1.2"], "Can Tab or Esc leave every control, also editors and grids?", "每個控制項（編輯器、表格也是）用 Tab 或 Esc 出不出得來。"),
         new(["2.1.4"], "Single-letter shortcuts: can they be turned off?", "單一字母的快速鍵關不關得掉。"),
         new(["2.4.3"], "Does Tab follow the meaning? Where is focus after a dialog closes?", "Tab 走的順序合不合理；對話框關掉之後焦點在哪。"),
-        new(["2.4.6"], "Do the names say what the control does? A name that exists passes this tool.", "名稱說不說得清楚做什麼。這支只看有沒有名稱。"),
+        new(["2.4.6"], "Do the names say what the control does? This tool only sees whether there is one, and whether two side by side are the same.", "名稱說不說得清楚做什麼。這支只看有沒有名稱、並排的是不是一樣。"),
         new(["2.4.11"], "Does a sticky bar or popup cover the focused control?", "固定的工具列、彈出視窗會不會蓋住有焦點的控制項。"),
         new(["2.5.7"], "Is there a way without dragging?", "不拖曳做不做得到。"),
         new(["3.2.1", "3.2.2"], "Does something unexpected happen when a control gets focus or a value?", "拿到焦點或改值的時候會不會冒出意外的事。"),

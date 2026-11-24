@@ -25,7 +25,7 @@ public class NvdaFactsTests
         }
     }
 
-    private static readonly string[] Lists = ["清單", "樹狀檢視", "資料格", "list", "tree view", "data grid"];
+    private static readonly string[] Lists = ["清單", "樹狀檢視", "資料格", "工具列", "list", "tree view", "data grid", "tool bar"];
 
     private static readonly string[] Roles =
     [
@@ -38,8 +38,15 @@ public class NvdaFactsTests
     private static string? Said(JsonElement c, string lang) => c.GetProperty(lang).GetString();
     private static string[] Pieces(string sentence) => sentence.Split(", ");
 
-    private static AuditResult Audit(JsonElement c) =>
-        Auditor.Run(Project.FromText($"<StackPanel xmlns='{Markup.WpfNamespace}' xmlns:x='{Markup.XamlNamespace}'>{c.GetProperty("xaml").GetString()}</StackPanel>"));
+    private static readonly string Code = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "uia-facts.json"))).RootElement.GetProperty("code").GetString()!;
+
+    private static AuditResult Audit(JsonElement c)
+    {
+        var xaml = $"<StackPanel xmlns='{Markup.WpfNamespace}' xmlns:x='{Markup.XamlNamespace}'>{c.GetProperty("xaml").GetString()}</StackPanel>";
+        if (!xaml.Contains("<o:", StringComparison.Ordinal)) return Auditor.Run(Project.FromText(xaml));
+        using var f = new Folder().Add("Main.xaml", xaml).Add("Code.cs", Code);
+        return f.Audit();
+    }
 
     private static IEnumerable<Judgement> Judged(JsonElement c) => Audit(c).Judgements
         .Where(j => Markup.NameOf(j.Element) == "p" && j.Rule is "R1" or "R2" or "R7" && j.Verdict is not (Verdict.Blocked or Verdict.NotJudged));
@@ -98,6 +105,33 @@ public class NvdaFactsTests
                 }
             return true;
         }
+    }
+
+    /// <summary>R8：工具說「念成型別名」的，NVDA 真的念型別名；說沒問題的沒有。收起來的 ComboBox 也是。</summary>
+    [Theory, MemberData(nameof(Titles))]
+    public void Items_are_read_the_way_the_tool_says(string lang, string title)
+    {
+        var c = Case(title);
+        foreach (var j in Audit(c).Judgements.Where(j => j.Rule == "R8" && j.Verdict is Verdict.Finding or Verdict.Pass))
+            Assert.Equal(j.Verdict == Verdict.Finding, Said(c, lang)!.Contains("Uia Oracle dot", StringComparison.Ordinal));
+    }
+
+    /// <summary>R9：工具說「沒聲音」的，NVDA 停在那裡真的什麼都沒念。</summary>
+    [Theory, MemberData(nameof(Titles))]
+    public void Silent_stops_are_silent(string lang, string title)
+    {
+        var c = Case(title);
+        foreach (var j in Audit(c).Judgements.Where(j => j.Rule == "R9" && Markup.NameOf(j.Element) == "p" && j.Verdict == Verdict.Finding))
+            Assert.Equal("", Said(c, lang));
+    }
+
+    [Fact]
+    public void Both_new_rules_were_heard()
+    {
+        var all = Cases.SelectMany(c => Audit(c).Judgements).ToList();
+        Assert.True(all.Count(j => j.Rule == "R8" && j.Verdict == Verdict.Finding) >= 4);
+        Assert.True(all.Count(j => j.Rule == "R8" && j.Verdict == Verdict.Pass) >= 4);
+        Assert.True(all.Count(j => j.Rule == "R9" && j.Verdict == Verdict.Finding) >= 3);
     }
 
     /// <summary>念法表上的每一種控制項、每一種會念描述的，都真的跑過。</summary>

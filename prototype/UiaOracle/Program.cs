@@ -19,6 +19,8 @@ internal static class Program
                 case "templates": Parts.RunTemplates(); break;
                 case "themes": Parts.RunThemes(); break;
                 case "tabs": Probe.RunTabs(); break;
+                case "items": Items.Run(); break;
+                case "silent": Items.Silent(); break;
                 case "focus": Diag.ShowFocusVisuals(); Probe.RunFocus(); break;
                 case "check": return Check.Run();
                 case "check-names" when args.Length > 1: Check.NameFiles = args[1..]; Check.Show = true; return Check.Facts();
@@ -30,6 +32,7 @@ internal static class Program
                 case "check-windows": return WindowCheck.Run(args[1..]);
                 case "record": Check.Record(args[1]); break;
                 case "nvda-window": return NvdaWindow.Run(args[1]);
+                case "check-items": return Check.ItemCases() + Check.SilentCases();
                 case "check-hostile": return SafeMarkup.SelfTest();
                 case "axe-pid": Diag.AxePid(int.Parse(args[1])); break;
                 case "label": Diag.LabelTarget(); break;

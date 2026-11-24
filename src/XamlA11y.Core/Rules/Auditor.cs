@@ -37,8 +37,12 @@ public static class Auditor
                 MouseRule.Check(ctx, doc, e);
                 TabRule.Check(ctx, doc, e);
                 SizeRule.Check(ctx, doc, e);
+                ItemsRule.Check(ctx, e);
+                SilentRule.Check(ctx, e);
+                SameNameRule.Check(ctx, e);
             }
         FocusRule.Check(ctx);
+        ctx.RunLater();
         return ctx.Finish();
     }
 }
@@ -54,6 +58,33 @@ public sealed class Context(Project project, AuditOptions options)
     private readonly Dictionary<string, RuleStats> _stats = Kinds.Rules.ToDictionary(r => r, r => new RuleStats(r) { Off = Kinds.CountedIn(r).All(k => options.SeverityOf(k) == Severity.Off) }, StringComparer.Ordinal);
     private readonly Dictionary<string, int> _unknown = new(StringComparer.Ordinal);
     private readonly SortedSet<string> _invalidIgnores = new(StringComparer.Ordinal);
+
+    private readonly HashSet<XElement> _mouseOnly = new(ReferenceEqualityComparer.Instance);
+
+    /// <summary>已經報「滑鼠能用，鍵盤不能」的元素：改成 Button 一次修好，不再報「沒聲音」。</summary>
+    public bool IsMouseOnly(XElement e) => _mouseOnly.Contains(e);
+
+    private readonly Dictionary<string, (XElement First, Action Report)> _later = new(StringComparer.Ordinal);
+
+    /// <summary>同一個原因只報一次：檔名、行號最前面的那一個。其他的記成不判。</summary>
+    public void Later(string key, XElement e, Action report)
+    {
+        // 壓掉的是這一個用法，不是整個類別
+        if (IgnoreOf(e).Reason is { Length: > 0 } reason) { Record(key[..key.IndexOf(':')], Verdict.Suppressed, e, reason, null); return; }
+        if (!_later.TryGetValue(key, out var first)) { _later[key] = (e, report); return; }
+        var (keep, drop, action) = Before(e, first.First) ? (e, first.First, report) : (first.First, e, first.Report);
+        _later[key] = (keep, action);
+        NotJudged(key[..key.IndexOf(':')], drop, "the same class, reported once");
+    }
+
+    public void RunLater()
+    {
+        foreach (var key in _later.Keys.Order(StringComparer.Ordinal)) _later[key].Report();
+        _later.Clear();
+    }
+
+    private static bool Before(XElement a, XElement b) =>
+        string.CompareOrdinal(StyleIndex.FileOf(a), StyleIndex.FileOf(b)) is var c && c != 0 ? c < 0 : LineOf(a) < LineOf(b);
 
     /// <summary>是不是畫面上的元素（不是 Style、Setter、Trigger、Storyboard、資源裡的值…）。</summary>
     public bool IsElement(XElement e)
@@ -80,7 +111,7 @@ public sealed class Context(Project project, AuditOptions options)
     /// <param name="rule">算在哪條規則的統計裡（預設是這一種自己的規則；輸入框的亂碼名稱算 R2）。</param>
     /// <param name="control">名稱規則的：當成哪一個 WPF 控制項。</param>
     /// <param name="spokenName">NVDA 會念的名稱（空名稱是 null）。</param>
-    public void Report(Kind kind, XElement e, string message, XElement? at = null, Severity? lowered = null, string? identity = null, string? rule = null, string? control = null, string? spokenName = null, bool unreadable = false)
+    public void Report(Kind kind, XElement e, string message, XElement? at = null, Severity? lowered = null, string? identity = null, string? rule = null, string? control = null, string? spokenName = null, bool unreadable = false, string? keyFile = null)
     {
         rule ??= kind.Rule;
         var site = at ?? e;
@@ -95,7 +126,8 @@ public sealed class Context(Project project, AuditOptions options)
                 : "has no reason, so it does nothing (write xamla11y-ignore: why)"));
 
         Record(rule, Verdict.Finding, e, message, kind);
-        _findings.Add(new Finding(kind, severity, StyleIndex.FileOf(site), LineOf(site), site.Name.LocalName, CutMiddle(XamlA11y.Core.Report.Text.Visible(message), 600)) { Identity = identity ?? IdentityOf(site), Lowered = lowered is not null, Control = control, SpokenName = spokenName, Unreadable = unreadable, Description = control is null ? null : DescriptionOf(e) });
+        if (kind == Kinds.MouseOnly) _mouseOnly.Add(e);
+        _findings.Add(new Finding(kind, severity, StyleIndex.FileOf(site), LineOf(site), site.Name.LocalName, CutMiddle(XamlA11y.Core.Report.Text.Visible(message), 600)) { Identity = identity ?? IdentityOf(site), Lowered = lowered is not null, Control = control, SpokenName = spokenName, Unreadable = unreadable, KeyFile = keyFile, Description = control is null ? null : DescriptionOf(e) });
     }
 
     /// <summary>沒有是 ""，不確定是 null。UIA 的 HelpText：AutomationProperties.HelpText，空的話是字串 ToolTip（WPF 原始碼，NVDA 實跑）。</summary>

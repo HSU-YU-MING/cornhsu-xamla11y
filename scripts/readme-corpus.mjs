@@ -21,7 +21,7 @@ const LABEL = { en: { own: ' (maintainer app)', lib: ' (library)', '': '' }, zh:
 
 const rows = lang => ROWS.map(([file, name, kind]) => {
   const s = JSON.parse(fs.readFileSync(path.join(dir, file + '.json'), 'utf8')).summary, c = s.counts;
-  const cells = [s.files, `**${s.resolution.toFixed(1)}%**`, c['missing-name'] + c['text-not-in-name'] + c['meaningless-name'], c['input-no-name'], c['focus-not-visible'], c['mouse-only'], c['not-in-tab-order'] + c['small-target'], c['list-no-name']];
+  const cells = [s.files, `**${s.resolution.toFixed(1)}%**`, c['missing-name'] + c['text-not-in-name'] + c['meaningless-name'], c['input-no-name'], c['focus-not-visible'], c['mouse-only'], c['not-in-tab-order'] + c['small-target'], c['list-no-name'] + c['widget-no-name'], c['item-type-name'] + c['silent-tab-stop']];
   return `| ${name}${LABEL[lang][kind]} | ${cells.join(' | ')} |`;
 });
 
