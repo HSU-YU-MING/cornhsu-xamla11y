@@ -48,3 +48,30 @@ nvda | Button access key | <Button x:Name='p' Content='_Save'/>
 nvda | GroupBox around a Button | <GroupBox Header='Danger'><Button x:Name='p' Content='Reset'/></GroupBox>
 nvda | Button AccessText | <Button x:Name='p'><AccessText Text='_Open'/></Button>
 nvda | Two buttons, same name | <StackPanel><Button x:Name='p' Content='Edit'/><Button Content='Edit'/></StackPanel>
+nvda | RepeatButton icon | <RepeatButton x:Name='p'>[ICON]</RepeatButton>
+nvda | RepeatButton icon, ToolTip only | <RepeatButton x:Name='p' ToolTip='Delete'>[ICON]</RepeatButton>
+nvda | RichTextBox nothing | <RichTextBox x:Name='p'/>
+nvda | ListView nothing | <ListView x:Name='p'><ListViewItem Content='One'/></ListView>
+nvda | DataGrid nothing | <DataGrid x:Name='p' AutoGenerateColumns='False' Height='60'><DataGrid.Columns><DataGridTextColumn Header='H' Binding='{Binding Tag}'/></DataGrid.Columns><TextBlock Tag='One'/></DataGrid>
+nvda | DataGrid Name | <DataGrid x:Name='p' AutoGenerateColumns='False' Height='60' AutomationProperties.Name='Files'><DataGrid.Columns><DataGridTextColumn Header='H' Binding='{Binding Tag}'/></DataGrid.Columns><TextBlock Tag='One'/></DataGrid>
+nvda | ToggleButton icon, ToolTip only | <ToggleButton x:Name='p' ToolTip='Delete'>[ICON]</ToggleButton>
+nvda | CheckBox no content, ToolTip only | <CheckBox x:Name='p' ToolTip='Delete'/>
+nvda | RadioButton no content, ToolTip only | <RadioButton x:Name='p' ToolTip='Delete'/>
+nvda | PasswordBox ToolTip only | <PasswordBox x:Name='p' ToolTip='Name'/>
+nvda | ComboBox ToolTip only | <ComboBox x:Name='p' SelectedIndex='0' ToolTip='Name'><ComboBoxItem Content='One'/></ComboBox>
+nvda | ComboBox editable, nothing | <ComboBox x:Name='p' IsEditable='True'><ComboBoxItem Content='One'/></ComboBox>
+nvda | Slider ToolTip only | <Slider x:Name='p' ToolTip='Name'/>
+nvda | RichTextBox ToolTip only | <RichTextBox x:Name='p' ToolTip='Name'/>
+nvda | ListBox ToolTip only | <ListBox x:Name='p' ToolTip='Name'><ListBoxItem Content='One'/></ListBox>
+nvda | Button icon, ToolTip element | <Button x:Name='p'><Button.ToolTip><ToolTip Content='Delete'/></Button.ToolTip>[ICON]</Button>
+nvda | Button icon, ToolTip and HelpText | <Button x:Name='p' ToolTip='Tip' AutomationProperties.HelpText='Help'>[ICON]</Button>
+nvda | Button icon, empty HelpText and ToolTip | <Button x:Name='p' ToolTip='Tip' AutomationProperties.HelpText=''>[ICON]</Button>
+nvda | MenuItem icon | <Menu><MenuItem x:Name='p'><MenuItem.Header>[ICON]</MenuItem.Header></MenuItem></Menu>
+nvda | Button in a ToolBar, icon | <ToolBar><Button x:Name='p'>[ICON]</Button></ToolBar>
+nvda | Read-only TextBox, ToolTip only | <TextBox x:Name='p' IsReadOnly='True' Text='a' ToolTip='Name'/>
+nvda | Button icon, escaped ToolTip | <Button x:Name='p' ToolTip='{}{Delete}'>[ICON]</Button>
+nvda | TabItem icon, ToolTip only | <TabControl><TabItem x:Name='p' ToolTip='Home'><TabItem.Header>[ICON]</TabItem.Header></TabItem></TabControl>
+nvda | TreeView ToolTip only | <TreeView x:Name='p' ToolTip='Name'><TreeViewItem Header='One'/></TreeView>
+nvda | Button icon, access key | <Button x:Name='p' AutomationProperties.AccessKey='Alt+D'>[ICON]</Button>
+nvda | Button icon, ToolTip with punctuation | <Button x:Name='p' ToolTip='Delete (all), now? Yes: 3.5 files!'>[ICON]</Button>
+nvda | ListView custom null view | <ListView x:Name='p' View='{x:Null}'><ListViewItem Content='One'/></ListView>

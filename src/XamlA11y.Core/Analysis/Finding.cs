@@ -13,25 +13,9 @@ public sealed record Kind(string Slug, string Rule, Severity Default, string Wca
     public string WcagWithLevels => string.Join(", ", Criteria.Select(c => $"{c} ({Analysis.Wcag.Level(c)})"));
 
     public IReadOnlyList<string> Criteria => Wcag.Split(", ");
-}
 
-/// <summary>用到的 WCAG 2.2 成功準則。等級與名稱照 W3C 的資料（tests/XamlA11y.Tests/wcag22.json 守著）。</summary>
-public static class Wcag
-{
-    public const string Version = "2.2";
-
-    public static readonly IReadOnlyDictionary<string, (string Level, string Name)> Criteria = new Dictionary<string, (string, string)>(StringComparer.Ordinal)
-    {
-        ["1.1.1"] = ("A", "Non-text Content"),
-        ["1.3.1"] = ("A", "Info and Relationships"),
-        ["2.1.1"] = ("A", "Keyboard"),
-        ["2.4.7"] = ("AA", "Focus Visible"),
-        ["2.5.3"] = ("A", "Label in Name"),
-        ["2.5.8"] = ("AA", "Target Size (Minimum)"),
-        ["4.1.2"] = ("A", "Name, Role, Value"),
-    };
-
-    public static string Level(string criterion) => Criteria[criterion].Level;
+    /// <summary>這一種是「名稱是空的」：EN 301 549 11.5.2.5、Section 508 502.3.1（名稱要能由程式判定）。亂碼名稱不是空的。</summary>
+    public bool NameIsEmpty => Slug is "missing-name" or "text-not-in-name" or "input-no-name" or "list-no-name";
 }
 
 public static class Kinds
@@ -81,6 +65,9 @@ public static class Kinds
 
     public static readonly IReadOnlyList<string> Rules = ["R1", "R2", "R3", "R4", "R5", "R6", "R7"];
 
+    /// <summary>會算在這條規則裡的種類：輸入框的亂碼名稱、只有符號的名稱算 R2。</summary>
+    public static IEnumerable<Kind> CountedIn(string rule) => All.Where(k => k.Rule == rule || rule == "R2" && (k == MeaninglessName || k == SymbolName));
+
     public static string RuleTitle(string rule) => rule switch
     {
         "R1" => "names of controls",
@@ -110,8 +97,23 @@ public sealed record Finding(Kind Kind, Severity Severity, string File, int Line
 
     private static string Escape(string s) => s.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("|", "\\|", StringComparison.Ordinal);
 
+    /// <summary>名稱規則的：當成哪一個 WPF 控制項（NVDA 的念法要用）。別的規則是 null。</summary>
+    public string? Control { get; init; }
+
+    /// <summary>HelpText 或 ToolTip：NVDA 當描述念在型別後面。沒有是 ""；不確定（綁定、物件）是 null。</summary>
+    public string? Description { get; init; }
+
+    /// <summary>NVDA 會念的名稱（只有確定的：項目容器的型別名）；空名稱是 null。</summary>
+    public string? SpokenName { get; init; }
+
     /// <summary>因為元素不能聚焦而降了一級。</summary>
     public bool Lowered { get; init; }
+
+    /// <summary>名稱是空的。清單的亂碼名稱也報 list-no-name，但它不是空的。</summary>
+    public bool NameIsEmpty => Kind.NameIsEmpty && !Unreadable;
+
+    /// <summary>名稱有，只是念不出意思（R7 沒有另外一種）。</summary>
+    public bool Unreadable { get; init; }
 
     public string Site => $"{File}:{Line}";
 }
@@ -130,6 +132,9 @@ public enum Verdict
 
 public sealed record RuleStats(string Rule)
 {
+    /// <summary>會算在這條規則裡的每一種都關掉了（設定檔，或選的標準沒有這一條）。它的數字不進總數與可解析率。</summary>
+    public bool Off { get; init; }
+
     public int Pass { get; set; }
     public int Findings { get; set; }
     public int Blocked { get; set; }
@@ -147,6 +152,10 @@ public sealed class AuditResult
     public required IReadOnlyList<Finding> Findings { get; init; }
     public required IReadOnlyList<RuleStats> Rules { get; init; }
     public required int Files { get; init; }
+
+    /// <summary>依哪個標準、哪個等級。</summary>
+    public Scope Scope { get; init; } = Scope.Default;
+
     public required IReadOnlyList<string> ParseErrors { get; init; }
     public IReadOnlyDictionary<string, string> ParseWhy { get; init; } = new Dictionary<string, string>();
     public required IReadOnlyList<(string File, string Dialect)> Foreign { get; init; }
@@ -156,22 +165,26 @@ public sealed class AuditResult
     /// <summary>沒作用的 xamla11y-ignore 與原因（「檔:行: 為什麼」）：沒寫理由、或停在被註解掉的元素前面。</summary>
     public required IReadOnlyList<string> InvalidIgnores { get; init; }
 
-    public int Pass => Rules.Sum(r => r.Pass);
-    public int Blocked => Rules.Sum(r => r.Blocked);
-    public int NotJudged => Rules.Sum(r => r.NotJudged);
-    public int Suppressed => Rules.Sum(r => r.Suppressed);
-    public int Judged => Rules.Sum(r => r.Pass + r.Findings + r.Suppressed);
-    public int Candidates => Rules.Sum(r => r.Candidates);
+    /// <summary>沒關掉的規則。</summary>
+    public IEnumerable<RuleStats> On => Rules.Where(r => !r.Off);
+
+    public int Pass => On.Sum(r => r.Pass);
+    public int Blocked => On.Sum(r => r.Blocked);
+    public int NotJudged => On.Sum(r => r.NotJudged);
+    public int Suppressed => On.Sum(r => r.Suppressed);
+    public int Judged => On.Sum(r => r.Pass + r.Findings + r.Suppressed);
+    public int Candidates => On.Sum(r => r.Candidates);
 
     /// <summary>
     /// 可解析率：判得出來的 ÷（判得出來的 + 卡住的）。「靜態不可能知道」的不在分母。
     /// 只看預設會擋的四條（R1～R4）：R5～R7 預設不擋，也幾乎不會卡住，算進來會把名稱整批看不到的專案墊高過關。
+    /// 關掉的規則不算：不看的東西看不到，不是結果不可信。
     /// </summary>
     public double Resolution
     {
         get
         {
-            var gate = Rules.Where(r => r.Rule is "R1" or "R2" or "R3" or "R4").ToList();
+            var gate = On.Where(r => r.Rule is "R1" or "R2" or "R3" or "R4").ToList();
             double judged = gate.Sum(r => r.Pass + r.Findings + r.Suppressed), blocked = gate.Sum(r => r.Blocked);
             return judged + blocked == 0 ? (Judged > 0 || (Blocked == 0 && NotJudged > 0) ? 100 : 0) : 100.0 * judged / (judged + blocked);
         }

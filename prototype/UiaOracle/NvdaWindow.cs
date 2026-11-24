@@ -22,10 +22,15 @@ internal static class NvdaWindow
         var first = new Button { Content = "Start" };
         panel.Children.Add(first);
         var hosts = new List<FrameworkElement>();
+        var markers = new List<Border>();
         for (var i = 0; i < cases.Count; i++)
         {
             var host = (FrameworkElement)XamlReader.Parse($"<StackPanel {Host.Ns} Margin=\"0,4\">{cases[i].Body}</StackPanel>");
             hosts.Add(host);
+            var marker = new Border { Focusable = true, Height = 1 };
+            KeyboardNavigation.SetIsTabStop(marker, false);
+            markers.Add(marker);
+            panel.Children.Add(marker);
             panel.Children.Add(host);
             // 工具對同一段的判定
             var audit = Auditor.Run(Project.FromText($"<Window {Host.Ns}><StackPanel>{cases[i].Body}</StackPanel></Window>"));
@@ -47,6 +52,8 @@ internal static class NvdaWindow
                 window.Dispatcher.Invoke(() =>
                 {
                     if (line == "start") { window.Activate(); first.Focus(); Say(window.IsActive ? "active" : "lost"); }
+                    // 焦點放在前一案後面的標記上，下一個 Tab 就走進第 i 案
+                    if (line.StartsWith("goto ", StringComparison.Ordinal)) markers[int.Parse(line[5..])].Focus();
                     if (line == "quit") window.Close();
                 });
             window.Dispatcher.Invoke(window.Close);

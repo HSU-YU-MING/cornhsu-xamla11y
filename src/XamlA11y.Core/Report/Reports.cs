@@ -63,29 +63,39 @@ public static class Text
     public static string Slug(Severity s) => s switch { Severity.Fail => "fail", Severity.Warn => "warn", Severity.Info => "info", _ => "off" };
 
     /// <summary>
+    /// 看不見的：格式字元（雙向控制會改掉別的文字的順序；標籤字元 U+E00xx 在 BMP 外，要一個碼位一個碼位看）、行分隔、沒有字形的諺文填充。
+    /// </summary>
+    private static bool Hidden(Rune r) =>
+        Rune.GetUnicodeCategory(r) == UnicodeCategory.Format || r.Value is 0x0085 or 0x2028 or 0x2029 or 0x115F or 0x1160 or 0x3164 or 0xFFA0;
+
+    private static string Escaped(Rune r) => r.IsBmp ? $"\\u{r.Value:x4}" : $"\\U{r.Value:x8}";
+
+    /// <summary>看不見的字元寫成 \uXXXX。表情用的零寬連字 U+200D 留著。落單的代理（XML 讀不進來，保險）變成 U+FFFD。</summary>
+    public static string Visible(string s)
+    {
+        if (s.All(c => c is >= ' ' and < (char)0x7F)) return s;
+        var sb = new StringBuilder(s.Length + 8);
+        foreach (var r in s.EnumerateRunes()) sb.Append(Hidden(r) && r.Value != 0x200D ? Escaped(r) : r.ToString());
+        return sb.ToString();
+    }
+
+    /// <summary>
     /// 印到 console 的字串：控制字元逃掉（MSBuild 與 CI 逐行解析，訊息裡夾一個換行就多一筆假的診斷），
     /// Azure Pipelines／GitHub Actions 的舊指令格式（##vso[、##[）拆開。文字來自使用者的 XAML，是不可信的輸入。
     /// </summary>
-    /// <summary>雙向控制與看不見的格式字元寫成 \uXXXX（會把別的文字的順序改掉）。表情用的零寬連字 U+200D 留著。</summary>
-    public static string Visible(string s)
-    {
-        if (!s.Any(Hidden)) return s;
-        return string.Concat(s.Select(c => Hidden(c) ? $"\\u{(int)c:x4}" : c.ToString()));
-        static bool Hidden(char c) => c != (char)0x200D && char.GetUnicodeCategory(c) == UnicodeCategory.Format;
-    }
 
     public static string Safe(string s)
     {
         var sb = new StringBuilder(s.Length + 8);
-        foreach (var c in s)
-            sb.Append(c switch
+        foreach (var r in s.EnumerateRunes())
+            sb.Append(r.Value switch
             {
                 '\n' => "\\n",
                 '\r' => "\\r",
                 '\t' => "\t",
                 // 看不見的格式字元（軟連字號、雙向控制、零寬）：夾在 ## 與 vso[ 之間可以躲過比對，順序也會被改掉
-                _ when char.IsControl(c) || c is (char)0x2028 or (char)0x2029 || char.GetUnicodeCategory(c) == UnicodeCategory.Format => $"\\u{(int)c:x4}",
-                _ => c.ToString(),
+                _ when Rune.IsControl(r) || Hidden(r) => Escaped(r),
+                _ => r.ToString(),
             });
         return sb.ToString().Replace("##", "#\\u0023", StringComparison.Ordinal);
     }
@@ -118,6 +128,7 @@ public static class JsonReport
             {
                 rule = s.Rule,
                 title = Kinds.RuleTitle(s.Rule),
+                off = s.Off,
                 candidates = s.Candidates,
                 pass = s.Pass,
                 findings = s.Findings,
@@ -142,16 +153,24 @@ public static class JsonReport
             },
             inBaseline = baselined,
             reportedAfterBaseline = reported.Count,
-            wcagVersion = Wcag.Version,
+            standard = r.Scope.Standard.Id,
+            level = r.Scope.Level,
+            wcagVersion = r.Scope.Standard.Wcag,
             scope = Summary.Scope,
         },
+        manualChecks = ManualCheck.In(r.Scope).Select(m => new
+        {
+            criteria = m.Criteria.Select(c => new { number = c.Number, level = c.Level, name = c.Name }),
+            check = m.Check.En,
+        }),
         findings = reported.Select(f => new
         {
             kind = f.Kind.Slug,
             rule = f.Kind.Rule,
             severity = Text.Slug(f.Severity),
-            wcag = f.Kind.Wcag,
-            wcagLevels = f.Kind.Criteria.ToDictionary(c => c, Wcag.Level, StringComparer.Ordinal),
+            wcag = string.Join(", ", r.Scope.CriteriaOf(f.Kind)),
+            wcagLevels = r.Scope.CriteriaOf(f.Kind).ToDictionary(c => c, Wcag.Level, StringComparer.Ordinal),
+            clauses = Clauses(f.Kind, f.NameIsEmpty),
             site = f.Site,
             file = f.File,
             line = f.Line,
@@ -159,8 +178,13 @@ public static class JsonReport
             identity = f.Identity,
             message = f.Message,
             help = f.Kind.Help,
+            nvda = Nvda.Says(f, Lang.En),
         }),
     }, Json.Options) + "\n";
+
+    /// <summary>每個有自己條號的標準：不管這次選哪一個，寫合規報告時都查得到。</summary>
+    internal static Dictionary<string, IReadOnlyList<string>> Clauses(Kind kind, bool nameIsEmpty) =>
+        Standard.All.Where(s => s.HasClauses).Select(s => (s.Id, List: s.ClausesOf(new Scope(s, "AA").CriteriaOf(kind), nameIsEmpty))).Where(x => x.List.Count > 0).ToDictionary(x => x.Id, x => x.List, StringComparer.Ordinal);
 
     private static IEnumerable<object> Reasons(Dictionary<string, int> map) =>
         map.OrderByDescending(p => p.Value).ThenBy(p => p.Key, StringComparer.Ordinal).Select(p => new { reason = p.Key, sites = p.Value });
@@ -168,16 +192,21 @@ public static class JsonReport
 
 public static class Summary
 {
+    public static string Manual(Lang lang) => lang.T(
+        "This tool cannot do these. They are the ones that go wrong most in desktop software, not the rest of WCAG.",
+        "這支查不到這些。是桌面軟體最常出問題的，不是 WCAG 剩下的全部。");
+
     /// <summary>每一份報告都要講的：看了什麼、沒看什麼。</summary>
     public const string Scope =
         "Static: the XAML was read, nothing was run; of the code, only class declarations and each XAML file's own code-behind (does it set a name, a content or a key handler?). Passing is not a claim of WCAG or EAA conformance.";
 }
 
-/// <summary>SARIF 2.1.0。info 不輸出：不是缺陷，灌進 Security 分頁是噪音（JSON 裡照樣有）。</summary>
+/// <summary>SARIF 2.1.0。依選的標準標條文。info 不輸出：不是缺陷，灌進 Security 分頁是噪音（JSON 裡照樣有）。</summary>
 public static class SarifReport
 {
-    public static string Create(IReadOnlyList<Finding> reported, string toolVersion)
+    public static string Create(IReadOnlyList<Finding> reported, string toolVersion, Scope? chosen = null)
     {
+        var scope = chosen ?? Scope.Default;
         var text = JsonSerializer.Serialize(new
         {
             version = "2.1.0",
@@ -199,9 +228,9 @@ public static class SarifReport
                                 name = string.Concat(k.Slug.Split('-').Select(p => char.ToUpperInvariant(p[0]) + p[1..])),
                                 shortDescription = new { text = k.Title },
                                 fullDescription = new { text = k.Help },
-                                help = new { text = $"{k.Help} (WCAG {Wcag.Version}: {k.WcagWithLevels})" },
+                                help = new { text = $"{k.Help} ({scope.Title}: {scope.WcagOf(k)})" },
                                 defaultConfiguration = new { level = Level(k.Default) },
-                                properties = new { tags = k.Criteria.Select(c => "WCAG " + c).Prepend("accessibility") },
+                                properties = new { tags = scope.CriteriaOf(k).Select(c => "WCAG " + c).Prepend("accessibility"), clauses = JsonReport.Clauses(k, k.NameIsEmpty) },
                             }),
                         },
                     },
@@ -270,27 +299,37 @@ public static class MsBuildReport
 public static class MarkdownReport
 {
     private const int RowsPerSection = 50;
+    private const int ListMax = 20;
 
-    public static string Create(AuditResult r, IReadOnlyList<Finding> reported, int exitCode, int baselined, string? why)
+    public static string Create(AuditResult r, IReadOnlyList<Finding> reported, int exitCode, int baselined, string? why, Lang? lang = null)
     {
+        lang ??= Lang.En;
         var inv = CultureInfo.InvariantCulture;
         var sb = new StringBuilder();
         int Count(Severity s) => reported.Count(f => f.Severity == s);
 
-        sb.AppendLine("## XamlA11y — accessibility audit").AppendLine();
-        var verdict = exitCode switch { 0 => "✅ **PASS**", 1 => "❌ **FAIL**", 3 => "⚠️ **NOT TRUSTWORTHY** (exit 3)", _ => $"exit {exitCode.ToString(inv)}" };
-        sb.AppendLine(string.Create(inv,
-            $"{verdict} · **{Count(Severity.Fail)} fail**, {Count(Severity.Warn)} warn, {Count(Severity.Info)} info · {r.Judged} check(s) in {r.Files} XAML file(s) · resolution {r.Resolution:F1}%")).AppendLine();
+        sb.AppendLine(lang.T("## XamlA11y — accessibility audit", "## XamlA11y 無障礙稽核")).AppendLine();
+        var verdict = exitCode switch { 0 => lang.T("✅ **PASS**", "✅ **通過**"), 1 => lang.T("❌ **FAIL**", "❌ **沒通過**"), 3 => lang.T("⚠️ **NOT TRUSTWORTHY** (exit 3)", "⚠️ **結果不可信**（exit 3）"), _ => $"exit {exitCode.ToString(inv)}" };
+        sb.AppendLine(lang.IsZh
+            ? string.Create(inv, $"{verdict} · **{Count(Severity.Fail)} fail**、{Count(Severity.Warn)} warn、{Count(Severity.Info)} info · {r.Files} 個 XAML 檔、判了 {r.Judged} 處 · 可解析率 {r.Resolution:F1}% · {r.Scope.Title}")
+            : string.Create(inv, $"{verdict} · **{Count(Severity.Fail)} fail**, {Count(Severity.Warn)} warn, {Count(Severity.Info)} info · {r.Judged} check(s) in {r.Files} XAML file(s) · resolution {r.Resolution:F1}% · {r.Scope.Title}")).AppendLine();
 
         if (exitCode == 3)
-            sb.AppendLine($"> ⚠️ **The result can't be trusted.** {Code(why ?? "see the console output of the run", table: false)}").AppendLine();
-        foreach (var f in r.ParseErrors.Take(20))
-            sb.AppendLine($"> ⚠️ **Parse failed:** {Code(f, table: false)} — this file is missing from the audit.").AppendLine();
+            sb.AppendLine($"> ⚠️ **{lang.T("The result can't be trusted.", "結果不可信。")}** {Code(why ?? lang.T("see the console output of the run", "原因看這次執行的輸出"), table: false)}").AppendLine();
+        foreach (var f in r.ParseErrors.Take(ListMax))
+            sb.AppendLine($"> ⚠️ **{lang.T("Parse failed:", "讀不懂：")}** {Code(f, table: false)} — {lang.T("this file is missing from the audit.", "這個檔案沒有稽核到。")}").AppendLine();
+        if (r.ParseErrors.Count > ListMax) sb.AppendLine(string.Create(inv, $"> ⚠️ {lang.T($"… and {r.ParseErrors.Count - ListMax} more file(s) that could not be parsed.", $"… 還有 {r.ParseErrors.Count - ListMax} 個檔案讀不懂。")}")).AppendLine();
+        foreach (var i in r.InvalidIgnores.Take(ListMax)) sb.AppendLine($"> ⚠️ {Code(i, table: false)}").AppendLine();
+        if (r.InvalidIgnores.Count > ListMax) sb.AppendLine(string.Create(inv, $"> ⚠️ {lang.T($"… and {r.InvalidIgnores.Count - ListMax} more xamla11y-ignore that do nothing.", $"… 還有 {r.InvalidIgnores.Count - ListMax} 個沒作用的 xamla11y-ignore。")}")).AppendLine();
         if (r.Blocked > 0)
         {
-            sb.AppendLine(string.Create(inv, $"> ⚠️ **{r.Blocked} place(s) could not be judged:**"));
-            foreach (var (reason, n) in r.Rules.SelectMany(x => x.BlockedReasons).GroupBy(p => p.Key).Select(g => (g.Key, N: g.Sum(p => p.Value))).OrderByDescending(x => x.N).ThenBy(x => x.Key, StringComparer.Ordinal).Take(5))
-                sb.AppendLine(string.Create(inv, $"> - {n} × {Code(reason, table: false)}"));
+            sb.AppendLine(string.Create(inv, $"> ⚠️ **{r.Blocked} {lang.T("place(s) could not be judged:", "處判不出來：")}**"));
+            var why5 = r.On.SelectMany(x => x.BlockedReasons).GroupBy(p => p.Key).Select(g => (g.Key, N: g.Sum(p => p.Value))).OrderByDescending(x => x.N).ThenBy(x => x.Key, StringComparer.Ordinal).ToList();
+            foreach (var (reason, n) in why5.Take(5))
+                sb.AppendLine(string.Create(inv, $"> - {n} × {Code(lang.Reason(reason), table: false)}"));
+            if (why5.Count > 5) sb.AppendLine(string.Create(inv, $"> - … {lang.T($"and {why5.Count - 5} more reason(s)", $"還有 {why5.Count - 5} 種原因")}"));
+            if (r.UnknownControls.Count > 0)
+                sb.AppendLine($"> - {lang.T("controls it does not know (declare them in `treatAs`):", "不認得的控制項（用 `treatAs` 宣告）：")} {string.Join(", ", r.UnknownControls.Take(8).Select(u => Code(string.Create(inv, $"{u.Element} ×{u.Count}"), table: false)))}{(r.UnknownControls.Count > 8 ? " …" : "")}");
             sb.AppendLine();
         }
 
@@ -299,37 +338,49 @@ public static class MarkdownReport
             var group = reported.Where(f => f.Severity == severity).ToList();
             if (group.Count == 0) continue;
             sb.AppendLine(string.Create(inv, $"### {(severity == Severity.Fail ? "Fail" : "Warn")} ({group.Count})")).AppendLine();
-            Table(sb, group);
+            Table(sb, group, r.Scope, lang);
         }
         var info = reported.Where(f => f.Severity == Severity.Info).ToList();
         if (info.Count > 0)
         {
-            sb.AppendLine(string.Create(inv, $"<details><summary>{info.Count} info finding(s) (do not fail the build)</summary>")).AppendLine();
-            Table(sb, info);
+            sb.AppendLine(string.Create(inv, $"<details><summary>{info.Count} {lang.T("info finding(s) (do not fail the build)", "筆 info（不會擋）")}</summary>")).AppendLine();
+            Table(sb, info, r.Scope, lang);
             sb.AppendLine("</details>").AppendLine();
         }
 
         var notes = new List<string>();
-        if (baselined > 0) notes.Add(string.Create(inv, $"{baselined} in the baseline"));
-        if (r.NotJudged > 0) notes.Add(string.Create(inv, $"{r.NotJudged} not judged (data-bound names, template parts, list items…)"));
-        if (r.Suppressed > 0) notes.Add(string.Create(inv, $"{r.Suppressed} suppressed via xamla11y-ignore"));
-        if (r.Foreign.Count > 0) notes.Add(string.Create(inv, $"{r.Foreign.Count} non-WPF XAML file(s)"));
-        if (r.Gaps.Excluded > 0) notes.Add(string.Create(inv, $"{r.Gaps.Excluded} file(s) excluded"));
-        if (r.Gaps.Unreadable.Count > 0) notes.Add(string.Create(inv, $"{r.Gaps.Unreadable.Count} unreadable folder(s)"));
-        if (notes.Count > 0) sb.AppendLine($"**Not in the list above:** {string.Join(" · ", notes)}").AppendLine();
+        if (baselined > 0) notes.Add(string.Create(inv, $"{baselined} {lang.T("in the baseline", "筆在 baseline 裡")}"));
+        if (r.NotJudged > 0) notes.Add(string.Create(inv, $"{r.NotJudged} {lang.T("not judged (data-bound names, template parts, list items…)", "處不判（名稱來自資料、範本零件、清單項目…）")}"));
+        if (r.Suppressed > 0) notes.Add(string.Create(inv, $"{r.Suppressed} {lang.T("suppressed via xamla11y-ignore", "筆用 xamla11y-ignore 壓掉")}"));
+        if (r.Foreign.Count > 0) notes.Add(string.Create(inv, $"{r.Foreign.Count} {lang.T("non-WPF XAML file(s)", "個不是 WPF 的 XAML")}"));
+        if (r.Gaps.Excluded > 0) notes.Add(string.Create(inv, $"{r.Gaps.Excluded} {lang.T("file(s) excluded", "個檔案排除")}"));
+        if (r.Gaps.Unreadable.Count > 0) notes.Add(string.Create(inv, $"{r.Gaps.Unreadable.Count} {lang.T("unreadable folder(s)", "個資料夾讀不到")}"));
+        if (notes.Count > 0) sb.AppendLine($"**{lang.T("Not in the list above:", "上面沒列的：")}** {string.Join(" · ", notes)}").AppendLine();
 
-        sb.AppendLine($"<sub>Generated by XamlA11y · {Summary.Scope}</sub>");
+        // 工具查不到的要跟結果放在一起，不然「通過」看起來像全部查過了
+        var manual = ManualCheck.In(r.Scope);
+        sb.AppendLine(string.Create(inv, $"<details><summary>{lang.T($"{manual.Count} checks a person has to do (the common ones)", $"要人檢查的 {manual.Count} 項（最常出問題的）")}</summary>")).AppendLine().AppendLine(Summary.Manual(lang)).AppendLine();
+        sb.AppendLine($"| WCAG | {lang.T("Check it like this", "怎麼檢查")} |").AppendLine("|---|---|");
+        foreach (var (check, criteria) in manual)
+            sb.AppendLine($"| {string.Join(lang.T(", ", "、"), criteria.Select(c => $"{c.Number} {lang.Criterion(c)} ({c.Level})"))} | {lang.T(check.En, check.Zh)} |");
+        sb.AppendLine().AppendLine("</details>").AppendLine();
+
+        sb.AppendLine($"<sub>{lang.T("Generated by XamlA11y", "XamlA11y 產生")} · {lang.Scope}</sub>");
         return sb.ToString().Replace("\r\n", "\n", StringComparison.Ordinal);
     }
 
-    private static void Table(StringBuilder sb, List<Finding> findings)
+    private static void Table(StringBuilder sb, List<Finding> findings, Scope scope, Lang lang)
     {
-        sb.AppendLine("| Location | Kind | WCAG | Detail |").AppendLine("|---|---|---|---|");
+        sb.AppendLine(lang.T("| Location | Kind | WCAG | Detail |", "| 位置 | 種類 | WCAG | 說明 |")).AppendLine("|---|---|---|---|");
         foreach (var f in findings.Take(RowsPerSection))
-            sb.AppendLine($"| {Code(f.Site)} | {f.Kind.Slug} | {f.Kind.WcagWithLevels} | {Code(Trunc(f.Message, 220))} |");
+        {
+            var clauses = scope.ClausesOf(f);
+            var says = Nvda.Says(f, lang) is { } s ? $"<br>NVDA: {Code(s)}" : "";
+            sb.AppendLine($"| {Code(f.Site)} | {(lang.IsZh ? $"{f.Kind.Slug}<br>{lang.Title(f.Kind)}" : f.Kind.Slug)} | {scope.WcagOf(f.Kind)}{(clauses.Count > 0 ? $"<br>{scope.Standard.Title}: {string.Join(", ", clauses)}" : "")} | {Code(Trunc(lang.Message(f.Message), 220))}{says} |");
+        }
         sb.AppendLine();
         if (findings.Count > RowsPerSection)
-            sb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"<sub>… and {findings.Count - RowsPerSection} more — see the JSON report artifact.</sub>")).AppendLine();
+            sb.AppendLine(string.Create(CultureInfo.InvariantCulture, $"<sub>{lang.T($"… and {findings.Count - RowsPerSection} more — see the JSON report artifact.", $"… 還有 {findings.Count - RowsPerSection} 筆，看 JSON 報告。")}</sub>")).AppendLine();
     }
 
     private static string Trunc(string s, int n)

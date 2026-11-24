@@ -31,6 +31,15 @@ public sealed class A11yConfig
     /// <summary>每一種 finding 的嚴重度：<c>{ "not-in-tab-order": "off", "symbol-name": "warn" }</c>。</summary>
     [JsonPropertyName("rules")] public Dictionary<string, string>? Rules { get; set; }
 
+    /// <summary>依哪個標準：wcag22（預設）、wcag21、wcag20、en301549、en301549-v4、section508。</summary>
+    [JsonPropertyName("standard")] public string? Standard { get; set; }
+
+    /// <summary>A 或 AA（預設，連 A 一起）。</summary>
+    [JsonPropertyName("level")] public string? Level { get; set; }
+
+    /// <summary>報告的語言：en（預設）、zh-Hant。</summary>
+    [JsonPropertyName("language")] public string? Language { get; set; }
+
     /// <summary>外部佈景在 FocusVisualStyle 關掉之後自己畫焦點（你在畫面上確認過）。</summary>
     [JsonPropertyName("themeShowsFocus")] public bool? ThemeShowsFocus { get; set; }
 
@@ -75,6 +84,10 @@ public sealed class A11yConfig
         for (var i = 0; i < (config.Exclude?.Count ?? 0); i++)
             if (string.IsNullOrWhiteSpace(config.Exclude![i])) problems.Add(new Problem($"exclude[{i}]", "must not be empty"));
 
+        if (config.Standard is { } standard && Analysis.Standard.ById(standard) is null) problems.Add(new Problem("standard", "must be " + StandardIds));
+        if (config.Level is not (null or "A" or "AA")) problems.Add(new Problem("level", "must be A or AA"));
+        if (config.Language is { } language && Report.Lang.ById(language) is null) problems.Add(new Problem("language", "must be " + Report.Lang.Ids));
+
         foreach (var (from, to) in config.TreatAs ?? [])
         {
             if (string.IsNullOrWhiteSpace(from) || string.IsNullOrWhiteSpace(to) || from.Contains(':') || to.Contains(':'))
@@ -92,6 +105,8 @@ public sealed class A11yConfig
         }
         return (config, problems);
     }
+
+    public static string StandardIds => string.Join(", ", Analysis.Standard.All.Select(s => s.Id));
 
     public static Severity? ParseSeverity(string? s) => s switch
     {

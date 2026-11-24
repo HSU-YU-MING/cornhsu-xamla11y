@@ -41,6 +41,7 @@ xamla11y audit ./src --baseline a11y-baseline.json         # 之後只擋新增�
 
 依據是 **WCAG 2.2 的 A 與 AA**：55 條裡的 7 條，照 [WCAG2ICT](https://www.w3.org/TR/wcag2ict-22/) 的方式套到桌面軟體。
 每一種為什麼是那一條、什麼情況不算違反、跟 EN 301 549／Section 508／台灣規範差在哪、還有什麼要人來看：[docs/標準對照.md](docs/標準對照.md)。
+`--standard` 與 `--level` 可以換一個標準（WCAG 2.1、2.0、EN 301 549、Section 508）；HTML、JSON、SARIF 報告也帶 EN 301 549 與 Section 508 的條號。
 
 這**不是** WCAG、EN 301 549 或歐盟無障礙法（EAA）的合規聲明：靜態工具只看得到其中一部分。
 
@@ -70,7 +71,7 @@ UI Automation client 讀樹（螢幕閱讀器看到的）、走 Tab、移動焦�
 
 | 跟什麼比 | 案例 | 有答案 | 不知道 | **說錯** |
 |---|---:|---:|---:|---:|
-| NVDA 2026.2 用 Tab 走到時念的話 | 48 | 45 | 3 | **0** |
+| NVDA 2026.2 用 Tab 走到時念的話（英文、繁體中文各一遍） | 75 | 72 | 3 | **0** |
 | UIA 名稱，手寫 | 338 | 323 | 15 | **0** |
 | UIA 名稱，控制項 × 內容 × 命名方式的窮舉 | 8,218 | 7,843 | 375 | **0** |
 | UIA 名稱，19 個真實專案裡的不同形狀 | 2,172 | 2,172 | 0 | **0** |
@@ -83,7 +84,7 @@ UI Automation client 讀樹（螢幕閱讀器看到的）、走 Tab、移動焦�
 整個檔案那一列是不執行專案程式碼就載得進真的 WPF 的 1,919 個檔；要靠它的程式碼、沒量過的佈景、要打開選單才看得到的元素不算在內。
 
 「不知道」是對的答案；把念不出名字的說成沒問題才是錯的。WPF 與 NVDA 的答案錄在 `tests/XamlA11y.Tests/` 的
-`uia-facts.json` 與 `nvda-facts.json`，CI 在 Linux 上也比同一份。朗讀程式（Narrator）與 JAWS 沒跑過。細節在 [docs/M1-UIA實測.md](docs/M1-UIA實測.md)。
+`uia-facts.json` 與 `nvda-facts.json`，CI 在 Linux 上也比同一份。報告上的「NVDA 會念」只寫跑過的。朗讀程式（Narrator）與 JAWS 沒跑過。細節在 [docs/M1-UIA實測.md](docs/M1-UIA實測.md)。
 
 ## 老實說看得到多少
 
@@ -143,7 +144,10 @@ UI Automation client 讀樹（螢幕閱讀器看到的）、走 Tab、移動焦�
 
 | | |
 |---|---|
+| `--html <檔>` | 給人看的一頁，沒有指令碼、不連外：是什麼、為什麼、怎麼修、NVDA 會怎麼念、條號、要人檢查的清單 |
 | `--json`、`--sarif`、`--md <檔>` | 完整報告、code scanning、PR 留言用的 Markdown |
+| `--standard <標準>`、`--level A\|AA` | `wcag22`（預設）、`wcag21`、`wcag20`、`en301549`（V3.2.1）、`en301549-v4`、`section508` —— [會變什麼](docs/標準對照.md#選一個標準) |
+| `--lang en\|zh-Hant` | 主控台、Markdown、HTML 報告的語言。JSON、SARIF、MSBuild 一律英文 |
 | `--msbuild` | MSBuild 診斷：`XA0001` 擋下的、`XA0002` 不擋的、`XA0003` 結果不可信 |
 | `--baseline`、`--write-baseline <檔>` | 只擋新增的。鍵不含行號 |
 | `--fail-on fail\|warn` | 擋到哪個嚴重度 |

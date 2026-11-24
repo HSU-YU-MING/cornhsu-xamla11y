@@ -43,7 +43,7 @@ public static class Program
 
 internal sealed class Options
 {
-    public string? Root, Json, Sarif, Md, Baseline, WriteBaseline, Config;
+    public string? Root, Json, Sarif, Md, Html, Baseline, WriteBaseline, Config, Standard, Level, Language;
     public Severity FailOn = Severity.Fail;
     public double MinCoverage = 60;
     public bool MsBuild;
@@ -68,7 +68,7 @@ internal sealed class Options
 
             if (!o.Given.Add(a) && a is not "--exclude") return (o, $"{a} was given twice");
             string? value = null;
-            if (a is "--json" or "--sarif" or "--md" or "--baseline" or "--write-baseline" or "--config" or "--fail-on" or "--min-coverage" or "--exclude")
+            if (a is "--json" or "--sarif" or "--md" or "--html" or "--standard" or "--level" or "--lang" or "--baseline" or "--write-baseline" or "--config" or "--fail-on" or "--min-coverage" or "--exclude")
             {
                 if (i + 1 >= args.Length || args[i + 1].StartsWith("--", StringComparison.Ordinal) || args[i + 1].Length == 0) return (o, $"{a} needs a value");
                 value = args[++i];
@@ -79,6 +79,19 @@ internal sealed class Options
                 case "--json": o.Json = value; break;
                 case "--sarif": o.Sarif = value; break;
                 case "--md": o.Md = value; break;
+                case "--html": o.Html = value; break;
+                case "--standard":
+                    if (Core.Analysis.Standard.ById(value!) is null) return (o, "--standard takes one of: " + A11yConfig.StandardIds);
+                    o.Standard = value;
+                    break;
+                case "--level":
+                    if (value is not ("A" or "AA")) return (o, "--level takes 'A' or 'AA'");
+                    o.Level = value;
+                    break;
+                case "--lang":
+                    if (Lang.ById(value!) is null) return (o, "--lang takes one of: " + Lang.Ids);
+                    o.Language = value;
+                    break;
                 case "--baseline": o.Baseline = value; break;
                 case "--write-baseline": o.WriteBaseline = value; break;
                 case "--config": o.Config = value; break;
@@ -109,7 +122,7 @@ internal static class AuditCommand
         if (opts.Root is null) { stderr.WriteLine("audit needs a root directory"); return 2; }
         if (!Directory.Exists(opts.Root)) { stderr.WriteLine($"not a directory: {Text.Safe(opts.Root)}"); return 2; }
         if (opts.Baseline is not null && opts.WriteBaseline is not null) { stderr.WriteLine("--baseline and --write-baseline cannot be combined"); return 2; }
-        if (opts.WriteBaseline is not null && (opts.Json ?? opts.Sarif ?? opts.Md) is not null || opts is { WriteBaseline: not null, MsBuild: true })
+        if (opts.WriteBaseline is not null && (opts.Json ?? opts.Sarif ?? opts.Md ?? opts.Html) is not null || opts is { WriteBaseline: not null, MsBuild: true })
         { stderr.WriteLine("--write-baseline only writes the baseline; run again for the reports"); return 2; }
         if (opts.Baseline is not null && !File.Exists(opts.Baseline)) { stderr.WriteLine($"baseline not found: {Text.Safe(opts.Baseline)}"); return 2; }
 
@@ -130,9 +143,12 @@ internal static class AuditCommand
             stderr.WriteLine($"config: {Text.Safe(configPath)}");
         }
         if (!opts.Given.Contains("--min-coverage") && config.MinCoverage is { } mc) opts.MinCoverage = mc;
+        // 旗標 > 設定檔 > 預設
+        var scope = new Scope(Core.Analysis.Standard.ById(opts.Standard ?? config.Standard ?? "") ?? Scope.Default.Standard, opts.Level ?? config.Level ?? Scope.Default.Level);
+        var lang = Lang.ById(opts.Language ?? config.Language ?? "") ?? Lang.En;
 
         var project = Project.Load(opts.Root, [.. opts.Exclude, .. config.Exclude ?? []], config.TreatAs);
-        var result = Auditor.Run(project, new AuditOptions { Severities = config.Severities, ThemeShowsFocus = config.ThemeShowsFocus ?? false });
+        var result = Auditor.Run(project, new AuditOptions { Severities = config.Severities, Scope = scope, ThemeShowsFocus = config.ThemeShowsFocus ?? false });
 
         // ── baseline ──
         if (opts.WriteBaseline is not null)
@@ -163,7 +179,7 @@ internal static class AuditCommand
         var blocking = reported.Count(f => f.Severity >= opts.FailOn);
         var exit = why is not null ? 3 : blocking > 0 ? 1 : 0;
 
-        Print(result, reported, baselined, stale, opts, stdout);
+        Print(result, reported, baselined, stale, opts, lang, stdout);
         if (why is not null) stderr.WriteLine("\n" + Text.Safe(why));
         else if (blocking > 0)
         {
@@ -174,9 +190,10 @@ internal static class AuditCommand
         }
 
         if (opts.Json is not null && !TryWrite(opts.Json, JsonReport.Create(result, reported, baselined, Program.Version(), exit), stderr)) return 2;
-        if (opts.Sarif is not null && !TryWrite(opts.Sarif, SarifReport.Create(reported, Program.Version()), stderr)) return 2;
-        if (opts.Md is not null && !TryWrite(opts.Md, MarkdownReport.Create(result, reported, exit, baselined, why), stderr)) return 2;
-        foreach (var path in new[] { opts.Json, opts.Sarif, opts.Md })
+        if (opts.Sarif is not null && !TryWrite(opts.Sarif, SarifReport.Create(reported, Program.Version(), scope), stderr)) return 2;
+        if (opts.Md is not null && !TryWrite(opts.Md, MarkdownReport.Create(result, reported, exit, baselined, why, lang), stderr)) return 2;
+        if (opts.Html is not null && !TryWrite(opts.Html, HtmlReport.Create(result, reported, exit, baselined, why, Program.Version(), lang, stale), stderr)) return 2;
+        foreach (var path in new[] { opts.Json, opts.Sarif, opts.Md, opts.Html })
             if (path is not null) stdout.WriteLine($"wrote {Text.Safe(path)}");
         if (opts.MsBuild) stdout.Write(MsBuildReport.Create(reported, opts.Root, opts.FailOn, exit));
         return exit;
@@ -190,6 +207,8 @@ internal static class AuditCommand
         var wpf = r.Files - r.Foreign.Count;
         if (minCoverage > 0 && 100.0 * (wpf - r.ParseErrors.Count) / wpf < minCoverage)
             return string.Create(CultureInfo.InvariantCulture, $"{r.ParseErrors.Count} of {wpf} XAML file(s) could not be parsed, above what --min-coverage {minCoverage:0.#}% allows — result is not trustworthy");
+        // 全部關掉：沒有東西被檢查，不是通過
+        if (!r.On.Any()) return "every rule is turned off — nothing was checked, result is not trustworthy";
         if (r.Candidates == 0) return "no interactive elements found — result is not trustworthy";
         // 全部卡住才是「沒看到」；全部都是執行期的資料（名稱綁定）不是專案改得了的，也不是工具漏看
         if (minCoverage > 0 && r.Judged == 0 && r.Blocked > 0) return "not one element could be judged — result is not trustworthy";
@@ -198,16 +217,18 @@ internal static class AuditCommand
         return null;
     }
 
-    private static void Print(AuditResult r, IReadOnlyList<Finding> reported, int baselined, int stale, Options opts, TextWriter o)
+    private static void Print(AuditResult r, IReadOnlyList<Finding> reported, int baselined, int stale, Options opts, Lang lang, TextWriter o)
     {
         var inv = CultureInfo.InvariantCulture;
+        if (lang.IsZh) { PrintZh(r, reported, baselined, stale, lang, o); return; }
         o.WriteLine($"xamla11y audit — {r.Files} XAML file(s), {r.Candidates} check(s)");
+        o.WriteLine($"  standard         {r.Scope.Title}");
         o.WriteLine(string.Create(inv, $"  resolution       {r.Resolution:F1}%  ({r.Judged} judged, {r.Blocked} blocked; {r.NotJudged} not judged)"));
         if (r.Suppressed > 0) o.WriteLine($"  suppressed       {r.Suppressed}");
         if (baselined > 0) o.WriteLine($"  in baseline      {baselined}");
-        if (stale > 0) o.WriteLine($"  stale baseline   {stale}  (fixed since; write the baseline again to drop them)");
+        if (stale > 0) o.WriteLine($"  stale baseline   {stale}  (fixed since, or not in {r.Scope.Title}; write the baseline again to drop them)");
         foreach (var s in r.Rules.Where(s => s.Candidates > 0))
-            o.WriteLine(string.Create(inv, $"    {s.Rule} {Kinds.RuleTitle(s.Rule),-20} {s.Findings,4} finding(s), {s.Pass,4} ok, {s.Blocked,4} blocked, {s.NotJudged,4} not judged"));
+            o.WriteLine(string.Create(inv, $"    {s.Rule} {Kinds.RuleTitle(s.Rule),-20} {s.Findings,4} finding(s), {s.Pass,4} ok, {s.Blocked,4} blocked, {s.NotJudged,4} not judged{(s.Off ? "  (off)" : "")}"));
 
         foreach (var f in r.ParseErrors) o.WriteLine($"  !! could not parse {Text.Safe(f)}{(r.ParseWhy.TryGetValue(f, out var why) ? ": " + Text.Safe(why) : "")}");
         if (r.Gaps.Excluded > 0) o.WriteLine($"  {r.Gaps.Excluded} XAML file(s) excluded");
@@ -216,7 +237,7 @@ internal static class AuditCommand
         foreach (var g in r.Foreign.GroupBy(f => f.Dialect)) o.WriteLine($"  {g.Count()} {g.Key} file(s) not checked (WPF only)");
         if (r.UnknownControls.Count > 0)
             o.WriteLine($"  unknown controls {string.Join(", ", r.UnknownControls.Take(8).Select(u => $"{Text.Safe(u.Element)} ×{u.Count}"))}  (declare them in treatAs)");
-        var blocked = r.Rules.SelectMany(s => s.BlockedReasons.Select(b => (s.Rule, b.Key, b.Value))).OrderByDescending(b => b.Value).ThenBy(b => b.Key, StringComparer.Ordinal).Take(6).ToList();
+        var blocked = r.On.SelectMany(s => s.BlockedReasons.Select(b => (s.Rule, b.Key, b.Value))).OrderByDescending(b => b.Value).ThenBy(b => b.Key, StringComparer.Ordinal).Take(6).ToList();
         foreach (var (rule, reason, n) in blocked) o.WriteLine($"  blocked {n,4}  {rule}: {Trunc(Text.Safe(reason), 110)}");
 
         foreach (var kind in Kinds.All)
@@ -232,13 +253,60 @@ internal static class AuditCommand
             o.WriteLine();
             foreach (var f in reported.OrderByDescending(f => f.Severity).Take(60))
             {
-                o.WriteLine($"  {Text.Slug(f.Severity),-4} {f.Kind.Slug,-18} {Text.Safe(f.Site)}");
+                o.WriteLine($"  {Text.Slug(f.Severity),-4} {f.Kind.Slug,-18} {Text.Safe(f.Site)}{(Nvda.Says(f, lang) is { } says ? $"   NVDA: \"{Text.Safe(says)}\"" : "")}");
                 o.WriteLine($"       {Text.Safe(f.Message)}");
             }
             if (reported.Count > 60) o.WriteLine($"  … and {reported.Count - 60} more (--json has all of them)");
         }
         o.WriteLine();
+        o.WriteLine($"  {ManualCheck.In(r.Scope).Count} more checks need a person; --html and --md list them (the common ones, not the rest of WCAG).");
         o.WriteLine("  " + Summary.Scope);
+    }
+
+    /// <summary>主控台的中文版。欄位用不了對齊（全形字兩格寬），寫成句子。</summary>
+    private static void PrintZh(AuditResult r, IReadOnlyList<Finding> reported, int baselined, int stale, Lang lang, TextWriter o)
+    {
+        var inv = CultureInfo.InvariantCulture;
+        o.WriteLine($"xamla11y 無障礙稽核：{r.Files} 個 XAML 檔，{r.Candidates} 處");
+        o.WriteLine($"  標準：{r.Scope.Title}");
+        o.WriteLine(string.Create(inv, $"  可解析率：{r.Resolution:F1}%（判得出來 {r.Judged}、判不出來 {r.Blocked}、不判 {r.NotJudged}）"));
+        if (r.Suppressed > 0) o.WriteLine($"  壓掉的：{r.Suppressed}");
+        if (baselined > 0) o.WriteLine($"  在 baseline 裡：{baselined}");
+        if (stale > 0) o.WriteLine($"  baseline 裡這次沒有的：{stale}（修好了，或不在 {r.Scope.Title} 裡；重寫一次 baseline 就會拿掉）");
+        foreach (var s in r.Rules.Where(s => s.Candidates > 0))
+            o.WriteLine($"    {s.Rule} {lang.RuleTitle(s.Rule)}：問題 {s.Findings}、沒問題 {s.Pass}、判不出來 {s.Blocked}、不判 {s.NotJudged}{(s.Off ? "（關）" : "")}");
+
+        foreach (var f in r.ParseErrors) o.WriteLine($"  !! 讀不懂 {Text.Safe(f)}{(r.ParseWhy.TryGetValue(f, out var why) ? "：" + Text.Safe(why) : "")}");
+        if (r.Gaps.Excluded > 0) o.WriteLine($"  排除 {r.Gaps.Excluded} 個 XAML 檔");
+        foreach (var d in r.Gaps.Unreadable) o.WriteLine($"  !! 資料夾讀不到 {Text.Safe(d)}");
+        foreach (var f in r.InvalidIgnores) o.WriteLine($"  !! {Text.Safe(f)}");
+        foreach (var g in r.Foreign.GroupBy(f => f.Dialect)) o.WriteLine($"  {g.Count()} 個 {g.Key} 檔沒有檢查（只看 WPF）");
+        if (r.UnknownControls.Count > 0)
+            o.WriteLine($"  不認得的控制項：{string.Join("、", r.UnknownControls.Take(8).Select(u => $"{Text.Safe(u.Element)} ×{u.Count}"))}（用 treatAs 宣告）");
+        foreach (var (rule, reason, n) in r.On.SelectMany(s => s.BlockedReasons.Select(b => (s.Rule, b.Key, b.Value))).OrderByDescending(b => b.Value).ThenBy(b => b.Key, StringComparer.Ordinal).Take(6))
+            o.WriteLine($"  判不出來 {n} 處，{rule}：{Trunc(Text.Safe(lang.Reason(reason)), 110)}");
+
+        foreach (var kind in Kinds.All)
+        {
+            var n = r.Findings.Count(f => f.Kind == kind);
+            if (n == 0) continue;
+            var fresh = reported.Count(f => f.Kind == kind);
+            o.WriteLine($"    {kind.Slug}（{lang.Title(kind)}）：{n}{(baselined > 0 ? $"（新的 {fresh}，baseline 裡 {n - fresh}）" : "")}");
+        }
+
+        if (reported.Count > 0)
+        {
+            o.WriteLine();
+            foreach (var f in reported.OrderByDescending(f => f.Severity).Take(60))
+            {
+                o.WriteLine($"  {Text.Slug(f.Severity),-4} {f.Kind.Slug} {Text.Safe(f.Site)}{(Nvda.Says(f, lang) is { } says ? $"　NVDA 會念「{Text.Safe(says)}」" : "")}");
+                o.WriteLine($"       {Text.Safe(lang.Message(f.Message))}");
+            }
+            if (reported.Count > 60) o.WriteLine($"  … 還有 {reported.Count - 60} 筆（--json 有全部）");
+        }
+        o.WriteLine();
+        o.WriteLine($"  另外有 {ManualCheck.In(r.Scope).Count} 項要人檢查，--html 與 --md 有清單（最常出問題的，不是 WCAG 剩下的全部）。");
+        o.WriteLine("  " + lang.Scope);
     }
 
     private static string Trunc(string s, int n) => s.Length <= n ? s : s[..(n - 1)] + "…";
@@ -273,9 +341,13 @@ internal static class Usage
           --json <file>            full report
           --sarif <file>           SARIF 2.1.0 for code scanning
           --md <file>              Markdown summary (for a PR comment)
+          --html <file>            one self-contained page for people: why, how to fix, what NVDA says, manual checks
           --msbuild                also print MSBuild diagnostics (XA0001 gated, XA0002 not gated, XA0003 not trustworthy)
           --baseline <file>        only report findings that are not in this file
           --write-baseline <file>  record today's findings as known and exit
+          --standard <id>          wcag22 (default), wcag21, wcag20, en301549, en301549-v4, section508
+          --level A|AA             AA (default) includes A
+          --lang en|zh-Hant        language of the console, Markdown and HTML reports (default: en)
           --fail-on fail|warn      lowest severity that fails the run (default: fail)
           --min-coverage <0-100>   exit 3 when less than this share could be judged (default: 60)
           --config <file>          default: xamla11y.config.json in <root>
@@ -296,6 +368,7 @@ internal static class Usage
         {
             o.WriteLine($"{k.Slug,-18} {k.Rule}  {Text.Slug(k.Default),-4}  WCAG {k.WcagWithLevels}");
             o.WriteLine($"    {k.Title}. {k.Help}");
+            o.WriteLine($"    {string.Join("; ", Core.Analysis.Standard.All.Where(s => s.HasClauses).Select(s => (s.Title, Clauses: s.ClausesOf(k.Criteria.Where(s.Has), k.NameIsEmpty))).Where(x => x.Clauses.Count > 0).Select(x => $"{x.Title}: {string.Join(", ", x.Clauses)}"))}");
         }
     }
 }

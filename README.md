@@ -46,7 +46,8 @@ lets you stop the number from growing and pay it down when you touch each view.
 The standard is **WCAG 2.2, levels A and AA**: seven of its 55 criteria, read for desktop software as
 [WCAG2ICT](https://www.w3.org/TR/wcag2ict-22/) says. Why each finding is that criterion, when it is not a violation, how
 EN 301 549, Section 508 and Taiwan's rules differ, and what a person still has to check:
-[docs/standards.md](docs/standards.md).
+[docs/standards.md](docs/standards.md). `--standard` and `--level` choose another one (WCAG 2.1 or 2.0, EN 301 549, Section 508); the
+HTML, JSON and SARIF reports also carry the clause numbers of EN 301 549 and Section 508.
 
 This is **not** a claim of WCAG, EN 301 549 or European Accessibility Act conformance. A static tool
 sees part of what those ask for, and only part of that is decided by XAML.
@@ -77,6 +78,7 @@ exception: MaterialDesignThemes 5.3 turns `HintAssist.Hint` into the name, and t
 
 ```
 xamla11y audit — 1 XAML file(s), 19 check(s)
+  standard         WCAG 2.2 A + AA
   resolution       92.9%  (17 judged, 1 blocked; 1 not judged)
   suppressed       1
     R1 names of controls       4 finding(s),    4 ok,    1 blocked,    1 not judged
@@ -101,13 +103,13 @@ xamla11y audit — 1 XAML file(s), 19 check(s)
 
   fail focus-not-visible  MainWindow.xaml:11
        The style 'FlatButton' removes FocusVisualStyle and nothing else shows keyboard focus: its template has no focus trigger and no Focused state
-  fail missing-name       MainWindow.xaml:26
+  fail missing-name       MainWindow.xaml:26   NVDA: "button, Delete"
        <Button> has no accessible name: its content is <Path>, which gives no text; its ToolTip is the help text, not the name
-  fail text-not-in-name   MainWindow.xaml:31
+  fail text-not-in-name   MainWindow.xaml:31   NVDA: "button"
        <Button> shows "Save" but has no accessible name: the text is inside <StackPanel>; WPF only takes the name from a string, a TextBlock or a ContentControl
   fail meaningless-name   MainWindow.xaml:39
        <Button> has an unreadable accessible name (U+E74D): its name is an icon-font character from the private use area
-  fail input-no-name      MainWindow.xaml:46
+  fail input-no-name      MainWindow.xaml:46   NVDA: "edit"
        <TextBox> has no accessible name; <Label Target> at line 45 does not give it one (use AutomationProperties.LabeledBy)
   fail mouse-only         MainWindow.xaml:49
        <Border> reacts to MouseLeftButtonUp (OnOpen) but the keyboard cannot reach it
@@ -117,11 +119,12 @@ xamla11y audit — 1 XAML file(s), 19 check(s)
        <Button> is 18 DIP wide and 0 DIP away from <Button>; targets under 24 need more space around them
   warn small-target       MainWindow.xaml:59
        <Button> is 18 DIP wide and 0 DIP away from <Button>; targets under 24 need more space around them
-  warn list-no-name       MainWindow.xaml:64
+  warn list-no-name       MainWindow.xaml:64   NVDA: "list"
        <ListBox> has no accessible name; the GroupBox header "Files" around it does not give it one
   info symbol-name        MainWindow.xaml:42
        <Button> is named only by the symbol "×"
 
+  18 more checks need a person; --html and --md list them (the common ones, not the rest of WCAG).
   Static: the XAML was read, nothing was run; of the code, only class declarations and each XAML file's own code-behind (does it set a name, a content or a key handler?). Passing is not a claim of WCAG or EAA conformance.
 ```
 
@@ -135,7 +138,7 @@ Insights and of Visual Studio's checker.
 
 | compared with | cases | answered | unknown | **contradictions** |
 |---|---:|---:|---:|---:|
-| what NVDA 2026.2 says when Tab reaches it | 48 | 45 | 3 | **0** |
+| what NVDA 2026.2 says when Tab reaches it, in English and in Traditional Chinese | 75 | 72 | 3 | **0** |
 | UI Automation names, hand-written | 338 | 323 | 15 | **0** |
 | UI Automation names, every control × content × way of naming | 8,218 | 7,843 | 375 | **0** |
 | UI Automation names, distinct shapes from 19 real projects | 2,172 | 2,172 | 0 | **0** |
@@ -152,7 +155,7 @@ are 1,919 that a real WPF window could load without running any of the projects'
 theme that was not measured or an open menu are left out of that row.
 
 The recorded answers of WPF and of NVDA ship with the tests (`tests/XamlA11y.Tests/uia-facts.json`, `nvda-facts.json`), so
-CI on Linux checks the same facts. Narrator and JAWS were not run. Details: [docs/M1-UIA實測.md](docs/M1-UIA實測.md) (Chinese).
+CI on Linux checks the same facts. "NVDA says" in the reports is only written for what was run. Narrator and JAWS were not run. Details: [docs/M1-UIA實測.md](docs/M1-UIA實測.md) (Chinese).
 
 ## What it can see, honestly
 
@@ -219,7 +222,10 @@ mouse-only): the other three are almost never blocked and would only flatter the
 
 | | |
 |---|---|
+| `--html <file>` | one page for people, without scripts or external files: what, why, how to fix, what NVDA says, the clause numbers, and the checks a person has to do |
 | `--json`, `--sarif`, `--md <file>` | full report, code scanning, Markdown for a PR comment |
+| `--standard <id>`, `--level A\|AA` | `wcag22` (default), `wcag21`, `wcag20`, `en301549` (V3.2.1), `en301549-v4`, `section508` — [what changes](docs/standards.md#choosing-one) |
+| `--lang en\|zh-Hant` | language of the console, Markdown and HTML reports. JSON, SARIF and MSBuild stay English |
 | `--msbuild` | MSBuild diagnostics for the Visual Studio error list: `XA0001` gated, `XA0002` not gated, `XA0003` not trustworthy |
 | `--baseline`, `--write-baseline <file>` | only fail on new findings. Keys contain no line numbers |
 | `--fail-on fail\|warn` | lowest severity that fails the run |

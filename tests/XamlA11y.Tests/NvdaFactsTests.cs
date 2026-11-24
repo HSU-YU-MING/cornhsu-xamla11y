@@ -1,30 +1,55 @@
 using System.Text.Json;
 using XamlA11y.Core.Analysis;
+using XamlA11y.Core.Report;
 using XamlA11y.Core.Rules;
 using XamlA11y.Core.Xaml;
 
 namespace XamlA11y.Tests;
 
 /// <summary>
-/// 跟真的 NVDA 比：nvda-facts.json 是 NVDA（繁體中文）用 Tab 走過真的 WPF 視窗時念的話（prototype/UiaOracle/nvda.mjs 錄的）。
-/// 檔案裡只有 NVDA 念的，工具的判定是測試當場算的。
+/// 跟真的 NVDA 比：nvda-facts.json 是 NVDA（繁體中文、英文各一遍）用 Tab 走過真的 WPF 視窗時念的話（prototype/UiaOracle/nvda.mjs 錄的）。
+/// 檔案裡只有 NVDA 念的，工具的判定與預告是測試當場算的。
 /// </summary>
 public class NvdaFactsTests
 {
     private static readonly JsonElement[] Cases = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "nvda-facts.json")))
         .RootElement.GetProperty("cases").EnumerateArray().ToArray();
 
-    public static TheoryData<string> Titles => [.. Cases.Select(c => c.GetProperty("title").GetString()!)];
+    public static TheoryData<string, string> Titles
+    {
+        get
+        {
+            var data = new TheoryData<string, string>();
+            foreach (var c in Cases) foreach (var lang in (string[])["zh", "en"]) data.Add(lang, c.GetProperty("title").GetString()!);
+            return data;
+        }
+    }
+
+    private static readonly string[] Lists = ["清單", "樹狀檢視", "資料格", "list", "tree view", "data grid"];
 
     private static readonly string[] Roles =
-        ["按鈕", "切換按鈕", "核取方塊", "選擇鈕", "編輯區", "下拉式方塊", "滑桿", "清單", "樹狀檢視", "資料格", "群組", "連結", "索引標籤"];
+    [
+        .. Lists,
+        "按鈕", "切換按鈕", "核取方塊", "選擇鈕", "編輯區", "文件", "下拉式方塊", "滑桿", "群組", "連結", "索引標籤", "功能表項目",
+        "button", "toggle button", "check box", "radio button", "edit", "document", "combo box", "slider", "grouping", "link", "tab", "menu item",
+    ];
 
-    /// <summary>NVDA 先念名稱、再念型別；沒有名稱就直接念型別。清單的名稱在容器那一句，其他的在最後一句。</summary>
-    private static string SpokenName(string said, bool container)
+    private static JsonElement Case(string title) => Cases.Single(c => c.GetProperty("title").GetString() == title);
+    private static string? Said(JsonElement c, string lang) => c.GetProperty(lang).GetString();
+    private static string[] Pieces(string sentence) => sentence.Split(", ");
+
+    private static AuditResult Audit(JsonElement c) =>
+        Auditor.Run(Project.FromText($"<StackPanel xmlns='{Markup.WpfNamespace}' xmlns:x='{Markup.XamlNamespace}'>{c.GetProperty("xaml").GetString()}</StackPanel>"));
+
+    private static IEnumerable<Judgement> Judged(JsonElement c) => Audit(c).Judgements
+        .Where(j => Markup.NameOf(j.Element) == "p" && j.Rule is "R1" or "R2" or "R7" && j.Verdict is not (Verdict.Blocked or Verdict.NotJudged));
+
+    /// <summary>NVDA 先念名稱、再念型別；沒有名稱就直接念型別。清單的名稱在清單那一句，其他的在最後一句。</summary>
+    private static string SpokenName(string said, bool list)
     {
         var sentences = said.Split(". ");
-        var sentence = container ? sentences[^Math.Min(2, sentences.Length)] : sentences[^1];
-        var first = sentence.Split(", ")[0].TrimStart(',').Trim();
+        var sentence = list ? sentences.First(s => Pieces(s).Any(p => Lists.Contains(p))) : sentences[^1];
+        var first = Pieces(sentence)[0].TrimStart(',').Trim();
         return Roles.Contains(first) ? "" : first;
     }
 
@@ -32,14 +57,12 @@ public class NvdaFactsTests
         name.Length > 0 && !name.StartsWith("System dot", StringComparison.Ordinal) && !name.All(c => char.IsWhiteSpace(c) || c is >= '' and <= '');
 
     [Theory, MemberData(nameof(Titles))]
-    public void Name_verdicts_never_contradict_what_NVDA_says(string title)
+    public void Name_verdicts_never_contradict_what_NVDA_says(string lang, string title)
     {
-        var f = Cases.Single(c => c.GetProperty("title").GetString() == title);
-        if (f.GetProperty("heard").GetArrayLength() == 0) return;                       // 停用的命令按鈕：Tab 停不到
-        var said = f.GetProperty("heard")[0].GetProperty("said").GetString()!;
-        foreach (var j in Auditor.Run(Project.FromText($"<StackPanel xmlns='{Markup.WpfNamespace}' xmlns:x='{Markup.XamlNamespace}'>{f.GetProperty("xaml").GetString()}</StackPanel>")).Judgements)
+        var c = Case(title);
+        if (Said(c, lang) is not { } said) return;                       // 停用的命令按鈕：Tab 停不到
+        foreach (var j in Judged(c))
         {
-            if (Markup.NameOf(j.Element) != "p" || j.Rule is not ("R1" or "R2" or "R7") || j.Verdict is Verdict.Blocked or Verdict.NotJudged) continue;
             var name = SpokenName(said, j.Rule == "R7");
             var ok = j.Kind?.Slug switch
             {
@@ -51,23 +74,59 @@ public class NvdaFactsTests
         }
     }
 
-    [Fact]
-    public void Enough_of_it_is_judged()
+    /// <summary>報告上的「NVDA 會念」：每一段照順序都真的念了，而且型別前面沒有別的字。</summary>
+    [Theory, MemberData(nameof(Titles))]
+    public void What_the_reports_say_NVDA_says_is_what_it_said(string lang, string title)
     {
-        var judged = Cases.Count(f => Auditor.Run(Project.FromText($"<StackPanel xmlns='{Markup.WpfNamespace}' xmlns:x='{Markup.XamlNamespace}'>{f.GetProperty("xaml").GetString()}</StackPanel>"))
-            .Judgements.Any(j => j.Rule is "R1" or "R2" or "R7" && Markup.NameOf(j.Element) == "p" && j.Verdict is not (Verdict.Blocked or Verdict.NotJudged)));
-        Assert.True(judged >= 46, $"{judged} of {Cases.Length}");
-        // 兩份 README 的那一列：聽得到的、其中判得出來的（停用的命令按鈕聽不到）
-        var heard = Cases.Count(c => c.GetProperty("heard").GetArrayLength() > 0);
+        var c = Case(title);
+        foreach (var f in Audit(c).Findings)
+        {
+            if (Nvda.Says(f, lang == "zh" ? Lang.ZhHant : Lang.En) is not { } says) continue;
+            Assert.NotNull(Said(c, lang));
+            Assert.Contains(Said(c, lang)!.Split(". "), sentence => Matches(Pieces(sentence), says));
+        }
+
+        static bool Matches(string[] heard, string says)
+        {
+            var at = 0;
+            foreach (var part in says.Split("…, "))
+                foreach (var piece in part == says ? Pieces(says) : [part])
+                {
+                    var i = Array.FindIndex(heard, at, h => h == piece || part != says && h.StartsWith(piece, StringComparison.Ordinal));
+                    if (i < 0 || at == 0 && i != 0) return false;
+                    at = i + 1;
+                }
+            return true;
+        }
+    }
+
+    /// <summary>念法表上的每一種控制項、每一種會念描述的，都真的跑過。</summary>
+    [Fact]
+    public void Every_control_in_the_table_was_run()
+    {
+        var run = Cases.Where(c => Said(c, "zh") is not null && Said(c, "en") is not null).SelectMany(c => Audit(c).Findings).Where(f => Nvda.Says(f, Lang.En) is not null).ToList();
+        Assert.Equal(Nvda.Controls.Order(StringComparer.Ordinal), run.Select(f => f.Control!).Distinct().Order(StringComparer.Ordinal));
+        Assert.Equal(Nvda.WithDescription.Order(StringComparer.Ordinal), run.Where(f => f.Description!.Length > 0).Select(f => f.Control!).Distinct().Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void The_readmes_say_how_much_was_compared()
+    {
+        var heard = Cases.Where(c => Said(c, "zh") is not null).ToList();
+        var judged = heard.Count(c => Judged(c).Any());
+        Assert.True(judged >= 72, $"{judged} of {heard.Count}");
         foreach (var file in (string[])["README.md", "README.zh-Hant.md"])
-            Assert.Contains($"| {heard} | {judged - 1} | {heard - judged + 1} | **0** |", File.ReadAllText(Path.Combine(ActionContractTests.RepoRoot(), file)), StringComparison.Ordinal);
+            Assert.Contains($"| {heard.Count} | {judged} | {heard.Count - judged} | **0** |", File.ReadAllText(Path.Combine(ActionContractTests.RepoRoot(), file)), StringComparison.Ordinal);
     }
 
     /// <summary>ToolTip 不是名稱，但 NVDA 會當描述念在型別後面（docs/standards.md）。</summary>
     [Theory]
-    [InlineData("Button icon, ToolTip only", "按鈕, Delete")]
-    [InlineData("TextBox ToolTip only", "編輯區, Name, 空白")]
-    [InlineData("TextBox Label Target", "編輯區, 空白")]
-    public void The_documents_quote_what_NVDA_says(string title, string said) =>
-        Assert.Equal(said, Cases.Single(c => c.GetProperty("title").GetString() == title).GetProperty("heard")[0].GetProperty("said").GetString());
+    [InlineData("Button icon, ToolTip only", "按鈕, Delete", "button, Delete")]
+    [InlineData("TextBox ToolTip only", "編輯區, Name, 空白", "edit, Name, blank")]
+    [InlineData("TextBox Label Target", "編輯區, 空白", "edit, blank")]
+    public void The_documents_quote_what_NVDA_says(string title, string zh, string en)
+    {
+        Assert.Equal(zh, Said(Case(title), "zh"));
+        Assert.Equal(en, Said(Case(title), "en"));
+    }
 }
