@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 語料重跑：公開專案（XamlContrast 的 ~/.xamlcontrast-corpus，commit 釘在那邊）與作者的 App。
+# 語料重跑：公開專案（corpus-fetch.sh 抓的 ~/.xamla11y-corpus，commit 釘在 docs/corpus.tsv）與作者的 App。
 #
 #   scripts/corpus-run.sh <輸出目錄> [名稱…]
 #
@@ -8,7 +8,7 @@
 set -euo pipefail
 OUT=$1; shift
 HERE=$(cd "$(dirname "$0")/.." && pwd)
-CORPUS=${XAMLA11Y_CORPUS:-$HOME/.xamlcontrast-corpus}
+CORPUS=${XAMLA11Y_CORPUS:-$HOME/.xamla11y-corpus}
 APPS=${XAMLA11Y_APPS:-}
 EXE="$HERE/src/XamlA11y.Cli/bin/Release/net10.0/xamla11y"
 [ -x "$EXE" ] || EXE="$EXE.exe"

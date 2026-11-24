@@ -70,6 +70,24 @@
 - `FocusVisualStyle` 設成**空的 Style** 或範本是空的 ControlTemplate：跟 null 一樣看不見。
 - 換了範本但沒動 FocusVisualStyle：看得見（焦點框照畫）。
 
+## 5b. 第二輪（2026-11-24）：樣式怎麼套上去、文字怎麼組
+
+案例在 `facts/round3-names.txt`。
+
+- **ToolBar 的直接子元素**：Button、CheckBox、ComboBox、Menu、RadioButton、Separator、TextBox、ToggleButton（確切的型別）的**隱含樣式不套**，
+  換成 `ToolBar.ButtonStyleKey` 那一組；明寫的 `Style` 照套。隔了一層面板就照平常。PasswordBox、RepeatButton 不在名單上，照平常。
+  工具列裡 Menu 的 MenuItem 也套不到隱含樣式。StatusBar 沒有這件事。
+- **`ItemContainerStyle`** 會套到直接寫在清單裡的 TabItem、ListBoxItem、TreeViewItem、MenuItem，**贏過隱含樣式**、輸給自己的 Style；
+  TreeView 的不會往下傳給巢狀的 TreeViewItem。
+- **RoutedUICommand 資源**：`Command="{StaticResource X}"`、`<Button.Command>`、樣式設的都算，有 `Text` 才有名稱。`SystemCommands.*` 沒有文字。
+- **存取鍵**：只拿掉第一個後面還有字的底線。`_` → `_`、`__` → `_`、`___` → `__`、`a_` → `a_`、`_ ` → 空白。
+- **Run** 各自有字型，名稱是全部接起來的字；Run 的文字可以來自它明寫的樣式與觸發器，按鈕內容裡的**隱含樣式套不到 Run**。
+- **本地寫的內容贏過樣式觸發器的 Content**。
+- 放在按鈕裡的 UserControl、ContentControl 的 `AutomationProperties.Name` **不會**變成按鈕的名稱。
+- `ToolTipService.ToolTip` 跟 `ToolTip` 是同一個屬性。
+- 沒有 AutomationPeer 的自訂控制項（MahApps／HandyControl／MaterialDesign 的 NumericUpDown、HandyControl 的 PasswordBox）設了名稱也沒有用：
+  UIA 樹上只有裡面那個沒名稱的 TextBox。
+
 ## 6. .NET Framework 4.8
 
 同一份案例，Windows PowerShell 5.1（就是 .NET Framework 4.8）跑 `net48.ps1`。
@@ -84,5 +102,9 @@
 | WPF-UI `ui:TextBox`、`PasswordBox`、`NumberBox` | 照 TextBox |
 | MahApps `Tile` | 照 Button（`Title` **不算**名稱） |
 | MahApps `ToggleSwitch` | `Header` 是名稱 |
+| WPF-UI `CardExpander`、`Anchor`、`MenuItem`、`RichTextBox` | 照 Expander、Button、MenuItem、RichTextBox |
+| MahApps `MetroTabItem`、HandyControl `TabItem` | 照 TabItem |
+| HandyControl `CheckComboBox`、`DatePicker`、`ContextMenuButton`、`ProgressButton` | 照 ComboBox、DatePicker、Button、ToggleButton |
+| MaterialDesign `SplitButton`、`AutoSuggestBox` | 照 Button、TextBox |
 | HandyControl `hc:TextBox`、`SearchBar`、`ComboBox` | 照 TextBox／ComboBox（`Title`、`Placeholder` 不算） |
 | MaterialDesign `PackIcon`（內容） | 不給名稱 |

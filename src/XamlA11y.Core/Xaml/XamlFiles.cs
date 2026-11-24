@@ -9,6 +9,9 @@ public static class SafeXml
     /// <summary>超過這個深度當成解析錯誤：十萬層巢狀的檔案會讓整條 CI 卡到逾時。</summary>
     public const int MaxDepth = 512;
 
+    /// <summary>宣告 gb2312、windows-1252 的檔案（wpfsamples 就有）：.NET 預設不認這些編碼。</summary>
+    static SafeXml() => System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
     private static XmlReaderSettings Settings() => new()
     {
         DtdProcessing = DtdProcessing.Prohibit,
@@ -110,6 +113,8 @@ public static class XamlFiles
             foreach (var f in files)
             {
                 if (!f.EndsWith(extension, StringComparison.OrdinalIgnoreCase)) continue;
+                // 連結的檔案不讀：公開 repo 的 PR 可以放 a.cs -> /dev/zero，或指到 repo 外面
+                if (IsFileLink(f)) continue;
                 var rel = "/" + Relative(root, f);
                 if (exclude.Any(g => rel.Contains(g, StringComparison.OrdinalIgnoreCase)))
                 {
@@ -140,6 +145,23 @@ public static class XamlFiles
     }
 
     public static string Relative(string root, string file) => Path.GetRelativePath(root, file).Replace('\\', '/');
+
+    /// <summary>檔案是符號連結。只看 LinkTarget：OneDrive 的檔案也有 ReparsePoint 屬性，那不是連結。</summary>
+    public static bool IsFileLink(string file)
+    {
+        try
+        {
+            var info = new FileInfo(file);
+            return info.Attributes.HasFlag(FileAttributes.ReparsePoint) && info.LinkTarget is not null;
+        }
+        catch (IOException) { return true; }
+        catch (UnauthorizedAccessException) { return true; }
+    }
+
+    /// <summary>App.xaml：根叫 …Application，或是專案自己的子類別（&lt;local:BootApp x:Class="App.App"&gt;）放在 App.xaml 裡。</summary>
+    public static bool IsApplication(XElement root, string file) =>
+        root.Name.LocalName.EndsWith("Application", StringComparison.Ordinal) || root.Attribute("StartupUri") is not null
+        || (!Markup.IsWpf(root) && root.Name.LocalName != "ResourceDictionary" && file[(file.LastIndexOfAny(['/', '\\']) + 1)..].Equals("App.xaml", StringComparison.OrdinalIgnoreCase));
 
     private static bool IsLink(string dir)
     {

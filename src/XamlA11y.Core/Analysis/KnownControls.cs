@@ -161,14 +161,16 @@ public static class Wpf
     {
         "Border", "Grid", "StackPanel", "DockPanel", "WrapPanel", "Canvas", "UniformGrid", "Viewbox", "Decorator",
         "Image", "Path", "Rectangle", "Ellipse", "Line", "Polygon", "Polyline", "TextBlock", "Label", "ContentControl", "ContentPresenter",
-        "Run", "Span", "UserControl", "GroupBox", "ItemsControl",
+        "Run", "Span", "Bold", "Italic", "Underline", "UserControl", "GroupBox", "ItemsControl", "StatusBarItem", "HeaderedContentControl",
+        "MediaElement", "AccessText",
     };
 
     /// <summary>文字本身就是圖示的字型：內容是字母也念不出意思。</summary>
     public static bool IsIconFont(string family)
     {
         // 「Segoe UI, Segoe MDL2 Assets」是文字字型加圖示後備：字母用第一個家族畫
-        var f = family.Split(',').FirstOrDefault(x => x.Trim().Length > 0)?.ToLowerInvariant() ?? "";
+        // pack://application:,,,/Fonts/#FontAwesome：那三個逗號不是分隔
+        var f = family.Replace("pack://application:,,,", "", StringComparison.OrdinalIgnoreCase).Split(',').FirstOrDefault(x => x.Trim().Length > 0)?.ToLowerInvariant() ?? "";
         return f.Contains("mdl2", StringComparison.Ordinal) || f.Contains("fluent icons", StringComparison.Ordinal) || f.Contains("marlett", StringComparison.Ordinal)
                || f.Contains("webdings", StringComparison.Ordinal) || f.Contains("wingdings", StringComparison.Ordinal) || f.Contains("awesome", StringComparison.Ordinal)
                || f.Contains("material design icons", StringComparison.Ordinal) || f.Contains("material icons", StringComparison.Ordinal) || f.Contains("material symbols", StringComparison.Ordinal)

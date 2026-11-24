@@ -84,7 +84,7 @@ internal static class FocusRule
         Dictionary<string, (int All, int InTemplates)> usedKeys, Dictionary<StyleRecord, List<(XElement Element, StyleChain Chain)>> users)
     {
         if (!s.Setters.TryGetValue("FocusVisualStyle", out var setter)) return;
-        if (Removed(ctx, ctx.Project.Styles.SetterValue(setter)) is not { } removed) { ctx.Blocked("R3", setter, "FocusVisualStyle is set to a style outside the project"); return; }
+        if (Removed(ctx, ctx.Project.Styles.SetterValue(setter)) is not { } removed) { ctx.Blocked("R3", setter, "FocusVisualStyle is set to a style this tool cannot read"); return; }
         if (!removed) { ctx.Pass("R3", setter); return; }
 
         bool Applied(StyleRecord r, bool hasDerived) => r.Key is null || usedKeys.ContainsKey(r.Key) || !hasDerived;
@@ -176,7 +176,7 @@ internal static class FocusRule
     private static void CheckElement(Context ctx, XamlDoc doc, XElement e, Resolved value)
     {
         if (e.Parent is null) return;       // x:Class 的根是定義，用它的地方才判
-        if (Removed(ctx, value) is not { } removed) { ctx.Blocked("R3", e, "FocusVisualStyle is set to a style outside the project"); return; }
+        if (Removed(ctx, value) is not { } removed) { ctx.Blocked("R3", e, "FocusVisualStyle is set to a style this tool cannot read"); return; }
         if (!removed) { ctx.Pass("R3", e); return; }
 
         var styles = ctx.Project.Styles;
@@ -212,6 +212,9 @@ internal static class FocusRule
     /// <summary>FocusVisualStyle 是不是等於沒有（null、空樣式、空範本、畫出來是透明的）。null = 讀不出來。</summary>
     private static bool? Removed(Context ctx, Resolved r)
     {
+        // {DynamicResource {x:Static SystemParameters.FocusVisualStyleKey}}：系統的焦點框，等於沒改（專案自己換了那個鍵就不知道）
+        if (r.Value is { } key && key.Contains("SystemParameters.FocusVisualStyleKey", StringComparison.Ordinal))
+            return ctx.Project.Styles.HasKeyContaining("SystemParameters.FocusVisualStyleKey") ? null : false;
         if (r.IsUnreadable) return null;
         if (r.IsNull) return true;
         if (r.Element is not { } e) return r.Value is null || Markup.IsMarkup(r.Value) ? null : false;
@@ -228,6 +231,8 @@ internal static class FocusRule
             if (t.IsNull) continue;
             if (t.Element is not { } template) return null;
             if (template.Descendants().Any(d => !Markup.IsPropertyElement(d) && Draws(ctx, d))) return false;
+            // 筆刷是別人的附加屬性設的（EarTrumpet 的 Theme:Brush.Stroke="Text"）：畫不畫得出來看不到
+            if (template.Descendants().Attributes().Any(a => a.Name.NamespaceName.Length > 0 && !a.IsNamespaceDeclaration && a.Name.NamespaceName != Markup.XamlNamespace && a.Name.LocalName.Contains('.', StringComparison.Ordinal))) return null;
         }
         return true;
     }
@@ -304,6 +309,8 @@ internal static class FocusRule
                 var themes = ctx.Project.ThemesOf(file);
                 // 專案自己的樣式沒寫 BasedOn（或 Style="{x:Null}"）：佈景的隱含樣式整個被取代，用的是 WPF 內建的範本（Oracle 抓到的）
                 var replaced = (string?)element?.Attribute("Style") == "{x:Null}" || StyleIndex.KeepsThemeStyle(chain) == false;
+                // 工具列裡的控制項用的是 ToolBar.ButtonStyleKey 那一組，跟平常的預設範本不一樣
+                if (element is not null && StyleIndex.InToolBar(element)) return (Seen.Unknown, "a ToolBar gives it a style of its own");
                 if (themes.Count == 0 || replaced) return (Seen.No, $"the default {control} template shows focus only through FocusVisualStyle");
                 if (ctx.Options.ThemeShowsFocus) return (Seen.Yes, null);
                 return FromTheme(ctx, themes, control);
@@ -393,7 +400,11 @@ internal static class FocusRule
             if (d.Name.LocalName == "VisualState" && Markup.NameOf(d) is { } state && state.StartsWith("Focused", StringComparison.Ordinal) && d.Descendants().Any(x => x.Name.LocalName == "Storyboard" && x.HasElements))
                 return Seen.Yes;
             foreach (var a in d.Attributes())
-                if (Markup.ExtensionName(a.Value) is "Binding" && Markup.BindingPath(a.Value) is { } path && MentionsFocus(path)) return Seen.Yes;
+                if (Markup.ExtensionName(a.Value) is "Binding" && Markup.BindingPath(a.Value) is { } path && MentionsFocus(path)
+                    || Markup.ExtensionName(a.Value) is "TemplateBinding" && MentionsFocus(Markup.ExtensionBody(a.Value))) return Seen.Yes;
+            // 寫成元素的綁定：<Border.Visibility><Binding Path="IsKeyboardFocused" …/></Border.Visibility>（觸發器的條件另外看）
+            if (d.Name.LocalName == "Binding" && (string?)d.Attribute("Path") is { } elementPath && MentionsFocus(elementPath)
+                && !d.Ancestors().TakeWhile(a => a != template).Any(a => a.Name.LocalName is "DataTrigger" or "MultiDataTrigger" or "Condition")) return Seen.Yes;
             // 範本裡的元素自己的樣式觸發器（DataTrigger 綁到 TemplatedParent 的 IsKeyboardFocused）
             if (d.Name.LocalName is "DataTrigger" or "MultiDataTrigger" && FocusTrigger(d) == Seen.Yes) return Seen.Yes;
             if (!Markup.IsPropertyElement(d) && !Markup.IsWpf(d) && d.Name.NamespaceName != Markup.XamlNamespace && !d.Name.NamespaceName.StartsWith("clr-namespace:System", StringComparison.Ordinal)

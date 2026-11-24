@@ -54,7 +54,7 @@ internal static class Check
     private static bool Meaningful(string name)
     {
         if (string.IsNullOrWhiteSpace(name)) return false;
-        if (name.StartsWith("System.Windows.", StringComparison.Ordinal)) return false;
+        if (System.Text.RegularExpressions.Regex.IsMatch(name, @"^(?:\w+\.){1,6}\w+( |$)") && (name.StartsWith("System.Windows.", StringComparison.Ordinal) || name.Contains(".Controls.", StringComparison.Ordinal))) return false;      // 型別名
         if (name.EnumerateRunes().All(r => Rune.GetUnicodeCategory(r) == System.Globalization.UnicodeCategory.PrivateUse)) return false;
         if (System.Text.RegularExpressions.Regex.IsMatch(name, "^#[0-9A-F]{8}$")) return false;      // 筆刷的 ToString()
         return !System.Text.RegularExpressions.Regex.IsMatch(name, @"^[MF]\s*-?\d+(\.\d+)?[ ,]");
@@ -62,6 +62,7 @@ internal static class Check
 
     private static void CompareName(Tally t, string title, Judgement j, Node? node)
     {
+        if (Show) Console.WriteLine($"  {title,-52} UIA {node?.NameShown ?? "(not in tree)",-24} tool {j.Verdict} {j.Kind?.Slug}");
         if (j.Verdict is Verdict.Blocked or Verdict.NotJudged or Verdict.Suppressed) { t.Skip($"{j.Verdict}: {j.Reason}"); return; }
         if (node is null)
         {
@@ -98,10 +99,14 @@ internal static class Check
         return wrong == 0 ? 0 : 1;
     }
 
+    /// <summary>名稱的案例檔；指令列可以只跑一份（check-names round3-names.txt）。</summary>
+    internal static bool Show;
+    internal static string[] NameFiles = ["names.txt", "templates.txt", "more-names.txt", "round3-names.txt"];
+
     public static int Facts()
     {
         var t = new Tally();
-        foreach (var file in (string[])["names.txt", "templates.txt", "more-names.txt"])
+        foreach (var file in NameFiles)
             foreach (var c in Probe.Load(file))
             {
                 try
@@ -126,7 +131,7 @@ internal static class Check
     public static void Record(string path)
     {
         var list = new List<object>();
-        foreach (var file in (string[])["names.txt", "templates.txt", "more-names.txt"])
+        foreach (var file in NameFiles)
             foreach (var c in Probe.Load(file))
             {
                 using var shown = Host.Show(c.Body, c.Resources);

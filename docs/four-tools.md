@@ -69,7 +69,8 @@ by side. Each tool reads only its own.
 Each tool has its own comment and each needs a reason: `xamlcontrast-ignore`, `xamlkeys-ignore`,
 `xamlfit-ignore`, `xamla11y-ignore`.
 
-XamlA11y finds its comment in any position among the comments before an element. **XamlContrast 1.8.3 and
+XamlA11y finds its comment in any position among the comments before an element, but not past text or a
+commented-out element: the comment in front of that one was about that one. **XamlContrast 1.8.3 and
 XamlFit 0.12.0 only look at the comment closest to the element**, so put `xamla11y-ignore` first:
 
 ```xml

@@ -218,7 +218,8 @@ public sealed partial class NameResolver(Project project)
         var result = value is null ? null : (NameResult?)FromObject(value.Value, e, control, depth);
 
         // 觸發器換內容（播放／暫停）：每一種都要看
-        var alternatives = TriggerValues(e, property).Select(v => FromObject(v, e, control, depth)).ToList();
+        // 本地寫的內容贏過樣式的觸發器：那些觸發器沒作用（UiaOracle round3）
+        var alternatives = HasLocalContent(e, property) ? [] : TriggerValues(e, property).Select(v => FromObject(v, e, control, depth)).ToList();
         if (alternatives.Count > 0)
         {
             // 沒有平常的內容：觸發器沒成立的時候就是空的
@@ -235,10 +236,12 @@ public sealed partial class NameResolver(Project project)
         {
             // <local:Foo/>：內容寫在它自己的 XAML 裡
             if (project.CodeSets(e, property)) return NameResult.Unknown($"the code-behind sets its {property}");
-            return project.ControlOf(own.Root) is { } c ? Resolve(own.Root, c, depth + 1) : NameResult.Unknown($"the root of {own.File} is not a control this tool knows");
+            // 根上的 AutomationProperties.Name 是它自己的名稱（Resolve 看過了），不是它的純文字
+            return project.ControlOf(own.Root) is { } c ? PlainText(own.Root, c, depth + 1) : NameResult.Unknown($"the root of {own.File} is not a control this tool knows");
         }
 
         if (project.CodeSets(e, property)) return NameResult.Unknown($"the code-behind sets its {property}");
+        if (project.ClassSets(e, property)) return NameResult.Unknown($"its class sets its {property} in code");
 
         // MenuItem 沒有 Header：RoutedUICommand 的文字變成 Header
         if (control == "MenuItem" && CommandText(e) is { } header) return header;
@@ -252,15 +255,44 @@ public sealed partial class NameResolver(Project project)
             : NameResult.Missing($"it has no {property} and no AutomationProperties.Name");
     }
 
-    /// <summary>命令是有文字的 RoutedUICommand → 有名稱；自訂的 x:Static 命令 → 不知道；綁定的命令 → null。</summary>
+    private NameResult PlainText(XElement e, string control, int depth) => depth > 16 ? NameResult.Unknown("its content is nested too deeply") : Wpf.NameSourceOf(control) switch
+    {
+        NameSource.Text => TextOf(e, depth),
+        NameSource.Inlines => InlineText(e, depth),
+        NameSource.Content => ContentName(e, "Content", control, depth),
+        NameSource.Header => ContentName(e, "Header", control, depth),
+        NameSource.NoText or NameSource.Nothing => NameResult.Missing($"<{e.Name.LocalName}> gives no text"),
+        _ => NameResult.Unknown($"<{e.Name.LocalName}> is not a control this tool knows"),
+    };
+
+    /// <summary>命令是有文字的 RoutedUICommand → 有名稱；自訂的 x:Static 命令 → 不知道；綁定的命令、沒有文字的命令 → null。</summary>
     private NameResult? CommandText(XElement e)
     {
-        if (_styles.Resolve(e, "Command") is not { IsValue: true, Value: { } c }) return null;
+        var command = _styles.Resolve(e, "Command");
+        // <RoutedUICommand x:Key="Save" Text="Save"/>（資源、屬性元素）；沒有 Text 的就是沒有
+        if (command.Element is { } ce)
+            return ce.Name.LocalName == "RoutedUICommand" && (string?)ce.Attribute("Text") is { Length: > 0 } label
+                ? Markup.IsMarkup(label) ? NameResult.Named(null) : Judge(label, null)
+                : null;
+        if (command is { IsUnreadable: true, Origin: not null })
+            return NameResult.Unknown("its Command is a resource this tool cannot read, which may be a RoutedUICommand");
+        if (command is not { IsValue: true, Value: { } c }) return null;
         if (IsBuiltInCommand(e, c)) return NameResult.Named(null);
+        if (IsSystemCommand(e, c)) return null;
+        // 專案自己的 {x:Static local:Commands.Save}：看它在 C# 裡宣告成什麼
+        if (Markup.ExtensionName(c) == "x:Static" || !Markup.IsMarkup(c))
+        {
+            var member = (Markup.IsMarkup(c) ? Markup.ExtensionBody(c) : c).Trim();
+            var parts = member[(member.IndexOf(':') + 1)..].Split('.');
+            if (parts.Length == 2 && project.CommandHasText(parts[0], parts[1]) is { } hasText) return hasText ? NameResult.Named(null) : null;
+        }
         return Markup.ExtensionName(c) == "x:Static" || !Markup.IsMarkup(c) ? NameResult.Unknown("its Command may be a RoutedUICommand, whose text would be the name") : null;
     }
 
     private readonly record struct ContentVal(string? Text, XElement? Element);
+
+    private bool HasLocalContent(XElement e, string property) =>
+        _styles.LocalValue(e, property).IsSet || (property == "Content" && (Markup.ContentElements(e).Count > 0 || Markup.OwnText(e).Length > 0));
 
     /// <summary>Content／Header 設成什麼：屬性、屬性元素、直接內容、樣式。沒設回 null。</summary>
     private ContentVal? ContentValue(XElement e, string property)
@@ -307,7 +339,7 @@ public sealed partial class NameResolver(Project project)
                 return text.Length == 0
                     ? NothingFor(control, "its content is an empty string")
                     : new NameResult(NameKind.Meaningless, text, "its content is only white space");
-            return Judge(RemoveAccessKey(text, control), FontOf(owner));
+            return Spoken(text, control, FontOf(owner));
         }
 
         switch (Markup.ExtensionName(raw))
@@ -354,7 +386,7 @@ public sealed partial class NameResolver(Project project)
         if (c.Name.NamespaceName.StartsWith("clr-namespace:System", StringComparison.Ordinal) && local is "String")
         {
             var t = c.Value.Trim();
-            return t.Length == 0 ? NothingFor(control, "its content is an empty string") : Judge(RemoveAccessKey(t, control), FontOf(owner));
+            return t.Length == 0 ? NothingFor(control, "its content is an empty string") : Spoken(t, control, FontOf(owner));
         }
         // 其他值型別：ToString()
         if (c.Name.NamespaceName.StartsWith("clr-namespace:System;", StringComparison.Ordinal) && !c.HasElements) return NameResult.Named(c.Value.Trim());
@@ -453,36 +485,46 @@ public sealed partial class NameResolver(Project project)
         if (r.IsValue) return NameResult.Bound("its text is set with an object");
         if (TriggerValues(e, "Text").Any()) return NameResult.Bound("a trigger sets its text");
         if (project.CodeSets(e, "Text", "Inlines")) return NameResult.Unknown("the code-behind sets its text");
+        if (project.ClassSets(e, "Text") || project.ClassSets(e, "Inlines")) return NameResult.Unknown("its class sets its text in code");
         return InlineText(e, depth);
     }
 
     /// <summary>行內的文字：文字節點與 Run。InlineUIContainer 裡的東西不算（WPF 給一個空白）。</summary>
     private NameResult InlineText(XElement e, int depth)
     {
-        var sb = new StringBuilder();
-        var bound = false;
-        var container = false;
+        // 一段一段看：每個 Run 有自己的字型，有的是綁定 —— 「圖示字元＋文字」「綁定的數字＋圖示」都很常見
+        var parts = new List<(string Text, XElement At)>();
+        bool bound = false, container = false, named = false, coded = false, outside = false;
         void Visit(XElement x)
         {
             foreach (var node in x.Nodes())
             {
-                if (node is XText t) sb.Append(t.Value);
+                if (node is XText t) parts.Add((t.Value, x));
                 else if (node is XElement holder && Markup.IsPropertyElement(holder))
                 {
                     // <Hyperlink.Inlines>（Playnite）、<Run.Text>
                     if (holder.Name.LocalName.EndsWith(".Inlines", StringComparison.Ordinal)) Visit(holder);
                     else if (holder.Name.LocalName == "Run.Text")
                     {
-                        if (holder.HasElements) bound = true; else sb.Append(holder.Value);
+                        if (holder.HasElements) bound = true; else parts.Add((holder.Value, x));
                     }
                 }
                 else if (node is XElement el)
                 {
                     if (el.Name.LocalName is "InlineUIContainer") { container = true; continue; }
-                    if (el.Name.LocalName == "LineBreak") { sb.Append(' '); continue; }
-                    if (el.Name.LocalName == "Run" && (string?)el.Attribute("Text") is { } text)
+                    if (el.Name.LocalName == "LineBreak") { parts.Add((" ", x)); continue; }
+                    if (project.CodeSets(el, "Text", "Inlines")) coded = true;
+                    // 文字也可以來自 Run 的樣式與它的觸發器（NuGet Package Explorer）
+                    if (el.Name.LocalName == "Run" && TriggerValues(el, "Text").Any()) bound = true;
+                    if (el.Name.LocalName == "Run" && _styles.Resolve(el, "Text") is { IsSet: true } run)
                     {
-                        if (Markup.IsMarkup(text)) bound = true; else sb.Append(Markup.Literal(text));
+                        // 隱含樣式套不套得到 Run 要看它在哪裡（按鈕內容裡的套不到，UiaOracle round3）：不猜
+                        if (run is { IsUnreadable: true, Origin: null } || (!_styles.LocalValue(el, "Text").IsSet && el.Attribute("Style") is null && !el.Elements().Any(c => c.Name.LocalName.EndsWith(".Style", StringComparison.Ordinal)))) { if (el.Nodes().All(n => n is System.Xml.Linq.XComment)) outside = true; Visit(el); continue; }
+                        if (run.Value is { } text && !Markup.IsMarkup(text)) parts.Add((Markup.Literal(text), el));
+                        // 綁資料的不知道內容；x:Static、{loc:T …}、專案外的資源：有文字，只是讀不到
+                        else if (Markup.ExtensionName(run.Value) is null or "Binding" or "TemplateBinding" or "x:Bind" or "MultiBinding" or "PriorityBinding") bound = true;
+                        else if (run.Value!.Trim() != "{x:Null}") named = true;
+                        if (el.Elements().All(c => c.Name.LocalName == "Run.Text")) continue;
                     }
                     if (el.Name.LocalName is "Run" or "Bold" or "Italic" or "Underline" or "Span" or "Hyperlink" or "Paragraph") Visit(el);
                     else if (el.Name.LocalName is "Binding" or "MultiBinding") bound = true;
@@ -492,9 +534,14 @@ public sealed partial class NameResolver(Project project)
             }
         }
         Visit(e);
-        var found = sb.ToString().Trim();
-        if (found.Length > 0) return Judge(found, FontOf(e));
+        var found = string.Concat(parts.Select(p => p.Text)).Trim();
+        var judged = parts.Where(p => p.Text.Trim().Length > 0).Select(p => Judge(p.Text, FontOf(p.At))).ToList();
+        if (named || judged.Any(j => j.Kind == NameKind.Named)) return NameResult.Named(found);
         if (bound) return NameResult.Bound("its text is bound");
+        if (coded) return NameResult.Unknown("the code-behind sets its text");
+        if (outside) return NameResult.Unknown("a style may set the text of its Run");
+        if (found.Length > 0)
+            return judged.FirstOrDefault(j => j.Kind == NameKind.Meaningless) is { Kind: NameKind.Meaningless } odd ? odd with { Text = Escape(found) } : Judge(found, FontOf(e));
         if (project.CodeSets(e, "Text", "Inlines")) return NameResult.Unknown("the code-behind sets its text");
         return container
             ? new NameResult(NameKind.Meaningless, " ", "it only contains an element, and WPF turns that into a single space")
@@ -534,7 +581,8 @@ public sealed partial class NameResolver(Project project)
         {
             var cat = Rune.GetUnicodeCategory(rune);
             if (cat == UnicodeCategory.PrivateUse) anyPrivate = true;
-            else if (Rune.IsLetterOrDigit(rune) || cat is UnicodeCategory.NonSpacingMark or UnicodeCategory.SpacingCombiningMark) anyLetter = true;
+            // 組合字元自己不算：⚙ 後面的 U+FE0F（表情的樣式）也是組合字元
+            else if (Rune.IsLetterOrDigit(rune)) anyLetter = true;
         }
         if (anyPrivate && !anyLetter) return new NameResult(NameKind.Meaningless, Escape(t), "its name is an icon-font character from the private use area");
         if (font is not null && Wpf.IsIconFont(font)) return new NameResult(NameKind.Meaningless, Escape(t), $"its text is drawn as an icon by the font '{font}'; a screen reader reads the raw characters");
@@ -545,10 +593,31 @@ public sealed partial class NameResolver(Project project)
     internal static string Escape(string s) => string.Concat(s.EnumerateRunes().Select(r =>
         Rune.GetUnicodeCategory(r) == UnicodeCategory.PrivateUse ? $"U+{r.Value:X4}" : r.ToString()));
 
-    private static string RemoveAccessKey(string text, string control)
+    private static NameResult Spoken(string text, string control, string? font)
     {
-        if (!text.Contains('_', StringComparison.Ordinal)) return text;
-        return text.Replace("__", "\u0001", StringComparison.Ordinal).Replace("_", "", StringComparison.Ordinal).Replace("\u0001", "_", StringComparison.Ordinal);
+        var t = RemoveAccessKey(text);
+        return t.Trim().Length == 0 ? new NameResult(NameKind.Meaningless, t, "its content is only white space") : Judge(t, font);
+    }
+
+    private static string RemoveAccessKey(string text)
+    {
+        // 照 AccessText.RemoveAccessKeyMarker：只拿掉第一個後面還有字的底線，再把兩個底線變一個
+        for (var i = text.IndexOf('_', StringComparison.Ordinal); i >= 0; i = i + 2 < text.Length ? text.IndexOf('_', i + 2) : -1)
+            if (i + 1 < text.Length && text[i + 1] != '_') { text = text.Remove(i, 1); break; }
+        return text.Replace("__", "_", StringComparison.Ordinal);
+    }
+
+    /// <summary>SystemCommands.CloseWindowCommand：RoutedCommand，沒有文字（UiaOracle round3）。</summary>
+    private static bool IsSystemCommand(XElement at, string command)
+    {
+        var c = command.Trim();
+        if (Markup.ExtensionName(c) == "x:Static") c = Markup.ExtensionBody(c);
+        if (Markup.IsMarkup(c) || c.LastIndexOf('.') is not (> 0 and var dot)) return false;
+        var owner = c[..dot];
+        var colon = owner.IndexOf(':');
+        if (colon < 0) return owner == "SystemCommands";
+        return owner[(colon + 1)..] == "SystemCommands" && at.GetNamespaceOfPrefix(owner[..colon]) is { } ns
+               && (Markup.IsWpfNamespace(ns.NamespaceName) || ns.NamespaceName.StartsWith("clr-namespace:Microsoft.Windows.Shell", StringComparison.Ordinal) || ns.NamespaceName.StartsWith("http://schemas.microsoft.com/winfx/2006/xaml/presentation/shell", StringComparison.Ordinal));
     }
 
     /// <summary>WPF 內建、有文字的 RoutedUICommand。</summary>

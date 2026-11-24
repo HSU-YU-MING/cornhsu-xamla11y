@@ -171,7 +171,9 @@ public static class Markup
         return (ns.StartsWith("clr-namespace:", StringComparison.Ordinal) && semi > 0 ? ns[..semi] : ns) + "#" + local;
     }
 
-    public static bool IsWpfNamespace(string ns) => ns is WpfNamespace or "http://schemas.microsoft.com/netfx/2007/xaml/presentation";
+    public static bool IsWpfNamespace(string ns) => ns is WpfNamespace or "http://schemas.microsoft.com/netfx/2007/xaml/presentation"
+        // 同一批型別用 CLR 命名空間寫：xmlns:c="clr-namespace:System.Windows.Controls;assembly=PresentationFramework"
+        || (ns.StartsWith("clr-namespace:System.Windows", StringComparison.Ordinal) && ns[(ns.IndexOf(';') + 1)..].Trim() is "assembly=PresentationFramework" or "assembly=PresentationCore");
 
     public static string? NameOf(XElement e) => (string?)e.Attribute(XName_) ?? (string?)e.Attribute("Name");
 
@@ -192,6 +194,22 @@ public static class Markup
                 && (StyleIndex.NormalizeProperty(local) == property || local[..dot] == e.Name.LocalName)) return c;
         }
         return null;
+    }
+
+    private sealed record NodeIndex(List<XNode> Nodes, Dictionary<XNode, int> Index);
+
+    /// <summary>前一個節點。LINQ to XML 的 PreviousNode 每次都從頭數（三萬個兄弟元素就是平方），兄弟多的記一份索引。</summary>
+    public static XNode? Previous(XNode node)
+    {
+        if (node.Parent is not { } parent) return node.PreviousNode;
+        if (parent.Annotation<NodeIndex>() is not { } index)
+        {
+            var nodes = parent.Nodes().ToList();
+            var map = new Dictionary<XNode, int>(ReferenceEqualityComparer.Instance);
+            for (var i = 0; i < nodes.Count; i++) map[nodes[i]] = i;
+            parent.AddAnnotation(index = new NodeIndex(nodes, map));
+        }
+        return index.Index.TryGetValue(node, out var at) ? at > 0 ? index.Nodes[at - 1] : null : node.PreviousNode;
     }
 
     /// <summary>元素的內容（去掉屬性元素）。</summary>

@@ -10,7 +10,7 @@ What is left is that it parses input it does not trust: people run it in CI, on 
 |---|---|
 | External entities, entity expansion | DTDs are refused; such a file is a parse error |
 | Deep nesting, cyclic styles, cyclic resources, cyclic `LabeledBy` | depth limits; a file nested more than 512 levels is a parse error |
-| Symlinks and junctions | not followed |
+| Symlinks and junctions | not followed, neither directories nor single files |
 | Text from XAML in a CI log | control characters, Unicode line separators and bidirectional overrides are escaped; `##vso[` and `##[` are defused. In the action the output is also inside `::stop-commands::` |
 | Text from XAML in a PR comment | always inside a code span, so links, images, mentions and HTML stay text. The comment is cut at whole lines |
 | Regular expressions over repository text | fixed patterns with a time limit where they read code; names taken from XAML are escaped before use |

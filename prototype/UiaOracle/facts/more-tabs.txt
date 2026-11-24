@@ -15,3 +15,6 @@ tab | CheckBox Focusable=False | <CheckBox x:Name='p' Focusable='False'/>
 tab | PasswordBox IsTabStop=False | <PasswordBox x:Name='p' IsTabStop='False'/>
 tab | RichTextBox Focusable=False | <RichTextBox x:Name='p' Focusable='False'/>
 tab | resource boolean | <Button x:Name='p' IsTabStop='{StaticResource no}'/> | <sys:Boolean x:Key='no'>False</sys:Boolean>
+tab | ToolBar Button implicit IsTabStop False | <ToolBar><Button x:Name='p' Content='x'/></ToolBar> | <Style TargetType='Button'><Setter Property='IsTabStop' Value='False'/></Style>
+tab | ToolBar Button explicit IsTabStop False | <ToolBar><Button x:Name='p' Content='x' Style='{StaticResource e}'/></ToolBar> | <Style x:Key='e' TargetType='Button'><Setter Property='IsTabStop' Value='False'/></Style>
+tab | AccessText button IsTabStop False | <Button x:Name='p' IsTabStop='False'><AccessText Text='_Open'/></Button>
