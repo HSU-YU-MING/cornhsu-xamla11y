@@ -1,0 +1,42 @@
+tab | Button default | <Button x:Name='p'/>
+tab | Button IsTabStop=False | <Button x:Name='p' IsTabStop='False'/>
+tab | Button Focusable=False | <Button x:Name='p' Focusable='False'/>
+tab | KeyboardNavigation.IsTabStop=False | <Button x:Name='p' KeyboardNavigation.IsTabStop='False'/>
+tab | Border Focusable=True | <Border x:Name='p' Focusable='True' Background='Red' Height='20'/>
+tab | Border Focusable=True KbNav.IsTabStop=False | <Border x:Name='p' Focusable='True' KeyboardNavigation.IsTabStop='False' Background='Red' Height='20'/>
+tab | Border plain | <Border x:Name='p' Background='Red' Height='20'/>
+tab | TextBlock Focusable=True | <TextBlock x:Name='p' Focusable='True' Text='x'/>
+tab | Image Focusable=True | <Image x:Name='p' Focusable='True' Width='10' Height='10'/>
+tab | ContentControl default | <ContentControl x:Name='p' Content='x'/>
+tab | UserControl default | <UserControl x:Name='p'><TextBlock Text='x'/></UserControl>
+tab | Label default | <Label x:Name='p' Content='x'/>
+tab | Control (plain) | <Control x:Name='p' Height='20'/>
+tab | Thumb | <Thumb x:Name='p' Height='20'/>
+tab | GridSplitter | <Grid><GridSplitter x:Name='p' Width='5' Height='20'/></Grid>
+tab | Button in ToolBar | <ToolBar><Button x:Name='p' Content='x'/><Button x:Name='q' Content='y'/></ToolBar>
+tab | TabNavigation=None | <StackPanel KeyboardNavigation.TabNavigation='None'><Button x:Name='p'/></StackPanel>
+tab | TabNavigation=Once | <StackPanel KeyboardNavigation.TabNavigation='Once'><Button x:Name='p'/><Button x:Name='q'/></StackPanel>
+tab | disabled panel | <StackPanel IsEnabled='False'><Button x:Name='p'/></StackPanel>
+tab | Collapsed | <Button x:Name='p' Visibility='Collapsed'/>
+tab | Menu | <Menu><MenuItem x:Name='p' Header='File'/></Menu>
+tab | RepeatButton | <RepeatButton x:Name='p'/>
+tab | ScrollViewer default | <ScrollViewer x:Name='p' Height='20'/>
+tab | ListBox IsTabStop=False | <ListBox x:Name='p' IsTabStop='False'><ListBoxItem Content='1' x:Name='i'/></ListBox>
+tab | ListBox Focusable=False | <ListBox x:Name='p' Focusable='False'><ListBoxItem Content='1' x:Name='i'/></ListBox>
+tab | ListBoxItem Focusable=False | <ListBox x:Name='l'><ListBoxItem Content='1' x:Name='p' Focusable='False'/></ListBox>
+tab | TextBox IsTabStop=False | <TextBox x:Name='p' IsTabStop='False'/>
+tab | ComboBox editable IsTabStop=False | <ComboBox x:Name='p' IsEditable='True' IsTabStop='False'/>
+tab | ComboBox Focusable=False | <ComboBox x:Name='p' Focusable='False'/>
+tab | ComboBox editable Focusable=False | <ComboBox x:Name='p' IsEditable='True' Focusable='False'/>
+tab | DatePicker IsTabStop=False | <DatePicker x:Name='p' IsTabStop='False'/>
+tab | Expander default | <Expander x:Name='p' Header='x'/>
+tab | Hyperlink | <TextBlock><Hyperlink x:Name='p'>x</Hyperlink></TextBlock>
+tab | Hyperlink Focusable=False | <TextBlock><Hyperlink x:Name='p' Focusable='False'>x</Hyperlink></TextBlock>
+tab | ItemsControl default | <ItemsControl x:Name='p'><Button x:Name='i' Content='x'/></ItemsControl>
+tab | UserControl Focusable=False around Button | <UserControl Focusable='False'><Button x:Name='p'/></UserControl>
+tab | UserControl IsEnabled=False around Button | <UserControl IsEnabled='False'><Button x:Name='p'/></UserControl>
+tab | RadioButtons | <RadioButton x:Name='p' GroupName='g'/><RadioButton x:Name='r2' GroupName='g'/>
+tab | RadioButtons IsTabStop=False on one | <StackPanel KeyboardNavigation.DirectionalNavigation='Cycle'><RadioButton x:Name='r1' IsChecked='True'/><RadioButton x:Name='p' IsTabStop='False'/></StackPanel>
+tab | Button via Style Focusable=False | <Button x:Name='p'><Button.Style><Style TargetType='Button'><Setter Property='Focusable' Value='False'/></Style></Button.Style></Button>
+tab | TabItem IsTabStop=False | <TabControl><TabItem x:Name='p' Header='a' IsTabStop='False'/><TabItem x:Name='q' Header='b'/></TabControl>
+tab | MenuItem Focusable=False | <Menu><MenuItem x:Name='p' Header='File' Focusable='False'/></Menu>

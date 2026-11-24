@@ -1,0 +1,18 @@
+# 組：fail = 工具應該報（真的 < 24 而且鄰居太近）；ok = 不該報；skip = 靜態不知道
+fail | adjacent 20x20 in horizontal StackPanel | <StackPanel Orientation='Horizontal'><Button x:Name='p' Width='20' Height='20'/><Button Width='20' Height='20'/></StackPanel>
+fail | adjacent 16 wide, margin 2 | <StackPanel Orientation='Horizontal'><Button x:Name='p' Width='16' Height='30' Margin='2'/><Button Width='16' Height='30' Margin='2'/></StackPanel>
+fail | vertical 18 high | <StackPanel><Button x:Name='p' Height='18'/><Button Height='18'/></StackPanel>
+fail | style sets 20x20 | <StackPanel Orientation='Horizontal'><Button x:Name='p' Style='{StaticResource s}'/><Button Style='{StaticResource s}'/></StackPanel> | <Style x:Key='s' TargetType='Button'><Setter Property='Width' Value='20'/><Setter Property='Height' Value='20'/></Style>
+fail | MaxWidth 16 | <StackPanel Orientation='Horizontal'><Button x:Name='p' Content='wide text' MaxWidth='16'/><Button Width='16'/></StackPanel>
+fail | Grid row 18, stacked panel neighbour | <StackPanel><CheckBox x:Name='p' Height='16'/><CheckBox Height='16'/></StackPanel>
+fail | 10 wide next to a big button | <StackPanel Orientation='Horizontal'><Button x:Name='p' Width='10' Height='30'/><Button Width='80' Height='30'/></StackPanel>
+ok | MinWidth 30 beats Width 10 | <StackPanel Orientation='Horizontal'><Button x:Name='p' Width='10' MinWidth='30' Height='30'/><Button Width='10'/></StackPanel>
+ok | 24x24 | <StackPanel Orientation='Horizontal'><Button x:Name='p' Width='24' Height='24'/><Button Width='24' Height='24'/></StackPanel>
+ok | big | <Button x:Name='p' Width='100' Height='40'/>
+ok | 20 wide next to big button (centre 12+ away) | <StackPanel Orientation='Horizontal'><Button x:Name='p' Width='20' Height='30' Margin='0,0,2,0'/><Button Width='80' Height='30'/></StackPanel>
+ok | 20x20 with enough margin | <StackPanel Orientation='Horizontal'><Button x:Name='p' Width='20' Height='20' Margin='4'/><Button Width='20' Height='20' Margin='4'/></StackPanel>
+ok | alone | <StackPanel Orientation='Horizontal'><Button x:Name='p' Width='16' Height='16'/><TextBlock Text='x'/></StackPanel>
+ok | Viewbox | <Viewbox Height='100'><StackPanel Orientation='Horizontal'><Button x:Name='p' Width='16' Height='16'/><Button Width='16' Height='16'/></StackPanel></Viewbox>
+ok | LayoutTransform | <StackPanel Orientation='Horizontal'><Button x:Name='p' Width='16' Height='16'><Button.LayoutTransform><ScaleTransform ScaleX='2' ScaleY='2'/></Button.LayoutTransform></Button><Button Width='16'/></StackPanel>
+ok | collapsed neighbour then far | <StackPanel Orientation='Horizontal'><Button x:Name='p' Width='16' Height='30'/><Button Width='16' Visibility='Collapsed'/><TextBlock Text='x'/></StackPanel>
+ok | in a Grid | <Grid><Grid.RowDefinitions><RowDefinition Height='16'/><RowDefinition/></Grid.RowDefinitions><Button x:Name='p'/><Button Grid.Row='1'/></Grid>

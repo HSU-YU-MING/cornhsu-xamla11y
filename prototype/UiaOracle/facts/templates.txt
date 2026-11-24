@@ -1,0 +1,35 @@
+# 控制項範本裡的零件：哪些會出現在 UIA 的 control view 裡（t = 零件）
+part | ComboBox ToggleButton | <ComboBox x:Name='p' AutomationProperties.Name='N'><ComboBox.Template><ControlTemplate TargetType='ComboBox'><Grid><ToggleButton x:Name='t'>[ICON]</ToggleButton><ContentPresenter/><Popup x:Name='PART_Popup'><ItemsPresenter/></Popup></Grid></ControlTemplate></ComboBox.Template></ComboBox>
+part | ComboBox plain Button | <ComboBox x:Name='p' AutomationProperties.Name='N'><ComboBox.Template><ControlTemplate TargetType='ComboBox'><Grid><Button x:Name='t'>[ICON]</Button><ContentPresenter/><Popup x:Name='PART_Popup'><ItemsPresenter/></Popup></Grid></ControlTemplate></ComboBox.Template></ComboBox>
+part | Expander ToggleButton | <Expander x:Name='p' AutomationProperties.Name='N'><Expander.Template><ControlTemplate TargetType='Expander'><StackPanel><ToggleButton x:Name='t'>[ICON]</ToggleButton><ContentPresenter/></StackPanel></ControlTemplate></Expander.Template></Expander>
+part | TreeViewItem ToggleButton | <TreeView AutomationProperties.Name='N'><TreeViewItem x:Name='p' Header='H'><TreeViewItem.Template><ControlTemplate TargetType='TreeViewItem'><StackPanel><ToggleButton x:Name='t'>[ICON]</ToggleButton><ContentPresenter ContentSource='Header'/></StackPanel></ControlTemplate></TreeViewItem.Template></TreeViewItem></TreeView>
+part | ScrollBar RepeatButton | <ScrollBar x:Name='p' Height='80' Maximum='10' ViewportSize='2'><ScrollBar.Template><ControlTemplate TargetType='ScrollBar'><StackPanel><RepeatButton x:Name='t' Command='ScrollBar.LineUpCommand'>[ICON]</RepeatButton><Track x:Name='PART_Track'/></StackPanel></ControlTemplate></ScrollBar.Template></ScrollBar>
+part | Slider RepeatButton | <Slider x:Name='p' AutomationProperties.Name='N'><Slider.Template><ControlTemplate TargetType='Slider'><StackPanel><RepeatButton x:Name='t' Command='Slider.DecreaseLarge'>[ICON]</RepeatButton></StackPanel></ControlTemplate></Slider.Template></Slider>
+part | TextBox clear Button | <TextBox x:Name='p' AutomationProperties.Name='N'><TextBox.Template><ControlTemplate TargetType='TextBox'><DockPanel><Button x:Name='t'>[ICON]</Button><ScrollViewer x:Name='PART_ContentHost'/></DockPanel></ControlTemplate></TextBox.Template></TextBox>
+part | Button inside Button template | <Button x:Name='p' Content='N'><Button.Template><ControlTemplate TargetType='Button'><DockPanel><Button x:Name='t'>[ICON]</Button><ContentPresenter/></DockPanel></ControlTemplate></Button.Template></Button>
+part | ContentControl template Button | <ContentControl x:Name='p' Content='N'><ContentControl.Template><ControlTemplate TargetType='ContentControl'><DockPanel><Button x:Name='t'>[ICON]</Button><ContentPresenter/></DockPanel></ControlTemplate></ContentControl.Template></ContentControl>
+part | TabItem close Button | <TabControl AutomationProperties.Name='N'><TabItem x:Name='p' Header='H'><TabItem.Template><ControlTemplate TargetType='TabItem'><DockPanel><Button x:Name='t'>[ICON]</Button><ContentPresenter ContentSource='Header'/></DockPanel></ControlTemplate></TabItem.Template></TabItem></TabControl>
+part | ListBoxItem Button | <ListBox AutomationProperties.Name='N'><ListBoxItem x:Name='p' Content='H'><ListBoxItem.Template><ControlTemplate TargetType='ListBoxItem'><DockPanel><Button x:Name='t'>[ICON]</Button><ContentPresenter/></DockPanel></ControlTemplate></ListBoxItem.Template></ListBoxItem></ListBox>
+part | MenuItem Button | <Menu AutomationProperties.Name='N'><MenuItem x:Name='p' Header='H'><MenuItem.Template><ControlTemplate TargetType='MenuItem'><DockPanel><Button x:Name='t'>[ICON]</Button><ContentPresenter ContentSource='Header'/></DockPanel></ControlTemplate></MenuItem.Template></MenuItem></Menu>
+part | CheckBox template TextBox | <CheckBox x:Name='p' Content='N'><CheckBox.Template><ControlTemplate TargetType='CheckBox'><DockPanel><TextBox x:Name='t'/><ContentPresenter/></DockPanel></ControlTemplate></CheckBox.Template></CheckBox>
+part | DatePicker parts | <DatePicker x:Name='p' AutomationProperties.Name='N'><DatePicker.Template><ControlTemplate TargetType='DatePicker'><Grid x:Name='PART_Root'><Button x:Name='PART_Button'>[ICON]</Button><DatePickerTextBox x:Name='PART_TextBox'/><Popup x:Name='PART_Popup'/></Grid></ControlTemplate></DatePicker.Template></DatePicker>
+part | UserControl content Button | <UserControl x:Name='p'><Button x:Name='t'>[ICON]</Button></UserControl>
+part | DataTemplate Button | <ContentControl x:Name='p' Content='x'><ContentControl.ContentTemplate><DataTemplate><Button x:Name='t'>[ICON]</Button></DataTemplate></ContentControl.ContentTemplate></ContentControl>
+part | DataTemplate in ListBox Button | <ListBox AutomationProperties.Name='N'><ListBox.ItemTemplate><DataTemplate><StackPanel><Button x:Name='t'>[ICON]</Button></StackPanel></DataTemplate></ListBox.ItemTemplate><sys:String>a</sys:String></ListBox>
+part | Button in Button content | <Button x:Name='p'><StackPanel><TextBlock Text='a'/><Button x:Name='t'>[ICON]</Button></StackPanel></Button>
+part | Button in MenuItem header | <Menu AutomationProperties.Name='N'><MenuItem x:Name='p'><MenuItem.Header><StackPanel><Button x:Name='t'>[ICON]</Button></StackPanel></MenuItem.Header></MenuItem></Menu>
+part | CheckBox as MenuItem.Icon | <Menu AutomationProperties.Name='N'><MenuItem x:Name='p' Header='H'><MenuItem.Icon><CheckBox x:Name='t'/></MenuItem.Icon></MenuItem></Menu>
+part | DataGrid column header template | <DataGrid x:Name='p' AutomationProperties.Name='N'><DataGrid.Columns><DataGridTextColumn><DataGridTextColumn.Header><Button x:Name='t'>[ICON]</Button></DataGridTextColumn.Header></DataGridTextColumn></DataGrid.Columns></DataGrid>
+part | Focusable=False icon button | <Button x:Name='t' Focusable='False'>[ICON]</Button>
+part | Disabled icon button | <Button x:Name='t' IsEnabled='False'>[ICON]</Button>
+part | IsHitTestVisible=False icon button | <Button x:Name='t' IsHitTestVisible='False'>[ICON]</Button>
+part | Hidden icon button | <Button x:Name='t' Visibility='Hidden'>[ICON]</Button>
+part | Collapsed icon button | <Button x:Name='t' Visibility='Collapsed'>[ICON]</Button>
+part | Opacity 0 icon button | <Button x:Name='t' Opacity='0'>[ICON]</Button>
+part | Zero-size icon button | <Button x:Name='t' Width='0' Height='0'>[ICON]</Button>
+part | AccessibilityView-ish: IsOffscreenBehavior | <Button x:Name='t' AutomationProperties.IsOffscreenBehavior='Offscreen'>[ICON]</Button>
+part | StatusBarItem | <StatusBar><StatusBarItem x:Name='t'>[ICON]</StatusBarItem></StatusBar>
+part | GridSplitter | <Grid><GridSplitter x:Name='t' Width='5' Height='10'/></Grid>
+part | Thumb | <Thumb x:Name='t' Width='5' Height='10'/>
+part | Frame | <Frame x:Name='t' Height='10'/>
+part | Hyperlink in DataGridHyperlinkColumn | <DataGrid x:Name='t' AutomationProperties.Name='N'/>

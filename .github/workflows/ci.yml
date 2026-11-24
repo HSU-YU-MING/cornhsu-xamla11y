@@ -1,0 +1,172 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      # ⚠ 全部的 action 釘 40 碼 commit SHA（行尾註解標版本）。dependabot 會更新釘選；不要改回 @v7 這種移動 tag。
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build XamlA11y.slnx -c Release
+      - run: dotnet test XamlA11y.slnx -c Release --no-build
+      # 很多 Linux CI 映像沒有 ICU
+      - name: Test in globalization-invariant mode
+        run: dotnet test XamlA11y.slnx -c Release --no-build
+        env:
+          DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
+
+      # 示範專案是刻意做壞的：預期 exit 1，而且每一種 finding 的數量固定
+      - run: bash scripts/verify-demo.sh
+      - name: README sample is up to date
+        run: bash scripts/verify-readme-sample.sh
+      - name: README pins the released version
+        run: bash scripts/verify-readme-facts.sh
+
+  # 解析是純 XML，不依賴 WPF —— 這個 job 守住那句話在 Windows 上也成立（路徑分隔、大小寫、換行）。
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet test XamlA11y.slnx -c Release
+
+  # 真的跑一次 action.yml（照三件套）：先把這個 commit 的 CLI 打包成本機來源，Action 照真的安裝步驟裝它。
+  action:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.x'
+      # 版本號每次 run 都不一樣：同一個版本號第二次 pack，install 會拿快取裡的舊檔
+      - name: Pack this commit's CLI into a local feed
+        id: pack
+        run: |
+          v="0.0.0-ci.${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}"
+          dotnet pack src/XamlA11y.Cli/XamlA11y.Cli.csproj -c Release -o ci-feed -p:Version="$v"
+          printf '<configuration><packageSources><add key="ci" value="ci-feed" /></packageSources></configuration>\n' > nuget.config
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      # comment 用預設的 true：這個 workflow 只有 contents: read，PR 上那一步會 403 —— 它是 continue-on-error，
+      # 同時驗了「沒給 pull-requests: write 不會讓 job 紅在留言那步」
+      - name: Run the action on the demo (expects the gate to fail)
+        id: demo
+        continue-on-error: true
+        uses: ./
+        with:
+          root: samples/demo
+          version: ${{ steps.pack.outputs.version }}
+          artifact-name: xamla11y-demo-report-${{ matrix.os }}
+      - name: The gate failed and the reports were written
+        env:
+          OUTCOME: ${{ steps.demo.outcome }}
+          VERSION: ${{ steps.pack.outputs.version }}
+        run: |
+          report="$RUNNER_TEMP/xamla11y-report.json"
+          md="$RUNNER_TEMP/xamla11y-report.md"
+          test "$OUTCOME" = failure || { echo "expected the demo to fail the gate, got $OUTCOME"; exit 1; }
+          test -s "$report" || { echo "no JSON report"; exit 1; }
+          n=$(jq '.findings | length' "$report" | tr -d '\r')
+          test "$n" -eq 10 || { echo "expected 10 findings, got $n"; exit 1; }
+          got=$(jq -r '.toolVersion' "$report" | tr -d '\r')
+          test "$got" = "$VERSION" || { echo "expected tool $VERSION, the report says $got"; exit 1; }
+          test "$(head -n 1 "$md" | tr -d '\r')" = "## XamlA11y — accessibility audit" || { echo "unexpected Markdown header"; exit 1; }
+          echo "ok: gate failed, $n finding(s) in the report, Markdown written"
+
+      # 同一個 job 第二次呼叫：報告又出現 = 第二次真的跑完了（不是因為「已經安裝」而失敗）
+      - name: Second call in the same job
+        id: second
+        continue-on-error: true
+        uses: ./
+        with:
+          root: samples/demo
+          version: ${{ steps.pack.outputs.version }}
+          comment: 'false'
+          artifact-name: xamla11y-second-${{ matrix.os }}
+      - name: The second call ran the audit too
+        env:
+          OUTCOME: ${{ steps.second.outcome }}
+        run: |
+          test "$OUTCOME" = failure || { echo "expected the second call to fail the gate, got $OUTCOME"; exit 1; }
+          test -s "$RUNNER_TEMP/xamla11y-report.json" || { echo "no JSON report from the second call"; exit 1; }
+
+      - name: A bad input is refused
+        id: bad
+        continue-on-error: true
+        uses: ./
+        with:
+          root: samples/demo
+          fail-on: Warn
+          upload-report: false
+      - name: The bad input failed the step
+        env:
+          OUTCOME: ${{ steps.bad.outcome }}
+        run: test "$OUTCOME" = failure || { echo "expected fail-on Warn to be refused, got $OUTCOME"; exit 1; }
+
+  # 四件套放在同一個 job：各自的報告、artifact、註記不互蓋，四支都真的跑完（samples/suite 每一支各有問題）。
+  # 三件套用 nuget.org 上的已發佈版本與它們自己的 Action。
+  four-tools:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.x'
+      - name: Pack this commit's CLI into a local feed
+        id: pack
+        run: |
+          v="0.0.0-ci.${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}"
+          dotnet pack src/XamlA11y.Cli/XamlA11y.Cli.csproj -c Release -o ci-feed -p:Version="$v"
+          printf '<configuration><packageSources><add key="ci" value="ci-feed" /></packageSources></configuration>\n' > nuget.config
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - id: contrast
+        continue-on-error: true
+        uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.8.3
+        with: { root: samples/suite, version: 1.8.3 }
+      - id: keys
+        continue-on-error: true
+        uses: HSU-YU-MING/cornhsu-xamlkeys@v0.3.1
+        with: { root: samples/suite, version: 0.3.1 }
+      - id: fit
+        continue-on-error: true
+        uses: HSU-YU-MING/cornhsu-xamlfit@v0.12.0
+        with: { root: samples/suite, version: 0.12.0, resx: samples/suite/Resources }
+      - id: a11y
+        continue-on-error: true
+        uses: ./
+        with:
+          root: samples/suite
+          version: ${{ steps.pack.outputs.version }}
+      - name: Every tool ran, found its own problem and left its own report
+        env:
+          OUTCOMES: ${{ steps.contrast.outcome }} ${{ steps.keys.outcome }} ${{ steps.fit.outcome }} ${{ steps.a11y.outcome }}
+        run: |
+          echo "outcomes: $OUTCOMES"
+          test "$OUTCOMES" = "failure failure failure failure" || { echo "every tool should fail its gate on the sample"; exit 1; }
+          for t in xamlcontrast xamlkeys xamlfit xamla11y; do
+            f="$RUNNER_TEMP/$t-report.json"
+            test -s "$f" || { echo "no report from $t"; ls "$RUNNER_TEMP"; exit 1; }
+            echo "$t: $(jq '.findings | length' "$f") finding(s)"
+          done

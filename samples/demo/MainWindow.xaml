@@ -1,0 +1,76 @@
+<Window x:Class="Demo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Demo"
+        Title="XamlA11y demo" Width="480" Height="640">
+    <Window.Resources>
+        <Geometry x:Key="TrashIcon">M4,6 L20,6 M9,6 L9,4 L15,4 L15,6 M6,6 L7,20 L17,20 L18,6</Geometry>
+
+        <!-- focus-not-visible: the focus rectangle is removed and the template draws nothing instead -->
+        <Style x:Key="FlatButton" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" Padding="8,4">
+                            <ContentPresenter/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <StackPanel Margin="16">
+        <!-- missing-name: a ToolTip is not a name -->
+        <Button ToolTip="Delete">
+            <Path Data="{StaticResource TrashIcon}" Stroke="Black"/>
+        </Button>
+
+        <!-- text-not-in-name: the text is inside a panel -->
+        <Button Click="OnSave">
+            <StackPanel Orientation="Horizontal">
+                <Path Data="M0,0 L8,8"/>
+                <TextBlock Text="Save"/>
+            </StackPanel>
+        </Button>
+
+        <!-- meaningless-name: the name is the private-use character -->
+        <Button FontFamily="Segoe MDL2 Assets" Content="&#xE74D;" Click="OnTrash"/>
+
+        <!-- symbol-name (info) -->
+        <Button Content="×" Click="OnClose"/>
+
+        <!-- input-no-name: Label Target only moves focus -->
+        <Label Content="_Name" Target="{Binding ElementName=NameBox}"/>
+        <TextBox x:Name="NameBox"/>
+
+        <!-- mouse-only: no keyboard way in, and a Border is never in the UI Automation tree -->
+        <Border MouseLeftButtonUp="OnOpen" Cursor="Hand">
+            <TextBlock Text="Open the folder"/>
+        </Border>
+
+        <!-- not-in-tab-order (warn) -->
+        <Button Content="Refresh" IsTabStop="False"/>
+
+        <!-- small-target (warn), twice: each is too close to the other -->
+        <StackPanel Orientation="Horizontal">
+            <Button Content="Up" Width="18" Height="18"/>
+            <Button Content="Down" Width="18" Height="18"/>
+        </StackPanel>
+
+        <!-- fine -->
+        <Button Content="Flat" Style="{StaticResource FlatButton}"/>
+        <TextBlock x:Name="MailLabel" Text="Mail"/>
+        <TextBox AutomationProperties.LabeledBy="{Binding ElementName=MailLabel}"/>
+
+        <!-- not judged: the name comes from data -->
+        <Button Content="{Binding Title}"/>
+
+        <!-- blocked: the tool does not know this control -->
+        <local:FancyButton/>
+
+        <!-- xamla11y-ignore: the whole row is the control, this check box only mirrors it -->
+        <CheckBox IsChecked="{Binding IsSelected}"/>
+    </StackPanel>
+</Window>

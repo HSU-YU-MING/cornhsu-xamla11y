@@ -1,0 +1,187 @@
+# <img src="https://raw.githubusercontent.com/HSU-YU-MING/cornhsu-xamla11y/main/icon.png" width="28" alt=""/> XamlA11y
+
+**WPF XAML 的靜態無障礙稽核。不開 App 就找出螢幕閱讀器念不出名字、鍵盤到不了的地方，並在 CI 擋住新增的。**
+
+[English](README.md)
+
+```bash
+dotnet tool install -g Cornhsu.XamlA11y
+
+xamla11y audit ./src                                    # 先看有什麼
+xamla11y audit ./src --write-baseline a11y-baseline.json   # 把今天的記成已知
+xamla11y audit ./src --baseline a11y-baseline.json         # 之後只擋新增的
+```
+
+> 需要 **.NET 10 runtime**。只讀 XML、不相依 WPF，Linux、Windows、macOS 都能跑。
+> 還在 **0.x**：請釘確切版本，新版可能改變你會拿到哪些結果。
+>
+> **只檢查 WPF。** WinUI／UWP、Avalonia、MAUI 的檔案會認出來並回報「沒檢查」。
+
+**第一次請先 `--write-baseline`。** 多數 WPF 專案的輸入框一個名稱都沒寫，第一次跑會一口氣列出幾十筆。
+一上來就紅的閘門會被關掉；先記成已知，之後不再變多、改到哪個畫面就順手修。
+
+---
+
+## 找什麼
+
+| 種類 | WCAG | 預設 | |
+|---|---|---|---|
+| `missing-name` | 4.1.2、1.1.1 | fail | 按鈕、核取方塊、頁籤、選單…，螢幕閱讀器只念得出「按鈕」。**ToolTip 不是名稱**，WPF 把它當說明文字。 |
+| `text-not-in-name` | 4.1.2 | fail | 畫面上**有**字，但字在 `StackPanel`、`Border`、`AccessText` 裡。WPF 只從字串、`TextBlock`、`ContentControl` 取名稱。 |
+| `meaningless-name` | 4.1.2、1.1.1 | fail | 名稱是圖示字型的字元、空白、`System.Windows.Controls.TabItem`、或 Geometry 路徑。 |
+| `input-no-name` | 4.1.2、1.3.1、3.3.2 | fail | `TextBox`、`PasswordBox`、`RichTextBox`、`ComboBox`、`Slider`、`DatePicker` 沒有名稱。**`<Label Target=…>` 不會給名稱**（見下）。 |
+| `focus-not-visible` | 2.4.7 | fail | `FocusVisualStyle` 關掉了，範本與樣式也沒有別的東西畫出焦點。報在關掉的那一行，一次。 |
+| `mouse-only` | 2.1.1 | fail | `Border`、`Image`、`TextBlock`… 掛了點按，鍵盤沒有路。 |
+| `not-in-tab-order` | 2.1.1、2.4.3 | warn | `IsTabStop="False"` 或 `Focusable="False"`，又沒有存取鍵、`IsDefault`／`IsCancel` 這些看得到的入口。 |
+| `small-target` | 2.5.8 | warn | **你自己設的**大小小於 24 DIP，而且離鄰居太近、用不了間距例外。 |
+| `symbol-name` | 1.1.1 | info | 名稱只有 `×`、`…` 或表情符號。 |
+
+`xamla11y rules` 會印同一份清單與修法。
+
+這**不是** WCAG、EN 301 549 或歐盟無障礙法（EAA）的合規聲明：靜態工具只看得到其中一部分。
+
+## `Label.Target` 不會給名稱
+
+最常見的誤會，所以獨立一節。下面的寫法只讓存取鍵有目標，**TextBox 還是沒有無障礙名稱**：
+
+```xml
+<Label Content="_Name" Target="{Binding ElementName=NameBox}"/>
+<TextBox x:Name="NameBox"/>
+```
+
+在 .NET Framework 4.8 與 .NET 8、9、10、11 用 UI Automation client 實測，Axe-Windows 也會報。要這樣寫：
+
+```xml
+<Label x:Name="NameLabel" Content="_Name" Target="{Binding ElementName=NameBox}"/>
+<TextBox x:Name="NameBox" AutomationProperties.LabeledBy="{Binding ElementName=NameLabel}"/>
+```
+
+浮水印也不會變成名稱（MahApps.Metro 2.4、HandyControl 3.5、WPF-UI 4.3）；唯一的例外是
+MaterialDesignThemes 5.3 會把 `HintAssist.Hint` 當名稱，工具認得。
+
+## 怎麼知道的
+
+規則照 WPF **實際怎麼做**寫，而且每一條都跟真的 WPF 比：`prototype/UiaOracle` 把 XAML 開成真的視窗，從另一條執行緒的
+UI Automation client 讀樹（螢幕閱讀器看到的）、走 Tab、移動焦點比像素、跑 Axe-Windows。
+
+| 跟什麼比 | 案例 | 有答案 | 不知道 | **說錯** |
+|---|---:|---:|---:|---:|
+| UIA 名稱，手寫 | 235 | 224 | 11 | **0** |
+| UIA 名稱，控制項 × 內容 × 命名方式的窮舉 | 8,218 | 7,843 | 375 | **0** |
+| UIA 名稱，19 個真實專案裡的不同形狀 | 2,172 | 2,172 | 0 | **0** |
+| MahApps、MaterialDesign、HandyControl、WPF-UI、Fluent 底下的名稱 | 49 | 43 | 6 | **0** |
+| 焦點看得見（像素），預設與五個佈景 | 98 | 81 | 17 | **0** |
+| Tab 順序 | 27 | 25 | 2 | **0** |
+| 點擊範圍（BoundingRectangle） | 17 | 10 | 7 | **0** |
+
+「不知道」是對的答案；把念不出名字的說成沒問題才是錯的。WPF 的答案錄在 `tests/XamlA11y.Tests/uia-facts.json`，
+CI 在 Linux 上也比同一份。細節在 [docs/M1-UIA實測.md](docs/M1-UIA實測.md)。
+
+## 老實說看得到多少
+
+**可解析率** = 該有答案的元素裡，真的判得出來的比例。每次都印，`--min-coverage`（預設 60）當閘門：
+低於它是 exit 3「結果不可信」，不是 0。名稱來自資料的（`Content="{Binding Title}"`）會數出來，但不進分母。
+
+不設定、直接跑（後面幾欄是 finding 數。公開專案只讀 XAML、沒有 C# 與專案檔；ScreenToGif 例外，
+附上 C# 之後工具自己跟得到 `class ExtendedButton : Button`，從 36% 變 99%）。
+可解析率只算會擋建置的四條（名稱、輸入框、焦點、只能用滑鼠），另外兩條幾乎不會卡住，算進來只會墊高數字：
+
+| 專案 | XAML 檔 | 可解析率 | 控制項名稱 | 輸入框 | 焦點 | 只能用滑鼠 | Tab、大小 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Cornea (作者的 App) | 5 | **100.0%** | 0 | 19 | 0 | 0 | 0 |
+| Kindling (作者的 App) | 16 | **100.0%** | 7 | 17 | 0 | 1 | 0 |
+| QuillNest (作者的 App) | 32 | **99.5%** | 65 | 81 | 0 | 3 | 0 |
+| Bloxstrap | 40 | **87.5%** | 43 | 25 | 0 | 0 | 0 |
+| Flow.Launcher | 393 | **79.6%** | 28 | 107 | 0 | 3 | 11 |
+| GeekDesk | 33 | **87.4%** | 14 | 23 | 0 | 2 | 0 |
+| MAA | 89 | **81.2%** | 67 | 158 | 0 | 2 | 1 |
+| NETworkManager | 173 | **95.8%** | 245 | 475 | 0 | 0 | 37 |
+| Playnite | 275 | **100.0%** | 130 | 169 | 0 | 0 | 3 |
+| QuickLook | 56 | **97.0%** | 29 | 20 | 0 | 0 | 22 |
+| ScreenToGif (含 C#) | 121 | **99.3%** | 460 | 347 | 0 | 2 | 0 |
+| TwitchDownloader | 16 | **89.2%** | 44 | 54 | 0 | 26 | 0 |
+| v2rayN | 24 | **89.5%** | 82 | 167 | 0 | 0 | 0 |
+| VisualHFT | 49 | **100.0%** | 14 | 96 | 0 | 0 | 0 |
+| HandyControl (控制項庫) | 342 | **72.1%** | 238 | 169 | 0 | 0 | 0 |
+| MahApps.Metro (控制項庫) | 312 | **84.8%** | 161 | 379 | 0 | 0 | 0 |
+| MaterialDesignInXaml (控制項庫) | 368 | **90.7%** | 400 | 213 | 0 | 0 | 0 |
+| WPF-UI (控制項庫) | 229 | **82.7%** | 41 | 34 | 0 | 0 | 0 |
+
+**看不到的**
+
+- 程式碼裡設的名稱、內容、事件。只讀 XAML 檔自己的 code-behind，用來發現「它設了這個控制項的名稱或內容」（→ 不知道）與「這個處理器只是在拖視窗」。
+- 視窗資源裡的隱含樣式，套進它裡面放的 `UserControl`。
+- 資料給的名稱、`ItemsSource` 產生的項目。
+- 讀取順序、即時區域、高對比、名稱**好不好**、圖片是不是裝飾。
+- 清單與表格（`ListBox`、`DataGrid`…）沒有名稱：還沒檢查。
+- 大小或鄰居要到執行期才知道的點擊範圍：不判。
+
+## 選項
+
+| | |
+|---|---|
+| `--json`、`--sarif`、`--md <檔>` | 完整報告、code scanning、PR 留言用的 Markdown |
+| `--msbuild` | MSBuild 診斷：`XA0001` 擋下的、`XA0002` 不擋的、`XA0003` 結果不可信 |
+| `--baseline`、`--write-baseline <檔>` | 只擋新增的。鍵不含行號 |
+| `--fail-on fail\|warn` | 擋到哪個嚴重度 |
+| `--min-coverage <0-100>` | 可解析率低於它就 exit 3 |
+| `--config <檔>` | 預設 root 裡的 `xamla11y.config.json`（[欄位](docs/config-schema.md)） |
+| `--exclude <字>` | 路徑含這個字的跳過 |
+
+退出碼：**0** 通過 · **1** 有 `--fail-on` 以上的 · **2** 用法、設定或輸入錯誤 · **3** 結果不可信。
+
+要放過一個元素，在它前面寫註解，**理由必填**，沒寫理由等於沒寫：
+
+```xml
+<!-- xamla11y-ignore: 整列才是控制項，這個核取方塊只是顯示狀態 -->
+<CheckBox IsChecked="{Binding IsSelected}"/>
+```
+
+## GitHub Action
+
+```yaml
+permissions:
+  contents: read
+  pull-requests: write     # PR 留言
+  # security-events: write # sarif: true 才要
+
+steps:
+  - uses: actions/checkout@v4
+  - uses: HSU-YU-MING/cornhsu-xamla11y@v0.1.0
+    with:
+      root: src
+      version: 0.1.0
+      baseline: a11y-baseline.json
+```
+
+每一筆標在那一行、Markdown 報告變成一則會原地更新的 PR 留言、JSON 上傳成 artifact，全部出去之後最後才擋。
+
+| 輸入 | 預設 | |
+|---|---|---|
+| `root` | `.` | 要掃的資料夾 |
+| `working-directory` | `.` | `root`、`config`、`baseline` 相對於它 |
+| `version` | 最新 | 工具版本，請釘 |
+| `config` | root 裡的檔 | `xamla11y.config.json` |
+| `baseline` | | 進 repo 的 baseline |
+| `fail-on` | `fail` | `fail` 或 `warn` |
+| `min-coverage` | 設定檔，沒有就 `60` | |
+| `comment` | `true` | 貼 PR 留言 |
+| `upload-report` | `true` | 上傳 JSON 與 Markdown |
+| `sarif` | `false` | 上傳 code scanning |
+| `artifact-name` | `xamla11y-report` | 也決定 PR 留言是哪一則 |
+
+## 跟三件套一起用
+
+| | 問的問題 |
+|---|---|
+| [XamlContrast](https://github.com/HSU-YU-MING/cornhsu-xamlcontrast) | 看不看得清楚（顏色對比） |
+| [XamlKeys](https://github.com/HSU-YU-MING/cornhsu-xamlkeys) | 找不找得到（資源鍵） |
+| [XamlFit](https://github.com/HSU-YU-MING/cornhsu-xamlfit) | 裝不裝得下（文字寬度） |
+| **XamlA11y** | 按不按得到、念不念得出來 |
+
+退出碼、Action 輸入都一樣；報告檔、artifact、PR 留言、SARIF 工具名各自分開，四支可以放在同一個 job：
+[docs/four-tools.md](docs/four-tools.md)。`AutomationProperties.Name` 背後的資源鍵不存在是 XamlKeys 的事，這支把它當成有名稱。
+
+## 授權
+
+MIT。見 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。

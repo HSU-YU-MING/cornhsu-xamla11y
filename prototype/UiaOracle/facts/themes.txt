@@ -1,0 +1,54 @@
+# 佈景會不會替控制項補名稱（浮水印、提示字…）
+mahapps | TextBox watermark | <TextBox x:Name='p' mah:TextBoxHelper.Watermark='Search'/>
+mahapps | TextBox watermark + clear button | <TextBox x:Name='p' mah:TextBoxHelper.Watermark='Search' mah:TextBoxHelper.ClearTextButton='True'/>
+mahapps | PasswordBox watermark | <PasswordBox x:Name='p' mah:TextBoxHelper.Watermark='Pass'/>
+mahapps | ComboBox watermark | <ComboBox x:Name='p' mah:TextBoxHelper.Watermark='Font'/>
+mahapps | Button icon | <Button x:Name='p' ToolTip='Save'>[ICON]</Button>
+mahapps | Button text | <Button x:Name='p' Content='Save'/>
+mahapps | NumericUpDown | <mah:NumericUpDown x:Name='p'/>
+mahapps | ToggleSwitch header | <mah:ToggleSwitch x:Name='p' Header='Dark'/>
+mahapps | ToggleSwitch OnContent | <mah:ToggleSwitch x:Name='p' OnContent='On' OffContent='Off'/>
+mahapps | DropDownButton | <mah:DropDownButton x:Name='p' Content='More'/>
+mahapps | SplitButton | <mah:SplitButton x:Name='p'/>
+mahapps | Tile title | <mah:Tile x:Name='p' Title='Mail'/>
+mahapps | GroupBox/Expander | <Expander x:Name='p' Header='More'/>
+materialdesign | TextBox hint | <TextBox x:Name='p' materialDesign:HintAssist.Hint='Name'/>
+materialdesign | TextBox hint floating | <TextBox x:Name='p' Style='{StaticResource MaterialDesignFloatingHintTextBox}' materialDesign:HintAssist.Hint='Name'/>
+materialdesign | PasswordBox hint | <PasswordBox x:Name='p' materialDesign:HintAssist.Hint='Pass'/>
+materialdesign | ComboBox hint | <ComboBox x:Name='p' materialDesign:HintAssist.Hint='Font'/>
+materialdesign | Button PackIcon | <Button x:Name='p' ToolTip='Save'><materialDesign:PackIcon Kind='Abacus'/></Button>
+materialdesign | Button Content={PackIcon} | <Button x:Name='p' Content='{materialDesign:PackIcon Abacus}'/>
+materialdesign | Button StackPanel(PackIcon+text) | <Button x:Name='p'><StackPanel Orientation='Horizontal'><materialDesign:PackIcon Kind='Abacus'/><TextBlock Text='Save'/></StackPanel></Button>
+materialdesign | ToggleButton switch | <ToggleButton x:Name='p' Style='{StaticResource MaterialDesignSwitchToggleButton}'/>
+materialdesign | PopupBox | <materialDesign:PopupBox x:Name='p'/>
+materialdesign | Chip | <materialDesign:Chip x:Name='p' Content='Tag'/>
+materialdesign | Card | <materialDesign:Card x:Name='p' Content='Card'/>
+hc | TextBox InfoElement.Placeholder | <TextBox x:Name='p' hc:InfoElement.Placeholder='Name'/>
+hc | hc:TextBox title | <hc:TextBox x:Name='p' hc:InfoElement.Title='Name' hc:InfoElement.Placeholder='x'/>
+hc | hc:SearchBar | <hc:SearchBar x:Name='p' hc:InfoElement.Placeholder='Search'/>
+hc | hc:NumericUpDown | <hc:NumericUpDown x:Name='p'/>
+hc | hc:ComboBox | <hc:ComboBox x:Name='p' hc:InfoElement.Title='Font'/>
+hc | Button icon geometry | <Button x:Name='p' hc:IconElement.Geometry='M0,0 L10,10 Z'/>
+hc | Button icon geometry + text | <Button x:Name='p' hc:IconElement.Geometry='M0,0 L10,10 Z' Content='Save'/>
+wpfui | ui:Button icon | <ui:Button x:Name='p' Icon='{ui:SymbolIcon Save24}'/>
+wpfui | ui:Button icon + text | <ui:Button x:Name='p' Icon='{ui:SymbolIcon Save24}' Content='Save'/>
+wpfui | ui:TextBox placeholder | <ui:TextBox x:Name='p' PlaceholderText='Name'/>
+wpfui | ui:PasswordBox placeholder | <ui:PasswordBox x:Name='p' PlaceholderText='Pass'/>
+wpfui | ui:NumberBox | <ui:NumberBox x:Name='p' PlaceholderText='Age'/>
+wpfui | ui:AutoSuggestBox | <ui:AutoSuggestBox x:Name='p' PlaceholderText='Search'/>
+wpfui | ui:ToggleSwitch | <ui:ToggleSwitch x:Name='p' Content='Dark'/>
+wpfui | ui:ToggleSwitch OnContent | <ui:ToggleSwitch x:Name='p' OnContent='On' OffContent='Off'/>
+wpfui | ui:HyperlinkButton | <ui:HyperlinkButton x:Name='p' Content='Docs'/>
+wpfui | ui:CardAction | <ui:CardAction x:Name='p' Content='Open'/>
+wpfui | ui:CardAction panel | <ui:CardAction x:Name='p'><StackPanel><TextBlock Text='Open'/></StackPanel></ui:CardAction>
+wpfui | ui:SplitButton | <ui:SplitButton x:Name='p' Content='More'/>
+wpfui | ui:DropDownButton | <ui:DropDownButton x:Name='p' Content='More'/>
+fluent | TextBox | <TextBox x:Name='p'/>
+fluent | Button icon | <Button x:Name='p' ToolTip='Save'>[ICON]</Button>
+fluent | Button text | <Button x:Name='p' Content='Save'/>
+fluent | ComboBox | <ComboBox x:Name='p'/>
+materialdesign | hint, Style x:Null | <TextBox x:Name='p' Style='{x:Null}' materialDesign:HintAssist.Hint='Email'/>
+materialdesign | hint, own style no BasedOn | <TextBox x:Name='p' Style='{StaticResource s}' materialDesign:HintAssist.Hint='Email'/> | <Style x:Key='s' TargetType='TextBox'/>
+materialdesign | hint, own style BasedOn type | <TextBox x:Name='p' Style='{StaticResource s}' materialDesign:HintAssist.Hint='Email'/> | <Style x:Key='s' TargetType='TextBox' BasedOn='{StaticResource {x:Type TextBox}}'/>
+materialdesign | hint, own implicit style no BasedOn | <TextBox x:Name='p' materialDesign:HintAssist.Hint='Email'/> | <Style TargetType='TextBox'/>
+fluent | MaterialDesign hint without the MD theme | <TextBox x:Name='p' materialDesign:HintAssist.Hint='Email'/>

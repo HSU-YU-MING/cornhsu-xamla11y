@@ -1,0 +1,17 @@
+name: Bug — crash, wrong exit code, broken report or action
+description: Anything that is not about a single finding.
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version and OS
+      placeholder: "0.1.0, ubuntu-24.04"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: The command line, the output and the exit code. Mask private text.
+    validations:
+      required: true

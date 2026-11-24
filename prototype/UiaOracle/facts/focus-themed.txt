@@ -1,0 +1,14 @@
+# 每個佈景都跑一遍
+f | Button | <Button x:Name='p' Content='x' FocusVisualStyle='{x:Null}'/>
+f | ToggleButton | <ToggleButton x:Name='p' Content='x' FocusVisualStyle='{x:Null}'/>
+f | RepeatButton | <RepeatButton x:Name='p' Content='x' FocusVisualStyle='{x:Null}'/>
+f | CheckBox | <CheckBox x:Name='p' Content='x' FocusVisualStyle='{x:Null}'/>
+f | RadioButton | <RadioButton x:Name='p' Content='x' FocusVisualStyle='{x:Null}'/>
+f | ComboBox | <ComboBox x:Name='p' FocusVisualStyle='{x:Null}'><ComboBoxItem Content='x'/></ComboBox>
+f | Slider | <Slider x:Name='p' FocusVisualStyle='{x:Null}'/>
+f | own style without template | <Button x:Name='p' Content='x' Style='{StaticResource s}'/> | <Style x:Key='s' TargetType='Button'><Setter Property='FocusVisualStyle' Value='{x:Null}'/></Style>
+f | own style BasedOn type | <Button x:Name='p' Content='x' Style='{StaticResource s}'/> | <Style x:Key='s' TargetType='Button' BasedOn='{StaticResource {x:Type Button}}'><Setter Property='FocusVisualStyle' Value='{x:Null}'/></Style>
+f | own implicit style, no BasedOn | <Button x:Name='p' Content='x'/> | <Style TargetType='Button'><Setter Property='FocusVisualStyle' Value='{x:Null}'/></Style>
+f | own implicit style BasedOn type | <Button x:Name='p' Content='x'/> | <Style TargetType='Button' BasedOn='{StaticResource {x:Type Button}}'><Setter Property='FocusVisualStyle' Value='{x:Null}'/></Style>
+f | Style x:Null | <Button x:Name='p' Content='x' Style='{x:Null}' FocusVisualStyle='{x:Null}'/>
+f | own style with template | <Button x:Name='p' Content='x' Style='{StaticResource s}'/> | <Style x:Key='s' TargetType='Button'><Setter Property='FocusVisualStyle' Value='{x:Null}'/><Setter Property='Template'><Setter.Value><ControlTemplate TargetType='Button'><Border Background='Gray'><ContentPresenter/></Border></ControlTemplate></Setter.Value></Setter></Style>

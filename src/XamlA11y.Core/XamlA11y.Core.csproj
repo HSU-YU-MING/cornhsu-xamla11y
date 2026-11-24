@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>XamlA11y.Core</RootNamespace>
+    <!-- 純讀 XML，不相依 WPF：Linux CI 跑得動。 -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="XamlA11y.Tests" />
+  </ItemGroup>
+  <!-- 第三方控制項與佈景的事實：prototype/UiaOracle 在真的 WPF 裡量的。 -->
+  <ItemGroup>
+    <EmbeddedResource Include="../../data/known-controls.json" LogicalName="XamlA11y.Core.known-controls.json" />
+  </ItemGroup>
+</Project>

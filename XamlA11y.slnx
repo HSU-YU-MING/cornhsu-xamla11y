@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/XamlA11y.Cli/XamlA11y.Cli.csproj" />
+    <Project Path="src/XamlA11y.Core/XamlA11y.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/XamlA11y.Tests/XamlA11y.Tests.csproj" />
+  </Folder>
+</Solution>

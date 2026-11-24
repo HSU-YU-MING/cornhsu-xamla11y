@@ -1,0 +1,17 @@
+tab | Border MouseBinding | <Border x:Name='p' Background='Red' Height='20'><Border.InputBindings><MouseBinding Gesture='LeftClick' Command='ApplicationCommands.Copy'/></Border.InputBindings></Border>
+tab | Image MouseBinding | <Image x:Name='p' Width='20' Height='20'><Image.InputBindings><MouseBinding Gesture='LeftDoubleClick' Command='ApplicationCommands.Copy'/></Image.InputBindings></Image>
+tab | TextBlock MouseBinding | <TextBlock x:Name='p' Text='x'><TextBlock.InputBindings><MouseBinding MouseAction='LeftClick' Command='ApplicationCommands.Copy'/></TextBlock.InputBindings></TextBlock>
+tab | Label MouseBinding | <Label x:Name='p' Content='x'><Label.InputBindings><MouseBinding MouseAction='LeftClick' Command='ApplicationCommands.Copy'/></Label.InputBindings></Label>
+tab | Border focusable MouseBinding + KeyBinding | <Border x:Name='p' Focusable='True' Background='Red' Height='20'><Border.InputBindings><MouseBinding Gesture='LeftClick' Command='ApplicationCommands.Copy'/><KeyBinding Key='Enter' Command='ApplicationCommands.Copy'/></Border.InputBindings></Border>
+tab | Grid MouseBinding around Button | <Grid x:Name='p'><Grid.InputBindings><MouseBinding Gesture='LeftClick' Command='ApplicationCommands.Copy'/></Grid.InputBindings><Button x:Name='inner'/></Grid>
+tab | IsTabStop=False access key | <Button x:Name='p' IsTabStop='False' Content='_Save'/>
+tab | IsTabStop=False IsCancel | <Button x:Name='p' IsTabStop='False' IsCancel='True' Content='Cancel'/>
+tab | style IsTabStop=False | <Button x:Name='p' Style='{StaticResource s}'/> | <Style x:Key='s' TargetType='Button'><Setter Property='IsTabStop' Value='False'/></Style>
+tab | style KeyboardNavigation.IsTabStop=False | <Button x:Name='p' Style='{StaticResource s}'/> | <Style x:Key='s' TargetType='Button'><Setter Property='KeyboardNavigation.IsTabStop' Value='False'/></Style>
+tab | BasedOn Focusable=False overridden True | <Button x:Name='p' Style='{StaticResource d}'/> | <Style x:Key='s' TargetType='Button'><Setter Property='Focusable' Value='False'/></Style><Style x:Key='d' TargetType='Button' BasedOn='{StaticResource s}'><Setter Property='Focusable' Value='True'/></Style>
+tab | local True beats style False | <Button x:Name='p' IsTabStop='True' Style='{StaticResource s}'/> | <Style x:Key='s' TargetType='Button'><Setter Property='IsTabStop' Value='False'/></Style>
+tab | Slider IsTabStop=False | <Slider x:Name='p' IsTabStop='False'/>
+tab | CheckBox Focusable=False | <CheckBox x:Name='p' Focusable='False'/>
+tab | PasswordBox IsTabStop=False | <PasswordBox x:Name='p' IsTabStop='False'/>
+tab | RichTextBox Focusable=False | <RichTextBox x:Name='p' Focusable='False'/>
+tab | resource boolean | <Button x:Name='p' IsTabStop='{StaticResource no}'/> | <sys:Boolean x:Key='no'>False</sys:Boolean>

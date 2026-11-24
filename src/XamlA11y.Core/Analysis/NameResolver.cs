@@ -1,0 +1,572 @@
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
+using XamlA11y.Core.Xaml;
+
+namespace XamlA11y.Core.Analysis;
+
+public enum NameKind
+{
+    /// <summary>有名稱。</summary>
+    Named,
+    /// <summary>有設名稱，值要到執行期才知道（綁定資料）。專案改不了「靜態看不到」，不進可解析率的分母。</summary>
+    DataBound,
+    /// <summary>UIA 的 Name 是空的。</summary>
+    Missing,
+    /// <summary>名稱是空的，但畫面上有文字 —— 放在面板裡，WPF 不會拿它當名稱。</summary>
+    TextNotUsed,
+    /// <summary>UIA 的 Name 不是空的，但念出來沒有意義（私用區字元、空白、型別名、Geometry 路徑、圖示字型的字母）。</summary>
+    Meaningless,
+    /// <summary>只有符號或表情（×、…、🗑）：有名稱，念出來是符號的名字。</summary>
+    SymbolOnly,
+    /// <summary>讀不出來。</summary>
+    Unknown,
+}
+
+/// <param name="Text">看得到的名稱文字（Named、TextNotUsed、Meaningless、SymbolOnly）。</param>
+/// <param name="Why">給人看的原因。</param>
+public readonly record struct NameResult(NameKind Kind, string? Text = null, string? Why = null)
+{
+    public static NameResult Named(string? text) => new(NameKind.Named, text);
+    public static NameResult Missing(string why) => new(NameKind.Missing, null, why);
+    public static NameResult Unknown(string why) => new(NameKind.Unknown, null, why);
+    public static NameResult Bound(string why) => new(NameKind.DataBound, null, why);
+}
+
+/// <summary>
+/// 照 WPF 實際的取法算一個元素的 UIA 名稱（docs/M1-UIA實測.md 第 2 節；每一條都進 UiaOracle 比對）。
+/// </summary>
+public sealed partial class NameResolver(Project project)
+{
+    private readonly StyleIndex _styles = project.Styles;
+    private const int MaxSteps = 2000;
+    private int _steps;
+
+    private const string NameProperty = "AutomationProperties.Name";
+    private const string LabeledByProperty = "AutomationProperties.LabeledBy";
+
+    /// <param name="control">它照哪個 WPF 控制項算（<see cref="Project.ControlOf"/>）。</param>
+    public NameResult Resolve(XElement e, string control, int depth = 0)
+    {
+        if (depth > 12) return NameResult.Unknown("the labelling chain is too deep");
+        // 一個元素最多看這麼多步：深度有上限、分支沒有（觸發器互相引用資源，600 位元組的 XAML 就能跑不完）
+        if (depth == 0) _steps = 0;
+        if (++_steps > MaxSteps) return NameResult.Unknown("its content is too complex to follow");
+
+        // 1. AutomationProperties.Name
+        if (ExplicitName(e, depth) is { } named) return named;
+
+        // 2. 佈景補的名稱（MaterialDesign 的 HintAssist.Hint）
+        if (FromTheme(e, control) is { } themed) return themed;
+
+        // 3. LabeledBy
+        if (FromLabel(e, depth) is { } labeled) return labeled;
+
+        // code-behind 設名稱：靜態看不到值
+        if (project.CodeNames(e)) return NameResult.Unknown("the code-behind sets its accessible name");
+
+        // 4. 自己的純文字
+        var source = Wpf.NameSourceOf(control);
+        var result = source switch
+        {
+            NameSource.Text => TextOf(e, depth),
+            NameSource.Inlines => InlineText(e, depth),
+            NameSource.Content => ContentName(e, "Content", control, depth),
+            NameSource.Header => ContentName(e, "Header", control, depth),
+            NameSource.NoText or NameSource.Nothing => NameResult.Missing("it has no AutomationProperties.Name and nothing labels it"),
+            _ => NameResult.Unknown($"<{e.Name.LocalName}> is not a control this tool knows"),
+        };
+
+        // RoutedUICommand 的文字：ButtonBase 的 peer 在名稱是空的時候拿它（內容是圖示也一樣，UiaOracle「Command with icon content」）
+        if (result.Kind is NameKind.Missing or NameKind.TextNotUsed && Wpf.Buttons.Contains(control) && CommandText(e) is { } fromCommand)
+            return fromCommand;
+
+        // 名稱只在觸發器裡設：有時候有、有時候沒有
+        if (result.Kind is NameKind.Missing or NameKind.TextNotUsed or NameKind.Meaningless && TriggerSets(e, NameProperty))
+            return NameResult.Unknown("a trigger sets its accessible name");
+        return result;
+    }
+
+    // ───────────────────────── 明寫的名稱 ─────────────────────────
+
+    private NameResult? ExplicitName(XElement e, int depth)
+    {
+        var r = _styles.Resolve(e, NameProperty);
+        if (r.Kind == ResolveKind.NotSet) return null;
+        if (r.IsUnreadable)
+        {
+            // 資源引用：名稱**有**設，只是讀不到值 → 算有名稱（鍵在不在是 XamlKeys 的事）。
+            // 樣式在專案外：不知道它設不設名稱 → 當成沒設，其餘照看（樣式替圖示按鈕設名稱極少見，當「不知道」會讓每個套外部樣式的按鈕都不判）
+            if (r.Origin is null) return null;
+            return Markup.IsMarkup(r.Value) ? NameResult.Named(null) : NameResult.Unknown("its accessible name is " + r.Why);
+        }
+        if (r.Element is not null || r.Value is null) return NameResult.Named(null);
+        if (r.IsNull) return null;
+
+        if (Markup.IsMarkup(r.Value))
+        {
+            // 綁到自己的 ToolTip／Tag／Content：那個屬性沒設就等於沒設名稱
+            if (Markup.SelfBindingPath(r.Value) is { Length: > 0 } path && Regex.IsMatch(path, @"^\(?[\w:.]+\)?$", RegexOptions.CultureInvariant))
+            {
+                var name = StyleIndex.NormalizeProperty(path);
+                if (name is "Command.Text" or "Text") return NameResult.Bound("the name is bound to " + path);
+                var target = _styles.Resolve(e, name);
+                if (target.Kind == ResolveKind.NotSet) return null;
+                if (target.IsUnreadable) return NameResult.Named(null);
+                if (target.Element is { } te)
+                    return te.Name.LocalName is "ToolTip" or "TextBlock" ? NameResult.Named(null) : NameResult.Unknown($"the name is bound to {path}, which is an object");
+                return Markup.IsMarkup(target.Value) ? NameResult.Bound("the name is bound to " + path)
+                    : string.IsNullOrEmpty(target.Value) ? null : Judge(target.Value!, null);
+            }
+            return NameResult.Bound("the name comes from " + Markup.ExtensionName(r.Value));
+        }
+
+        var literal = Markup.Literal(r.Value);
+        if (literal.Length == 0) return null;
+        return Judge(literal, null);
+    }
+
+    private bool TriggerSets(XElement e, string property)
+    {
+        bool Sets(IEnumerable<XElement> triggers) => triggers.SelectMany(t => t.Descendants()).Any(s =>
+            s.Name.LocalName == "Setter" && s.Attribute("TargetName") is null
+            && s.Attribute("Property")?.Value is { } p && StyleIndex.NormalizeProperty(p) == property);
+
+        if (_styles.ChainsOf(e).Any(c => c.Styles.Any(s => Sets(s.Triggers)))) return true;
+        return _styles.TemplatesOf(e).Any(t => t.Template is { } template
+            && Sets(template.Elements().Where(x => x.Name.LocalName == "ControlTemplate.Triggers")));
+    }
+
+    private NameResult? FromTheme(XElement e, string control)
+    {
+        foreach (var lib in KnownControls.Libraries)
+            foreach (var (property, controls) in lib.NameFrom)
+            {
+                if (!controls.Contains(control, StringComparer.Ordinal)) continue;
+                var r = _styles.Resolve(e, property);
+                // 樣式在專案外的「讀不出來」不算設了（Origin 是 null）：語料有 880 個輸入框因此被誤當成有 Hint
+                if (!r.IsSet || r.Origin is null || r is { IsValue: true, Value: "" }) continue;
+
+                // 名稱是佈景的**樣式**給的：樣式被換掉、佈景沒合併就沒有（UiaOracle themes「hint, …」）
+                var keeps = _styles.KeepsThemeStyle(e);
+                if (keeps == false) continue;
+                if (keeps is null && !(Markup.ResourceKey((string?)e.Attribute("Style")) is { } key && key.StartsWith("MaterialDesign", StringComparison.Ordinal)))
+                    return NameResult.Unknown($"its style is outside the project, so whether {lib.Package} still names it from {property} is unknown");
+                if (!project.ThemesOf(StyleIndex.FileOf(e)).Any(t => t.LibraryId == lib.Id))
+                    return NameResult.Unknown($"{lib.Package} names it from {property} only where its theme is merged, and that was not found in the XAML");
+                var versions = project.PackageVersions(lib.Package);
+                if (versions.Count > 0 && versions.All(v => KnownLibrary.MajorMinorOf(v) == lib.MajorMinor))
+                    return r.IsValue && r.Value is { } v && !Markup.IsMarkup(v) ? NameResult.Named(v) : NameResult.Named(null);
+                return NameResult.Unknown(versions.Count == 0
+                    ? $"{lib.Package} {lib.Version} names it from {property}; the project's {lib.Package} version was not found"
+                    : $"{lib.Package} {lib.Version} names it from {property}; the project uses {string.Join(", ", versions.Order(StringComparer.Ordinal))}, which was not measured");
+            }
+        return null;
+    }
+
+    // ───────────────────────── LabeledBy ─────────────────────────
+
+    private NameResult? FromLabel(XElement e, int depth)
+    {
+        var r = _styles.Resolve(e, LabeledByProperty);
+        if (!r.IsValue) return null;
+        if (r.Element is { } inline)
+        {
+            if (project.ControlOf(inline) is { } c) return Through(inline, c);
+            return NameResult.Unknown("LabeledBy is set to an element this tool does not know");
+        }
+        if (Markup.ReferencedElement(r.Value) is not { } name)
+            return r.IsNull || string.IsNullOrEmpty(r.Value) ? null : NameResult.Unknown("LabeledBy is set to something this tool cannot follow");
+
+        var found = FindNamed(e, name);
+        if (found is null) return NameResult.Unknown($"LabeledBy points at '{name}', which is not in this file");
+        if (project.ControlOf(found) is not { } control) return NameResult.Unknown($"LabeledBy points at <{found.Name.LocalName}>, which this tool does not know");
+        return Through(found, control);
+
+        // 指到的東西沒有名稱 → 等於沒有 LabeledBy（往下看自己的文字）
+        NameResult? Through(XElement target, string control)
+        {
+            // 沒有 AutomationPeer 的元素（Border、面板、圖形、ContentControl…）寫了 Name 也沒有人念得到
+            if (!Wpf.HasPeer(control)) return null;
+            var label = Resolve(target, control, depth + 1);
+            return label.Kind is NameKind.Missing or NameKind.TextNotUsed ? null : label;
+        }
+    }
+
+    /// <summary>同一份文件裡 x:Name 是這個名字的元素。範本各有自己的名稱範圍：先找同一個範本裡的。</summary>
+    internal static XElement? FindNamed(XElement from, string name)
+    {
+        static bool IsTemplate(XElement e) => e.Name.LocalName is "ControlTemplate" or "DataTemplate" or "HierarchicalDataTemplate" or "ItemsPanelTemplate";
+        // 由內往外一層一層找；裡面的範本是別的名稱範圍，看不進去
+        for (var scope = from.Ancestors().FirstOrDefault(IsTemplate) ?? from.Document?.Root; scope is not null;
+             scope = scope.Parent is null ? null : scope.Ancestors().FirstOrDefault(IsTemplate) ?? scope.Document?.Root)
+        {
+            var here = scope;
+            var found = here.DescendantsAndSelf().FirstOrDefault(d => Markup.NameOf(d) == name && !d.Ancestors().TakeWhile(a => a != here).Any(IsTemplate));
+            if (found is not null) return found;
+        }
+        return null;
+    }
+
+    // ───────────────────────── 純文字 ─────────────────────────
+
+    /// <summary>ContentControl／HeaderedControl：看 Content 或 Header。</summary>
+    private NameResult ContentName(XElement e, string property, string control, int depth)
+    {
+        var value = ContentValue(e, property);
+        var result = value is null ? null : (NameResult?)FromObject(value.Value, e, control, depth);
+
+        // 觸發器換內容（播放／暫停）：每一種都要看
+        var alternatives = TriggerValues(e, property).Select(v => FromObject(v, e, control, depth)).ToList();
+        if (alternatives.Count > 0)
+        {
+            // 沒有平常的內容：觸發器沒成立的時候就是空的
+            var all = alternatives.Append(result ?? NothingFor(control, $"it has no {property} until a trigger sets one")).ToList();
+            if (all.FirstOrDefault(x => x.Kind == NameKind.Unknown) is { Kind: NameKind.Unknown } unknown) return unknown;
+            var named = all.Count(x => x.Kind is NameKind.Named or NameKind.DataBound or NameKind.SymbolOnly);
+            if (named == all.Count || named == 0) return all[0];
+            return NameResult.Unknown($"a trigger changes its {property}; some values name it and some do not");
+        }
+
+        if (result is { } r) return r;
+
+        if (property == "Content" && e.Name.LocalName is not ("ListBoxItem" or "ComboBoxItem") && project.DocOfClass(e) is { } own)
+        {
+            // <local:Foo/>：內容寫在它自己的 XAML 裡
+            if (project.CodeSets(e, property)) return NameResult.Unknown($"the code-behind sets its {property}");
+            return project.ControlOf(own.Root) is { } c ? Resolve(own.Root, c, depth + 1) : NameResult.Unknown($"the root of {own.File} is not a control this tool knows");
+        }
+
+        if (project.CodeSets(e, property)) return NameResult.Unknown($"the code-behind sets its {property}");
+
+        // MenuItem 沒有 Header：RoutedUICommand 的文字變成 Header
+        if (control == "MenuItem" && CommandText(e) is { } header) return header;
+
+        var chains = _styles.ChainsOf(e);
+        if (chains.Any(c => c.Unknown is not null && c.Styles.Count == 0) && e.Attribute("Style") is not null)
+            return NameResult.Unknown("its style is outside the project and may set the " + property.ToLowerInvariant());
+
+        return Wpf.Items.Contains(control)
+            ? new NameResult(NameKind.Meaningless, null, $"it has no {property}, so its name is the type name")
+            : NameResult.Missing($"it has no {property} and no AutomationProperties.Name");
+    }
+
+    /// <summary>命令是有文字的 RoutedUICommand → 有名稱；自訂的 x:Static 命令 → 不知道；綁定的命令 → null。</summary>
+    private NameResult? CommandText(XElement e)
+    {
+        if (_styles.Resolve(e, "Command") is not { IsValue: true, Value: { } c }) return null;
+        if (IsBuiltInCommand(e, c)) return NameResult.Named(null);
+        return Markup.ExtensionName(c) == "x:Static" || !Markup.IsMarkup(c) ? NameResult.Unknown("its Command may be a RoutedUICommand, whose text would be the name") : null;
+    }
+
+    private readonly record struct ContentVal(string? Text, XElement? Element);
+
+    /// <summary>Content／Header 設成什麼：屬性、屬性元素、直接內容、樣式。沒設回 null。</summary>
+    private ContentVal? ContentValue(XElement e, string property)
+    {
+        var local = _styles.LocalValue(e, property);
+        if (local.IsValue) return local.Element is { } el ? new ContentVal(null, el) : new ContentVal(local.Value ?? "", null);
+        if (local.IsUnreadable) return new ContentVal(local.Value ?? "{?}", null);
+
+        if (property == "Content")
+        {
+            var children = Markup.ContentElements(e);
+            var text = Markup.OwnText(e);
+            if (children.Count > 0) return new ContentVal(null, children[0]);
+            if (text.Length > 0) return new ContentVal(text, null);
+        }
+
+        var styled = _styles.Resolve(e, property);
+        if (styled.IsValue) return styled.Element is { } el ? new ContentVal(null, el) : new ContentVal(styled.Value ?? "", null);
+        if (styled.IsUnreadable && styled.Origin is not null) return new ContentVal(styled.Value ?? "{?}", null);
+        return null;
+    }
+
+    /// <summary>樣式觸發器裡設的 Content／Header。</summary>
+    private IEnumerable<ContentVal> TriggerValues(XElement e, string property)
+    {
+        foreach (var chain in _styles.ChainsOf(e))
+            foreach (var s in chain.Styles)
+                foreach (var setter in s.Triggers.SelectMany(t => t.Descendants()).Where(x => x.Name.LocalName == "Setter" && x.Attribute("TargetName") is null))
+                    if (setter.Attribute("Property")?.Value is { } p && StyleIndex.NormalizeProperty(p) == property)
+                    {
+                        var v = _styles.SetterValue(setter);
+                        yield return v.Element is { } el ? new ContentVal(null, el) : new ContentVal(v.Value ?? "{?}", null);
+                    }
+    }
+
+    private NameResult FromObject(ContentVal value, XElement owner, string control, int depth)
+    {
+        if (value.Element is { } element) return FromElement(element, owner, control, depth);
+        var raw = value.Text ?? "";
+        if (!Markup.IsMarkup(raw))
+        {
+            var text = Markup.Literal(raw);
+            if (text.Trim().Length == 0)
+                return text.Length == 0
+                    ? NothingFor(control, "its content is an empty string")
+                    : new NameResult(NameKind.Meaningless, text, "its content is only white space");
+            return Judge(RemoveAccessKey(text, control), FontOf(owner));
+        }
+
+        switch (Markup.ExtensionName(raw))
+        {
+            case "x:Null":
+                return control == "MenuItem" && CommandText(owner) is { } fromCommand ? fromCommand : NothingFor(control, "its content is null");
+            case "Binding" or "MultiBinding" or "PriorityBinding" or "x:Bind" or "TemplateBinding" or "CompiledBinding":
+                if (Markup.SelfBindingPath(raw) == "Command.Text") return NameResult.Named(null);
+                return NameResult.Bound($"its content is bound ({raw})");
+            case "x:Static":
+                return raw.Contains("Symbol", StringComparison.OrdinalIgnoreCase) || raw.Contains("Icon", StringComparison.OrdinalIgnoreCase) || raw.Contains("Glyph", StringComparison.OrdinalIgnoreCase)
+                    ? NameResult.Unknown($"its content is {raw}, which looks like an icon")
+                    : NameResult.Named(null);
+            case "StaticResource" or "DynamicResource" or "ThemeResource":
+                // 解得到的在 StyleIndex 就換成值了；走到這裡是專案裡沒有這個鍵（或同名的定義不一致）
+                return NameResult.Unknown($"its content is {raw}, which this tool cannot resolve");
+            case { } ext:
+                var local = ext[(ext.LastIndexOf(':') + 1)..];
+                if (IsIconExtension(owner, ext)) return NothingFor(control, $"its content is an icon ({{{ext}}})");
+                return LocalizationRegex().IsMatch(local) ? NameResult.Named(null) : NameResult.Unknown($"its content comes from the markup extension {{{ext} …}}");
+            default: return NameResult.Unknown($"its content is {raw}");
+        }
+    }
+
+    /// <summary>{materialDesign:PackIcon X}、{ui:SymbolIcon X}：回傳的是圖示元素。</summary>
+    private static bool IsIconExtension(XElement at, string extension)
+    {
+        var colon = extension.IndexOf(':');
+        if (colon <= 0) return false;
+        var local = extension[(colon + 1)..];
+        if (at.GetNamespaceOfPrefix(extension[..colon]) is not { } ns) return false;
+        return KnownControls.LibraryOf(ns.NamespaceName) is { } lib
+               && (lib.IconExtensions.Contains(local, StringComparer.Ordinal) || lib.IconPrefix is { } p && local.StartsWith(p, StringComparison.Ordinal));
+    }
+
+    [GeneratedRegex(@"^(Loc|Localize|Localization|LocText|Localized\w*|L10n|I18n|Lang\w*|Tr|T|Translate\w*|Translation\w*|Text|ResX|Resx|Res|String\w*|Str)(Extension)?$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex LocalizationRegex();
+
+    private NameResult FromElement(XElement c, XElement owner, string control, int depth)
+    {
+        // 互相引用的資源（<StaticResource x:Key="a" ResourceKey="b"/> 兩個繞圈）會堆疊溢位
+        if (depth > 16 || ++_steps > MaxSteps) return NameResult.Unknown("its content is nested or aliased too deeply");
+        var local = c.Name.LocalName;
+        if (c.Name.NamespaceName.StartsWith("clr-namespace:System", StringComparison.Ordinal) && local is "String")
+        {
+            var t = c.Value.Trim();
+            return t.Length == 0 ? NothingFor(control, "its content is an empty string") : Judge(RemoveAccessKey(t, control), FontOf(owner));
+        }
+        // 其他值型別：ToString()
+        if (c.Name.NamespaceName.StartsWith("clr-namespace:System;", StringComparison.Ordinal) && !c.HasElements) return NameResult.Named(c.Value.Trim());
+
+        // 綁定寫成元素、資源引用寫成元素
+        if (local is "Binding" or "MultiBinding" or "PriorityBinding" or "TemplateBinding") return NameResult.Bound("its content is bound");
+        if (local is "StaticResource" or "DynamicResource" or "StaticResourceExtension" or "DynamicResourceExtension")
+        {
+            if ((string?)c.Attribute("ResourceKey") is not { } key) return NameResult.Unknown("its content is a resource this tool cannot read");
+            var found = _styles.FindResources(c, key);
+            return found.Count == 0 ? NameResult.Unknown($"resource '{key}' is not defined in the project") : FromElement(found[0], owner, control, depth + 1);
+        }
+
+        // 不是 FrameworkElement 的物件：名稱是 ToString()
+        if (local is "Geometry" or "PathGeometry" or "StreamGeometry" or "GeometryGroup" or "CombinedGeometry")
+            return new NameResult(NameKind.Meaningless, null, "its content is a Geometry, so its name is the path data");
+        if (local is "DrawingImage" or "BitmapImage" or "CroppedBitmap" or "DrawingBrush" or "ImageBrush" or "GeometryDrawing" or "DrawingGroup" or "SolidColorBrush" or "VisualBrush")
+            return new NameResult(NameKind.Meaningless, null, $"its content is a {local}, so its name is the type name or a file path");
+
+        var known = project.ControlOf(c);
+        if (known is null)
+        {
+            return LooksLikeIcon(local)
+                ? NothingFor(control, $"its content is only <{local}>, which looks like an icon")
+                : NameResult.Unknown($"its content is <{local}>, and this tool does not know what text that gives");
+        }
+
+        switch (Wpf.NameSourceOf(known))
+        {
+            case NameSource.Text:
+                var text = TextOf(c, depth + 1);
+                return text.Kind == NameKind.Missing ? NothingFor(control, text.Why ?? "its content is an empty TextBlock") : text;
+            case NameSource.Content or NameSource.Header:
+                // 內層的 ContentControl：只看它的純文字，不看它的 AutomationProperties.Name
+                var inner = ContentName(c, Wpf.NameSourceOf(known) == NameSource.Content ? "Content" : "Header", known, depth + 1);
+                return inner.Kind is NameKind.Missing or NameKind.TextNotUsed ? NothingFor(control, inner.Why ?? "", inner.Text) : inner;
+            case NameSource.NoText when known == "TextBox":
+                // TextBox 當內容：它的 Text 是純文字（窮舉抓到的）
+                var typed = _styles.Resolve(c, "Text");
+                if (typed is { IsValue: true, Value: { } tv })
+                    return Markup.IsMarkup(tv) ? NameResult.Bound("its content is a TextBox with bound text") : tv.Length == 0 ? NothingFor(control, "its content is an empty TextBox") : Judge(tv, null);
+                return NameResult.Unknown("its content is a TextBox, whose text becomes the name");
+            case NameSource.NoText when known is "ComboBox" or "RichTextBox":
+                return NameResult.Unknown($"its content is a {known}, whose text becomes the name");
+            default:
+                var visible = VisibleText(c);
+                return NothingFor(control, visible is null
+                        ? $"its content is <{local}>, which gives no text"
+                        : $"the text is inside <{local}>; WPF only takes the name from a string, a TextBlock or a ContentControl",
+                    visible);
+        }
+    }
+
+    /// <summary>內容不給文字。項目容器的名稱變成型別名（不是空的），其他的是空名稱。</summary>
+    private static NameResult NothingFor(string control, string why, string? visible = null) =>
+        Wpf.Items.Contains(control)
+            ? new NameResult(NameKind.Meaningless, visible, why + "; its name becomes the type name")
+            : visible is null ? NameResult.Missing(why) : new NameResult(NameKind.TextNotUsed, visible, why);
+
+    /// <summary>元素底下看得到的文字（面板裡的 TextBlock）；綁定的文字寫成 "{…}"。沒有文字回 null。</summary>
+    private string? VisibleText(XElement root)
+    {
+        foreach (var d in root.DescendantsAndSelf())
+        {
+            if (Markup.IsPropertyElement(d) || d.Ancestors().TakeWhile(a => a != root).Any(a => a.Name.LocalName.EndsWith(".ToolTip", StringComparison.Ordinal) || a.Name.LocalName.EndsWith(".Resources", StringComparison.Ordinal)))
+                continue;
+            var c = project.ControlOf(d);
+            if (c is "TextBlock" or "AccessText" or "Label")
+            {
+                var raw = (string?)d.Attribute(c == "Label" ? "Content" : "Text") ?? (d.HasElements ? null : d.Value.Trim());
+                if (raw is null && d.Elements().Any(x => x.Name.LocalName == "Run")) raw = string.Concat(d.Elements().Where(x => x.Name.LocalName == "Run").Select(x => (string?)x.Attribute("Text") ?? x.Value));
+                if (string.IsNullOrWhiteSpace(raw)) continue;
+                if (Markup.IsMarkup(raw)) return "{…}";
+                if (Judge(raw, FontOf(d)).Kind == NameKind.Named) return raw.Trim();
+            }
+        }
+        return null;
+    }
+
+    private static bool LooksLikeIcon(string local) =>
+        local.Contains("Icon", StringComparison.OrdinalIgnoreCase) || local.Contains("Glyph", StringComparison.OrdinalIgnoreCase)
+        || local.Contains("Awesome", StringComparison.OrdinalIgnoreCase) || local.StartsWith("Svg", StringComparison.OrdinalIgnoreCase)
+        || local is "SymbolIcon" or "CachedImage" or "ImageEx";
+
+    /// <summary>TextBlock 的文字（Text 屬性、直接文字、Run）。</summary>
+    private NameResult TextOf(XElement e, int depth)
+    {
+        var r = _styles.Resolve(e, "Text");
+        if (r.IsUnreadable) return Markup.IsMarkup(r.Value) ? NameResult.Named(null) : NameResult.Unknown("its Text is set by a style this tool cannot read");
+        if (r is { IsValue: true, Value: { } v })
+        {
+            if (Markup.IsMarkup(v)) return Markup.ExtensionName(v) is "Binding" or "TemplateBinding" or "x:Bind" ? NameResult.Bound("its text is bound") : NameResult.Named(null);
+            var t = Markup.Literal(v);
+            return t.Length == 0 ? NameResult.Missing("its text is empty") : Judge(t, FontOf(e));
+        }
+        if (r.IsValue) return NameResult.Bound("its text is set with an object");
+        if (TriggerValues(e, "Text").Any()) return NameResult.Bound("a trigger sets its text");
+        if (project.CodeSets(e, "Text", "Inlines")) return NameResult.Unknown("the code-behind sets its text");
+        return InlineText(e, depth);
+    }
+
+    /// <summary>行內的文字：文字節點與 Run。InlineUIContainer 裡的東西不算（WPF 給一個空白）。</summary>
+    private NameResult InlineText(XElement e, int depth)
+    {
+        var sb = new StringBuilder();
+        var bound = false;
+        var container = false;
+        void Visit(XElement x)
+        {
+            foreach (var node in x.Nodes())
+            {
+                if (node is XText t) sb.Append(t.Value);
+                else if (node is XElement holder && Markup.IsPropertyElement(holder))
+                {
+                    // <Hyperlink.Inlines>（Playnite）、<Run.Text>
+                    if (holder.Name.LocalName.EndsWith(".Inlines", StringComparison.Ordinal)) Visit(holder);
+                    else if (holder.Name.LocalName == "Run.Text")
+                    {
+                        if (holder.HasElements) bound = true; else sb.Append(holder.Value);
+                    }
+                }
+                else if (node is XElement el)
+                {
+                    if (el.Name.LocalName is "InlineUIContainer") { container = true; continue; }
+                    if (el.Name.LocalName == "LineBreak") { sb.Append(' '); continue; }
+                    if (el.Name.LocalName == "Run" && (string?)el.Attribute("Text") is { } text)
+                    {
+                        if (Markup.IsMarkup(text)) bound = true; else sb.Append(Markup.Literal(text));
+                    }
+                    if (el.Name.LocalName is "Run" or "Bold" or "Italic" or "Underline" or "Span" or "Hyperlink" or "Paragraph") Visit(el);
+                    else if (el.Name.LocalName is "Binding" or "MultiBinding") bound = true;
+                    else if (!Markup.IsWpf(el)) bound = true;         // 專案自己的 Run 子類別
+                    else container = true;                            // 直接放 UIElement：WPF 包進 InlineUIContainer
+                }
+            }
+        }
+        Visit(e);
+        var found = sb.ToString().Trim();
+        if (found.Length > 0) return Judge(found, FontOf(e));
+        if (bound) return NameResult.Bound("its text is bound");
+        if (project.CodeSets(e, "Text", "Inlines")) return NameResult.Unknown("the code-behind sets its text");
+        return container
+            ? new NameResult(NameKind.Meaningless, " ", "it only contains an element, and WPF turns that into a single space")
+            : NameResult.Missing("it has no text");
+    }
+
+    // ───────────────────────── 文字有沒有意義 ─────────────────────────
+
+    /// <summary>元素的字型家族（本地、樣式；沿祖先找繼承值）。</summary>
+    private string? FontOf(XElement e)
+    {
+        for (XElement? cur = e; cur is not null; cur = cur.Parent)
+        {
+            if (Markup.IsPropertyElement(cur)) continue;
+            foreach (var property in (ReadOnlySpan<string>)["FontFamily"])
+            {
+                var r = _styles.Resolve(cur, property);
+                if (r is { IsValue: true, Value: { } v }) return v;
+                if (r is { IsValue: true, Element: { } el }) return (string?)el.Attribute("Source") ?? el.Value;
+                if (r.IsUnreadable) return Markup.ResourceKey(r.Value) ?? r.Value;
+            }
+            foreach (var a in cur.Attributes())
+                if (a.Name.LocalName is "TextElement.FontFamily" or "TextBlock.FontFamily") return a.Value;
+            if (cur.Name.LocalName is "ControlTemplate" or "DataTemplate") return null;
+        }
+        return null;
+    }
+
+    /// <summary>看得到的文字 → 名稱有沒有意義。</summary>
+    internal static NameResult Judge(string text, string? font)
+    {
+        var t = text.Trim();
+        if (t.Length == 0) return new NameResult(NameKind.Meaningless, text, "its name is only white space");
+
+        bool anyLetter = false, anyPrivate = false;
+        foreach (var rune in t.EnumerateRunes())
+        {
+            var cat = Rune.GetUnicodeCategory(rune);
+            if (cat == UnicodeCategory.PrivateUse) anyPrivate = true;
+            else if (Rune.IsLetterOrDigit(rune) || cat is UnicodeCategory.NonSpacingMark or UnicodeCategory.SpacingCombiningMark) anyLetter = true;
+        }
+        if (anyPrivate && !anyLetter) return new NameResult(NameKind.Meaningless, Escape(t), "its name is an icon-font character from the private use area");
+        if (font is not null && Wpf.IsIconFont(font)) return new NameResult(NameKind.Meaningless, Escape(t), $"its text is drawn as an icon by the font '{font}'; a screen reader reads the raw characters");
+        if (!anyLetter) return new NameResult(NameKind.SymbolOnly, t, "its name is only symbols");
+        return new NameResult(NameKind.Named, t);
+    }
+
+    internal static string Escape(string s) => string.Concat(s.EnumerateRunes().Select(r =>
+        Rune.GetUnicodeCategory(r) == UnicodeCategory.PrivateUse ? $"U+{r.Value:X4}" : r.ToString()));
+
+    private static string RemoveAccessKey(string text, string control)
+    {
+        if (!text.Contains('_', StringComparison.Ordinal)) return text;
+        return text.Replace("__", "\u0001", StringComparison.Ordinal).Replace("_", "", StringComparison.Ordinal).Replace("\u0001", "_", StringComparison.Ordinal);
+    }
+
+    /// <summary>WPF 內建、有文字的 RoutedUICommand。</summary>
+    private static bool IsBuiltInCommand(XElement at, string command)
+    {
+        var c = command.Trim();
+        if (Markup.ExtensionName(c) == "x:Static") c = Markup.ExtensionBody(c);
+        if (Markup.IsMarkup(c)) return false;
+        var dot = c.LastIndexOf('.');
+        if (dot < 0) return c is "Copy" or "Cut" or "Paste" or "Undo" or "Redo" or "Delete" or "Close" or "New" or "Open" or "Save" or "SaveAs" or "Print" or "PrintPreview" or "Find" or "Replace" or "SelectAll" or "Help" or "Properties" or "Stop";
+        var owner = c[..dot];
+        var colon = owner.LastIndexOf(':');
+        if (colon >= 0)
+        {
+            // local:ApplicationCommands 是專案自己的類別（Prism 的慣例），不是 WPF 的
+            if (colon == 0 || at.GetNamespaceOfPrefix(owner[..colon]) is not { } ns || !Markup.IsWpfNamespace(ns.NamespaceName)) return false;
+            owner = owner[(colon + 1)..];
+        }
+        return owner is "ApplicationCommands" or "EditingCommands" or "NavigationCommands" or "MediaCommands" or "ComponentCommands";
+    }
+}

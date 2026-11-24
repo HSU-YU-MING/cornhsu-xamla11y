@@ -1,0 +1,19 @@
+# Changelog
+
+All notable changes to this project are documented here.
+This project follows [Semantic Versioning](https://semver.org/).
+
+## [0.1.0] - Unreleased
+
+First version.
+
+- `xamla11y audit <root>`: nine kinds of finding in six rules — names of controls and inputs (WCAG 4.1.2,
+  1.1.1, 1.3.1, 3.3.2), visible focus (2.4.7), mouse-only elements (2.1.1), tab order (2.4.3), target size (2.5.8).
+- Names follow what WPF does, measured with a UI Automation client on .NET Framework 4.8 and .NET 8–11 and
+  checked against Axe-Windows: `Label.Target` gives no name, a ToolTip gives no name, text inside a panel
+  gives no name, template text gives no name, `MaterialDesignThemes` 5.3's `HintAssist.Hint` does.
+- Focus under MahApps.Metro 2.4, MaterialDesignThemes 5.3, HandyControl 3.5 and WPF-UI 4.3 was measured in
+  real windows; other themes and versions are unknown unless `themeShowsFocus` vouches for them.
+- Subclasses are followed through the project's own C# (`class ExtendedButton : Button`); `treatAs` declares the rest.
+- JSON, SARIF, Markdown, MSBuild output, baseline without line numbers, resolution gate (exit 3), and a
+  GitHub Action with the same inputs as XamlContrast, XamlKeys and XamlFit.

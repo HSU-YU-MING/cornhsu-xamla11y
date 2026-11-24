@@ -1,0 +1,55 @@
+name: False alarm — it reported something that is fine
+description: XamlA11y says a control has no name, cannot be reached or shows no focus, but the running app disagrees.
+labels: ["false-alarm"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the most valuable report this project receives. **Mask what you would not post publicly**; renaming is
+        fine, the *shape* of the XAML is what matters. English or 中文.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `xamla11y --version`
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Which finding?
+      options:
+        - missing-name
+        - text-not-in-name
+        - meaningless-name
+        - symbol-name
+        - input-no-name
+        - focus-not-visible
+        - mouse-only
+        - not-in-tab-order
+        - small-target
+        - "exit 3 / blocked — it should have been able to read this"
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: The smallest XAML that shows it
+      description: Include the style or resource it uses.
+      render: xml
+    validations:
+      required: true
+  - type: textarea
+    id: reality
+    attributes:
+      label: What the running app does
+      description: For names, the Name that Accessibility Insights (Inspect) shows. For focus, what you see when you Tab to it.
+    validations:
+      required: true
+  - type: input
+    id: runtime
+    attributes:
+      label: .NET version and theme library
+      placeholder: ".NET 10, MaterialDesignThemes 5.3.0"

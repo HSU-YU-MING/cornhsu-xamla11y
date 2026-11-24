@@ -1,0 +1,68 @@
+# 手寫的難例（規則寫完之後加的；每次改規則先加案例）
+more | Content via Setter.Value element | <Button x:Name='p'><Button.Style><Style TargetType='Button'><Setter Property='Content'><Setter.Value><Path Data='M0,0 L9,9 Z'/></Setter.Value></Setter></Style></Button.Style></Button>
+more | BasedOn chain sets Name | <Button x:Name='p' Style='{StaticResource d}'>[ICON]</Button> | <Style x:Key='b' TargetType='Button'><Setter Property='AutomationProperties.Name' Value='Base'/></Style><Style x:Key='d' TargetType='Button' BasedOn='{StaticResource b}'/>
+more | implicit style sets Name | <Button x:Name='p'>[ICON]</Button> | <Style TargetType='Button'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+more | explicit style replaces implicit | <Button x:Name='p' Style='{StaticResource e}'>[ICON]</Button> | <Style TargetType='Button'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style><Style x:Key='e' TargetType='Button'/>
+more | Style={x:Null} | <Button x:Name='p' Style='{x:Null}'>[ICON]</Button> | <Style TargetType='Button'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+more | implicit style for base type does not apply | <Button x:Name='p'>[ICON]</Button> | <Style TargetType='ButtonBase'><Setter Property='AutomationProperties.Name' Value='Implicit'/></Style>
+more | Name as property element | <Button x:Name='p'><AutomationProperties.Name>Save</AutomationProperties.Name>[ICON]</Button>
+more | Name resource string | <Button x:Name='p' AutomationProperties.Name='{StaticResource s}'>[ICON]</Button> | <sys:String x:Key='s'>Save</sys:String>
+more | Name resource glyph | <Button x:Name='p' AutomationProperties.Name='{StaticResource s}'>[ICON]</Button> | <sys:String x:Key='s'>&#xE74D;</sys:String>
+more | LabeledBy chain | <TextBlock x:Name='a' Text='A'/><Button x:Name='b' AutomationProperties.LabeledBy='{Binding ElementName=a}'>[ICON]</Button><Button x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=b}'>[ICON]</Button>
+more | LabeledBy GroupBox | <GroupBox x:Name='g' Header='Box'/><TextBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=g}'/>
+more | LabeledBy CheckBox | <CheckBox x:Name='g' Content='Enable'/><TextBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=g}'/>
+more | LabeledBy TextBox | <TextBox x:Name='g' Text='abc'/><TextBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=g}'/>
+more | LabeledBy Border with TextBlock | <Border x:Name='g'><TextBlock Text='abc'/></Border><TextBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=g}'/>
+more | LabeledBy ContentControl | <ContentControl x:Name='g' Content='abc'/><TextBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=g}'/>
+more | LabeledBy UserControl | <UserControl x:Name='g'><TextBlock Text='abc'/></UserControl><TextBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=g}'/>
+more | LabeledBy Image named | <Image x:Name='g' AutomationProperties.Name='abc' Width='9' Height='9'/><TextBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=g}'/>
+more | LabeledBy AccessText | <AccessText x:Name='g' Text='_abc'/><TextBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=g}'/>
+more | LabeledBy empty TextBlock, own text | <TextBlock x:Name='g'/><Button x:Name='p' Content='Save' AutomationProperties.LabeledBy='{Binding ElementName=g}'/>
+more | LabeledBy inside template | <Button x:Name='p'>[ICON]<Button.Style><Style TargetType='Button'><Setter Property='AutomationProperties.LabeledBy' Value='{Binding ElementName=g}'/></Style></Button.Style></Button><TextBlock x:Name='g' Text='abc'/>
+more | MenuItem bound header self | <Menu><MenuItem x:Name='p' Tag='T' Header='{Binding Tag, RelativeSource={RelativeSource Self}}'/></Menu>
+more | nested Button content | <Button x:Name='p'><Button Content='Inner'/></Button>
+more | Button with CheckBox panel content | <Button x:Name='p'><CheckBox><StackPanel/></CheckBox></Button>
+more | Button with Expander content | <Button x:Name='p'><Expander Header='Inner'/></Button>
+more | TextBlock with Hyperlink | <Button x:Name='p'><TextBlock><Hyperlink>Docs</Hyperlink></TextBlock></Button>
+more | TextBlock Text and Runs | <Button x:Name='p'><TextBlock Text='Save'><Run Text='x'/></TextBlock></Button>
+more | TextBlock style sets Text | <Button x:Name='p'><TextBlock><TextBlock.Style><Style TargetType='TextBlock'><Setter Property='Text' Value='Styled'/></Style></TextBlock.Style></TextBlock></Button>
+more | Marlett button | <Button x:Name='p' FontFamily='Marlett' Content='r'/>
+more | Wingdings via style | <Button x:Name='p' Content='a' Style='{StaticResource w}'/> | <Style x:Key='w' TargetType='Button'><Setter Property='FontFamily' Value='Wingdings'/></Style>
+more | ComboBoxItem panel (opened) | <ComboBox AutomationProperties.Name='c' IsDropDownOpen='True'><ComboBoxItem x:Name='p'><StackPanel><TextBlock Text='a'/></StackPanel></ComboBoxItem></ComboBox>
+more | ContextMenu item | <Button Content='x' x:Name='q'><Button.ContextMenu><ContextMenu><MenuItem x:Name='p' Header='Copy'/></ContextMenu></Button.ContextMenu></Button>
+more | Separator in menu | <Menu><MenuItem x:Name='p' Header='File'><Separator/><MenuItem Header='x'/></MenuItem></Menu>
+more | Hyperlink Bold | <TextBlock><Hyperlink x:Name='p'><Bold>Docs</Bold></Hyperlink></TextBlock>
+more | Hyperlink Run glyph | <TextBlock><Hyperlink x:Name='p'><Run FontFamily='Segoe MDL2 Assets' Text='&#xE74D;'/></Hyperlink></TextBlock>
+more | Hyperlink text and image | <TextBlock><Hyperlink x:Name='p'><InlineUIContainer>[ICON]</InlineUIContainer><Run Text='Docs'/></Hyperlink></TextBlock>
+more | Hyperlink TextBlock direct | <TextBlock><Hyperlink x:Name='p'><TextBlock Text='Docs'/></Hyperlink></TextBlock>
+more | CheckBox StackPanel LabeledBy inner | <CheckBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=in}'><StackPanel><TextBlock x:Name='in' Text='Wrap'/></StackPanel></CheckBox>
+more | Content trigger text/text | <Button x:Name='p'><Button.Style><Style TargetType='Button'><Setter Property='Content' Value='Play'/><Style.Triggers><Trigger Property='IsEnabled' Value='False'><Setter Property='Content' Value='Pause'/></Trigger></Style.Triggers></Style></Button.Style></Button>
+more | Content local beats style | <Button x:Name='p' Content='Local'><Button.Style><Style TargetType='Button'><Setter Property='Content'><Setter.Value><Path/></Setter.Value></Setter></Style></Button.Style></Button>
+more | Content local beats style trigger | <Button x:Name='p' Content='Local'><Button.Style><Style TargetType='Button'><Style.Triggers><Trigger Property='IsEnabled' Value='True'><Setter Property='Content'><Setter.Value><Path/></Setter.Value></Setter></Trigger></Style.Triggers></Style></Button.Style></Button>
+more | Command MediaCommands.Play no content | <Button x:Name='p' Command='MediaCommands.Play'/>
+more | Command short name Copy | <Button x:Name='p' Command='Copy'/>
+more | Command with icon content | <Button x:Name='p' Command='ApplicationCommands.Copy'>[ICON]</Button>
+more | CheckBox Command no content | <CheckBox x:Name='p' Command='ApplicationCommands.Copy'/>
+more | Expander header TextBlock | <Expander x:Name='p'><Expander.Header><TextBlock Text='More'/></Expander.Header></Expander>
+more | TabItem no header | <TabControl><TabItem x:Name='p'/></TabControl>
+more | TabItem content only | <TabControl><TabItem x:Name='p'><TextBlock Text='page'/></TabItem></TabControl>
+more | TabItem Name with icon | <TabControl><TabItem x:Name='p' AutomationProperties.Name='General'><TabItem.Header>[ICON]</TabItem.Header></TabItem></TabControl>
+more | DataTemplate HeaderTemplate text | <TabControl><TabItem x:Name='p' Header='Data'><TabItem.HeaderTemplate><DataTemplate>[ICON]</DataTemplate></TabItem.HeaderTemplate></TabItem></TabControl>
+more | TextBox in UserControl named | <UserControl AutomationProperties.Name='Outer'><TextBox x:Name='p'/></UserControl>
+more | TextBox template named part | <TextBox x:Name='p' AutomationProperties.Name='{Binding Tag, RelativeSource={RelativeSource Self}}' Tag='Tagged'/>
+more | TextBox Name bound to missing Tag | <TextBox x:Name='p' AutomationProperties.Name='{Binding Tag, RelativeSource={RelativeSource Self}}'/>
+more | CDATA content | <Button x:Name='p'><![CDATA[Save]]></Button>
+more | comment then text | <Button x:Name='p'><!-- c -->Save</Button>
+more | xml entity | <Button x:Name='p' Content='R&amp;D'/>
+more | newline content | <Button x:Name='p' Content='&#10;'/>
+more | zero width content | <Button x:Name='p' Content='&#x200B;'/>
+more | RTL mark only | <Button x:Name='p' Content='&#x200F;'/>
+more | Hyperlink.Inlines | <TextBlock><Hyperlink x:Name='p'><Hyperlink.Inlines><Run Text='Docs'/></Hyperlink.Inlines></Hyperlink></TextBlock>
+more | Hyperlink.Inlines image | <TextBlock><Hyperlink x:Name='p'><Hyperlink.Inlines><InlineUIContainer>[ICON]</InlineUIContainer></Hyperlink.Inlines></Hyperlink></TextBlock>
+more | TextBlock.Inlines | <Button x:Name='p'><TextBlock><TextBlock.Inlines><Run Text='Save'/></TextBlock.Inlines></TextBlock></Button>
+more | Run.Text element | <Button x:Name='p'><TextBlock><Run><Run.Text>Save</Run.Text></Run></TextBlock></Button>
+more | Collapsed TabItem no header | <TabControl><TabItem x:Name='p' Visibility='Collapsed'/><TabItem Header='a'/></TabControl>
+more | FrameworkElement.Style sets content | <Button x:Name='p'><FrameworkElement.Style><Style TargetType='Button'><Setter Property='Content' Value='Save'/></Style></FrameworkElement.Style></Button>
+more | ContentControl.Content element | <Button x:Name='p'><ContentControl.Content>Save</ContentControl.Content></Button>
+more | Setter ContentControl.Content | <Button x:Name='p'><Button.Style><Style TargetType='Button'><Setter Property='ContentControl.Content' Value='Save'/></Style></Button.Style></Button>
+more | Disabled icon button | <Button x:Name='p' IsEnabled='False'>[ICON]</Button>

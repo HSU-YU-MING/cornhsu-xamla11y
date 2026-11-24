@@ -1,0 +1,26 @@
+name: Missed — it said nothing
+description: Accessibility Insights, Narrator or the keyboard shows a problem that XamlA11y neither reports nor lists as blocked.
+labels: ["missed"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `xamla11y --version`
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: The smallest XAML that shows it
+      render: xml
+    validations:
+      required: true
+  - type: textarea
+    id: reality
+    attributes:
+      label: What is wrong in the running app
+      description: The rule Accessibility Insights reports, or what the screen reader says.
+    validations:
+      required: true

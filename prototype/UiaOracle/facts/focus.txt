@@ -1,0 +1,44 @@
+f | Button default | <Button x:Name='p' Content='x'/>
+f | Button FVS null | <Button x:Name='p' Content='x' FocusVisualStyle='{x:Null}'/>
+f | TextBox default | <TextBox x:Name='p'/>
+f | TextBox FVS null | <TextBox x:Name='p' FocusVisualStyle='{x:Null}'/>
+f | CheckBox FVS null | <CheckBox x:Name='p' Content='x' FocusVisualStyle='{x:Null}'/>
+f | RadioButton FVS null | <RadioButton x:Name='p' Content='x' FocusVisualStyle='{x:Null}'/>
+f | ToggleButton FVS null | <ToggleButton x:Name='p' Content='x' FocusVisualStyle='{x:Null}'/>
+f | RepeatButton FVS null | <RepeatButton x:Name='p' Content='x' FocusVisualStyle='{x:Null}'/>
+f | ComboBox FVS null | <ComboBox x:Name='p' FocusVisualStyle='{x:Null}'/>
+f | ComboBox editable FVS null | <ComboBox x:Name='p' IsEditable='True' FocusVisualStyle='{x:Null}'/>
+f | PasswordBox FVS null | <PasswordBox x:Name='p' FocusVisualStyle='{x:Null}'/>
+f | RichTextBox FVS null | <RichTextBox x:Name='p' FocusVisualStyle='{x:Null}'/>
+f | Slider default | <Slider x:Name='p'/>
+f | Slider FVS null | <Slider x:Name='p' FocusVisualStyle='{x:Null}'/>
+f | ListBox FVS null (empty) | <ListBox x:Name='p' Height='30' FocusVisualStyle='{x:Null}'/>
+f | ListBoxItem default | <ListBox><ListBoxItem x:Name='p' Content='x'/></ListBox>
+f | ListBoxItem FVS null | <ListBox><ListBoxItem x:Name='p' Content='x' FocusVisualStyle='{x:Null}'/></ListBox>
+f | ListViewItem FVS null | <ListView><ListViewItem x:Name='p' Content='x' FocusVisualStyle='{x:Null}'/></ListView>
+f | TreeViewItem default | <TreeView><TreeViewItem x:Name='p' Header='x'/></TreeView>
+f | TreeViewItem FVS null | <TreeView><TreeViewItem x:Name='p' Header='x' FocusVisualStyle='{x:Null}'/></TreeView>
+f | TabItem default | <TabControl><TabItem x:Name='p' Header='x'/><TabItem Header='y'/></TabControl>
+f | TabItem FVS null | <TabControl><TabItem x:Name='p' Header='x' FocusVisualStyle='{x:Null}'/><TabItem Header='y'/></TabControl>
+f | MenuItem default | <Menu><MenuItem x:Name='p' Header='x'/></Menu>
+f | MenuItem FVS null | <Menu><MenuItem x:Name='p' Header='x' FocusVisualStyle='{x:Null}'/></Menu>
+f | Expander FVS null | <Expander x:Name='p' Header='x' FocusVisualStyle='{x:Null}'/>
+f | Hyperlink default | <TextBlock><Hyperlink x:Name='p'>x</Hyperlink></TextBlock>
+f | Hyperlink FVS null | <TextBlock><Hyperlink x:Name='p' FocusVisualStyle='{x:Null}'>x</Hyperlink></TextBlock>
+f | Border Focusable default | <Border x:Name='p' Focusable='True' Background='Gray' Height='20'/>
+f | UserControl Focusable=True FVS null | <UserControl x:Name='p' Focusable='True' IsTabStop='True' FocusVisualStyle='{x:Null}' Height='20'/>
+f | DatePicker FVS null | <DatePicker x:Name='p' FocusVisualStyle='{x:Null}'/>
+f | Button own template, no trigger | <Button x:Name='p' Content='x'><Button.Template><ControlTemplate TargetType='Button'><Border Background='Gray'><ContentPresenter/></Border></ControlTemplate></Button.Template></Button>
+f | Button own template, no trigger, FVS null | <Button x:Name='p' Content='x' FocusVisualStyle='{x:Null}'><Button.Template><ControlTemplate TargetType='Button'><Border Background='Gray'><ContentPresenter/></Border></ControlTemplate></Button.Template></Button>
+f | Button own template, IsKeyboardFocused trigger | <Button x:Name='p' Content='x' FocusVisualStyle='{x:Null}'><Button.Template><ControlTemplate TargetType='Button'><Border x:Name='b' Background='Gray'><ContentPresenter/></Border><ControlTemplate.Triggers><Trigger Property='IsKeyboardFocused' Value='True'><Setter TargetName='b' Property='Background' Value='Red'/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template></Button>
+f | Button own template, IsFocused trigger | <Button x:Name='p' Content='x' FocusVisualStyle='{x:Null}'><Button.Template><ControlTemplate TargetType='Button'><Border x:Name='b' Background='Gray'><ContentPresenter/></Border><ControlTemplate.Triggers><Trigger Property='IsFocused' Value='True'><Setter TargetName='b' Property='Background' Value='Red'/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template></Button>
+f | Button own template, VSM Focused | <Button x:Name='p' Content='x' FocusVisualStyle='{x:Null}'><Button.Template><ControlTemplate TargetType='Button'><Border x:Name='b' Background='Gray'><VisualStateManager.VisualStateGroups><VisualStateGroup x:Name='FocusStates'><VisualState x:Name='Focused'><Storyboard><ColorAnimation Storyboard.TargetName='b' Storyboard.TargetProperty='(Border.Background).(SolidColorBrush.Color)' To='Red' Duration='0'/></Storyboard></VisualState><VisualState x:Name='Unfocused'/></VisualStateGroup></VisualStateManager.VisualStateGroups><ContentPresenter/></Border></ControlTemplate></Button.Template></Button>
+f | Button Style trigger Foreground, default template | <Button x:Name='p' Content='x'><Button.Style><Style TargetType='Button'><Setter Property='FocusVisualStyle' Value='{x:Null}'/><Style.Triggers><Trigger Property='IsFocused' Value='True'><Setter Property='Foreground' Value='Red'/></Trigger></Style.Triggers></Style></Button.Style></Button>
+f | Button Style trigger only sets Cursor | <Button x:Name='p' Content='x'><Button.Style><Style TargetType='Button'><Setter Property='FocusVisualStyle' Value='{x:Null}'/><Style.Triggers><Trigger Property='IsFocused' Value='True'><Setter Property='Cursor' Value='Hand'/></Trigger></Style.Triggers></Style></Button.Style></Button>
+f | Button IsDefault FVS null | <Button x:Name='p' Content='x' IsDefault='True' FocusVisualStyle='{x:Null}'/>
+f | FVS empty Style | <Button x:Name='p' Content='x'><Button.FocusVisualStyle><Style/></Button.FocusVisualStyle></Button>
+f | FVS empty template | <Button x:Name='p' Content='x'><Button.FocusVisualStyle><Style><Setter Property='Control.Template'><Setter.Value><ControlTemplate/></Setter.Value></Setter></Style></Button.FocusVisualStyle></Button>
+f | FVS null from Style | <Button x:Name='p' Content='x'><Button.Style><Style TargetType='Button'><Setter Property='FocusVisualStyle' Value='{x:Null}'/></Style></Button.Style></Button>
+f | TextBox own template, no trigger | <TextBox x:Name='p'><TextBox.Template><ControlTemplate TargetType='TextBox'><Border Background='White'><ScrollViewer x:Name='PART_ContentHost'/></Border></ControlTemplate></TextBox.Template></TextBox>
+f | CheckBox own template, no trigger, FVS null | <CheckBox x:Name='p' Content='x' FocusVisualStyle='{x:Null}'><CheckBox.Template><ControlTemplate TargetType='CheckBox'><ContentPresenter/></ControlTemplate></CheckBox.Template></CheckBox>
+f | ListBoxItem own template, no trigger, FVS null | <ListBox><ListBoxItem x:Name='p' Content='x' FocusVisualStyle='{x:Null}'><ListBoxItem.Template><ControlTemplate TargetType='ListBoxItem'><ContentPresenter/></ControlTemplate></ListBoxItem.Template></ListBoxItem></ListBox>

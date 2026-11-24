@@ -1,0 +1,85 @@
+{
+  "note": "Measured with prototype/UiaOracle (modes: themes, focus-themes) in real WPF windows. 'as' = the WPF control whose UI Automation name rules the control follows. 'nameFrom' = an attribute that becomes the name.",
+  "libraries": [
+    {
+      "id": "wpfui",
+      "package": "WPF-UI",
+      "version": "4.3.0",
+      "namespaces": ["http://schemas.lepo.co/wpfui/2022/xaml"],
+      "assemblies": ["Wpf.Ui"],
+      "controls": {
+        "Button": { "as": "Button" },
+        "HyperlinkButton": { "as": "Button" },
+        "CardAction": { "as": "Button" },
+        "ToggleSwitch": { "as": "ToggleButton" },
+        "DropDownButton": { "as": "Button" },
+        "SplitButton": { "as": "Button" },
+        "TextBox": { "as": "TextBox" },
+        "PasswordBox": { "as": "TextBox" },
+        "NumberBox": { "as": "TextBox" },
+        "SymbolIcon": { "as": "Image" },
+        "FontIcon": { "as": "Image" },
+        "ImageIcon": { "as": "Image" },
+        "IconSourceElement": { "as": "Image" }
+      },
+      "iconExtensions": ["SymbolIcon", "FontIcon", "ImageIcon"]
+    },
+    {
+      "id": "mahapps",
+      "package": "MahApps.Metro",
+      "version": "2.4.11",
+      "namespaces": ["http://metro.mahapps.com/winfx/xaml/controls"],
+      "assemblies": ["MahApps.Metro"],
+      "controls": {
+        "Tile": { "as": "Button" },
+        "ToggleSwitch": { "as": "(headered toggle)" }
+      },
+      "iconExtensions": []
+    },
+    {
+      "id": "handycontrol",
+      "package": "HandyControl",
+      "version": "3.5.1",
+      "namespaces": ["https://handyorg.github.io/handycontrol"],
+      "assemblies": ["HandyControl"],
+      "controls": {
+        "TextBox": { "as": "TextBox" },
+        "SearchBar": { "as": "TextBox" },
+        "ComboBox": { "as": "ComboBox" }
+      },
+      "iconExtensions": []
+    },
+    {
+      "id": "materialdesign",
+      "package": "MaterialDesignThemes",
+      "version": "5.3.0",
+      "namespaces": ["http://materialdesigninxaml.net/winfx/xaml/themes"],
+      "assemblies": ["MaterialDesignThemes.Wpf"],
+      "controls": {
+        "PackIcon": { "as": "Image" }
+      },
+      "iconExtensions": ["PackIcon"],
+      "nameFrom": {
+        "HintAssist.Hint": ["TextBox", "PasswordBox", "ComboBox"]
+      }
+    },
+    {
+      "id": "iconpacks",
+      "package": "MahApps.Metro.IconPacks",
+      "version": "",
+      "namespaces": ["http://metro.mahapps.com/winfx/xaml/iconpacks"],
+      "assemblies": [],
+      "controls": {},
+      "iconPrefix": "PackIcon",
+      "iconExtensions": []
+    }
+  ],
+  "themeFocusNote": "With FocusVisualStyle={x:Null}: does the theme's own template still show keyboard focus? (uiaoracle focus-themes, 2026-11-24)",
+  "themeFocus": {
+    "mahapps": { "Button": true, "ToggleButton": true, "RepeatButton": true, "CheckBox": false, "RadioButton": false, "ComboBox": true, "Slider": false },
+    "materialdesign": { "Button": true, "ToggleButton": true, "RepeatButton": true, "CheckBox": false, "RadioButton": false, "ComboBox": true, "Slider": true },
+    "handycontrol": { "Button": false, "ToggleButton": false, "RepeatButton": false, "CheckBox": false, "RadioButton": false, "ComboBox": true, "Slider": false },
+    "wpfui": { "Button": false, "ToggleButton": false, "CheckBox": false, "RadioButton": false, "ComboBox": false, "Slider": false }
+  },
+  "themeRequires": { "materialdesign": "MaterialDesign3.Defaults.xaml" }
+}

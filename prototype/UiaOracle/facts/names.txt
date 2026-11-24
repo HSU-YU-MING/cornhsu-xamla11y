@@ -1,0 +1,147 @@
+# 組 | 標題 | XAML（單引號）| 資源
+button | text attribute | <Button x:Name='p' Content='Save'/>
+button | access key | <Button x:Name='p' Content='_Save'/>
+button | text element | <Button x:Name='p'>Save</Button>
+button | TextBlock child | <Button x:Name='p'><TextBlock Text='Save'/></Button>
+button | TextBlock child (Runs) | <Button x:Name='p'><TextBlock><Run Text='Sa'/><Run Text='ve'/></TextBlock></Button>
+button | AccessText child | <Button x:Name='p'><AccessText Text='_Save'/></Button>
+button | Label child | <Button x:Name='p'><Label Content='Save'/></Button>
+button | StackPanel(icon + TextBlock) | <Button x:Name='p'><StackPanel Orientation='Horizontal'>[ICON]<TextBlock Text='Save'/></StackPanel></Button>
+button | Border(TextBlock) | <Button x:Name='p'><Border><TextBlock Text='Save'/></Border></Button>
+button | Viewbox(TextBlock) | <Button x:Name='p'><Viewbox><TextBlock Text='Save'/></Viewbox></Button>
+button | ContentControl(text) | <Button x:Name='p'><ContentControl Content='Save'/></Button>
+button | UserControl(text) | <Button x:Name='p'><UserControl><TextBlock Text='Save'/></UserControl></Button>
+button | Path | <Button x:Name='p'>[ICON]</Button>
+button | Path + ToolTip | <Button x:Name='p' ToolTip='Save'>[ICON]</Button>
+button | Path + AutomationProperties.Name | <Button x:Name='p' AutomationProperties.Name='Save'>[ICON]</Button>
+button | Path + Name='' | <Button x:Name='p' AutomationProperties.Name=''>[ICON]</Button>
+button | text + Name='' | <Button x:Name='p' AutomationProperties.Name='' Content='Save'/>
+button | text + Name=' ' | <Button x:Name='p' AutomationProperties.Name=' ' Content='Save'/>
+button | Path + Name=' ' | <Button x:Name='p' AutomationProperties.Name=' '>[ICON]</Button>
+button | Path, Name on the Path | <Button x:Name='p'><Path AutomationProperties.Name='Save' Data='M0,0 L10,10 L0,10 Z' Fill='Black'/></Button>
+button | Image, Name on the Image | <Button x:Name='p'><Image AutomationProperties.Name='Save' Width='10' Height='10'/></Button>
+button | TextBlock child, Name on the TextBlock | <Button x:Name='p'><TextBlock AutomationProperties.Name='Delete' Text='x'/></Button>
+button | icon font glyph | <Button x:Name='p' FontFamily='Segoe MDL2 Assets' Content='&#xE74D;'/>
+button | icon font TextBlock | <Button x:Name='p'><TextBlock FontFamily='Segoe MDL2 Assets' Text='&#xE74D;'/></Button>
+button | symbol × | <Button x:Name='p' Content='×'/>
+button | symbol … | <Button x:Name='p' Content='…'/>
+button | emoji | <Button x:Name='p' Content='🗑'/>
+button | Geometry resource as Content | <Button x:Name='p' Content='{StaticResource G}'/> | <Geometry x:Key='G'>M0,0 L10,10 L0,10 Z</Geometry>
+button | DrawingImage as Content | <Button x:Name='p' Content='{StaticResource G}'/> | <DrawingImage x:Key='G'/>
+button | Image resource as Content | <Button x:Name='p' Content='{StaticResource G}'/> | <Image x:Key='G' Width='10' Height='10'/>
+button | empty | <Button x:Name='p'/>
+button | Content='' | <Button x:Name='p' Content=''/>
+button | Content=' ' | <Button x:Name='p' Content='   '/>
+button | empty, template has TextBlock | <Button x:Name='p'><Button.Template><ControlTemplate TargetType='Button'><Border><TextBlock Text='Save'/></Border></ControlTemplate></Button.Template></Button>
+button | text, template has no presenter | <Button x:Name='p' Content='Save'><Button.Template><ControlTemplate TargetType='Button'><Border>[ICON]</Border></ControlTemplate></Button.Template></Button>
+button | text + ContentTemplate icon | <Button x:Name='p' Content='Save'><Button.ContentTemplate><DataTemplate>[ICON]</DataTemplate></Button.ContentTemplate></Button>
+button | ContentTemplate with text, no Content | <Button x:Name='p'><Button.ContentTemplate><DataTemplate><TextBlock Text='Save'/></DataTemplate></Button.ContentTemplate></Button>
+button | Name from Style setter | <Button x:Name='p'><Button.Style><Style TargetType='Button'><Setter Property='AutomationProperties.Name' Value='Save'/></Style></Button.Style>[ICON]</Button>
+button | Name from Style trigger | <Button x:Name='p'><Button.Style><Style TargetType='Button'><Style.Triggers><Trigger Property='IsEnabled' Value='True'><Setter Property='AutomationProperties.Name' Value='Save'/></Trigger></Style.Triggers></Style></Button.Style>[ICON]</Button>
+button | Name from template trigger | <Button x:Name='p'><Button.Template><ControlTemplate TargetType='Button'><ContentPresenter/><ControlTemplate.Triggers><Trigger Property='IsEnabled' Value='True'><Setter Property='AutomationProperties.Name' Value='Save'/></Trigger></ControlTemplate.Triggers></ControlTemplate></Button.Template>[ICON]</Button>
+button | Style: Name bound to ToolTip | <Button x:Name='p' ToolTip='Save'><Button.Style><Style TargetType='Button'><Setter Property='AutomationProperties.Name' Value='{Binding ToolTip, RelativeSource={RelativeSource Self}}'/></Style></Button.Style>[ICON]</Button>
+button | Style: Name bound to missing ToolTip | <Button x:Name='p'><Button.Style><Style TargetType='Button'><Setter Property='AutomationProperties.Name' Value='{Binding ToolTip, RelativeSource={RelativeSource Self}}'/></Style></Button.Style>[ICON]</Button>
+button | Style: Name bound to missing ToolTip, text | <Button x:Name='p' Content='Save'><Button.Style><Style TargetType='Button'><Setter Property='AutomationProperties.Name' Value='{Binding ToolTip, RelativeSource={RelativeSource Self}}'/></Style></Button.Style></Button>
+button | Content from Style setter (text) | <Button x:Name='p'><Button.Style><Style TargetType='Button'><Setter Property='Content' Value='Save'/></Style></Button.Style></Button>
+button | LabeledBy TextBlock | <TextBlock x:Name='lab' Text='Save'/><Button x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=lab}'>[ICON]</Button>
+button | LabeledBy Image (no name) | <Image x:Name='lab' Width='10'/><Button x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=lab}'>[ICON]</Button>
+button | text + LabeledBy TextBlock | <TextBlock x:Name='lab' Text='Other'/><Button x:Name='p' Content='Save' AutomationProperties.LabeledBy='{Binding ElementName=lab}'/>
+button | LabeledBy missing element | <Button x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=nope}'>[ICON]</Button>
+button | Command=Copy, no content | <Button x:Name='p' Command='ApplicationCommands.Copy'/>
+button | Content bound to Command.Text | <Button x:Name='p' Command='ApplicationCommands.Copy' Content='{Binding Command.Text, RelativeSource={RelativeSource Self}}'/>
+button | Collapsed TextBlock child | <Button x:Name='p'><TextBlock Text='Save' Visibility='Collapsed'/></Button>
+button | number content | <Button x:Name='p'><sys:Int32>5</sys:Int32></Button>
+button | HelpText only | <Button x:Name='p' AutomationProperties.HelpText='Save'>[ICON]</Button>
+button | Label Target (button) | <Label Content='Save' Target='{Binding ElementName=p}'/><Button x:Name='p'>[ICON]</Button>
+toggle | ToggleButton Path | <ToggleButton x:Name='p'>[ICON]</ToggleButton>
+toggle | ToggleButton StackPanel(text) | <ToggleButton x:Name='p'><StackPanel><TextBlock Text='Save'/></StackPanel></ToggleButton>
+toggle | RepeatButton Path | <RepeatButton x:Name='p'>[ICON]</RepeatButton>
+toggle | CheckBox no content | <CheckBox x:Name='p'/>
+toggle | CheckBox next to TextBlock | <StackPanel Orientation='Horizontal'><CheckBox x:Name='p'/><TextBlock Text='Wrap'/></StackPanel>
+toggle | CheckBox StackPanel(text) | <CheckBox x:Name='p'><StackPanel><TextBlock Text='Save'/></StackPanel></CheckBox>
+toggle | CheckBox text | <CheckBox x:Name='p' Content='Wrap'/>
+toggle | RadioButton Path | <RadioButton x:Name='p'>[ICON]</RadioButton>
+menu | MenuItem header | <Menu><MenuItem x:Name='p' Header='_File'/></Menu>
+menu | MenuItem header TextBlock | <Menu><MenuItem x:Name='p'><MenuItem.Header><TextBlock Text='File'/></MenuItem.Header></MenuItem></Menu>
+menu | MenuItem header AccessText | <Menu><MenuItem x:Name='p'><MenuItem.Header><AccessText Text='_File'/></MenuItem.Header></MenuItem></Menu>
+menu | MenuItem header StackPanel | <Menu><MenuItem x:Name='p'><MenuItem.Header><StackPanel><TextBlock Text='File'/></StackPanel></MenuItem.Header></MenuItem></Menu>
+menu | MenuItem icon only | <Menu><MenuItem x:Name='p'><MenuItem.Icon>[ICON]</MenuItem.Icon></MenuItem></Menu>
+menu | MenuItem header Path | <Menu><MenuItem x:Name='p'><MenuItem.Header>[ICON]</MenuItem.Header></MenuItem></Menu>
+menu | MenuItem Command=Copy, no header | <Menu><MenuItem x:Name='p' Command='ApplicationCommands.Copy'/></Menu>
+menu | MenuItem LabeledBy | <TextBlock x:Name='lab' Text='File'/><Menu><MenuItem x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=lab}'><MenuItem.Header>[ICON]</MenuItem.Header></MenuItem></Menu>
+link | Hyperlink text | <TextBlock><Hyperlink x:Name='p' NavigateUri='http://x'>Docs</Hyperlink></TextBlock>
+link | Hyperlink Run | <TextBlock><Hyperlink x:Name='p' NavigateUri='http://x'><Run Text='Docs'/></Hyperlink></TextBlock>
+link | Hyperlink image | <TextBlock><Hyperlink x:Name='p' NavigateUri='http://x'><InlineUIContainer>[ICON]</InlineUIContainer></Hyperlink></TextBlock>
+link | Hyperlink image + Name | <TextBlock><Hyperlink x:Name='p' AutomationProperties.Name='Docs' NavigateUri='http://x'><InlineUIContainer>[ICON]</InlineUIContainer></Hyperlink></TextBlock>
+link | Hyperlink TextBlock in container | <TextBlock><Hyperlink x:Name='p' NavigateUri='http://x'><InlineUIContainer><TextBlock Text='Docs'/></InlineUIContainer></Hyperlink></TextBlock>
+link | Hyperlink empty | <TextBlock><Hyperlink x:Name='p' NavigateUri='http://x'/></TextBlock>
+header | TabItem text | <TabControl><TabItem x:Name='p' Header='General'/></TabControl>
+header | TabItem Path | <TabControl><TabItem x:Name='p'><TabItem.Header>[ICON]</TabItem.Header></TabItem></TabControl>
+header | TabItem TextBlock | <TabControl><TabItem x:Name='p'><TabItem.Header><TextBlock Text='General'/></TabItem.Header></TabItem></TabControl>
+header | TabItem StackPanel(text) | <TabControl><TabItem x:Name='p'><TabItem.Header><StackPanel><TextBlock Text='General'/></StackPanel></TabItem.Header></TabItem></TabControl>
+header | Expander text | <Expander x:Name='p' Header='More'/>
+header | Expander no header | <Expander x:Name='p'/>
+header | Expander StackPanel(text) | <Expander x:Name='p'><Expander.Header><StackPanel><TextBlock Text='More'/></StackPanel></Expander.Header></Expander>
+header | Expander no header + Name | <Expander x:Name='p' AutomationProperties.Name='More'/>
+header | GroupBox text | <GroupBox x:Name='p' Header='Box'/>
+header | GroupBox StackPanel(text) | <GroupBox x:Name='p'><GroupBox.Header><StackPanel><TextBlock Text='Box'/></StackPanel></GroupBox.Header></GroupBox>
+item | ListBoxItem text | <ListBox><ListBoxItem x:Name='p' Content='One'/></ListBox>
+item | ListBoxItem Path | <ListBox><ListBoxItem x:Name='p'>[ICON]</ListBoxItem></ListBox>
+item | ListBoxItem TextBlock | <ListBox><ListBoxItem x:Name='p'><TextBlock Text='One'/></ListBoxItem></ListBox>
+item | ListBoxItem StackPanel(text) | <ListBox><ListBoxItem x:Name='p'><StackPanel><TextBlock Text='One'/></StackPanel></ListBoxItem></ListBox>
+item | ListViewItem StackPanel(text) | <ListView><ListViewItem x:Name='p'><StackPanel><TextBlock Text='One'/></StackPanel></ListViewItem></ListView>
+item | TreeViewItem text | <TreeView><TreeViewItem x:Name='p' Header='Node'/></TreeView>
+item | TreeViewItem StackPanel | <TreeView><TreeViewItem x:Name='p'><TreeViewItem.Header><StackPanel><TextBlock Text='Node'/></StackPanel></TreeViewItem.Header></TreeViewItem></TreeView>
+input | TextBox bare | <TextBox x:Name='p'/>
+input | TextBox with Text | <TextBox x:Name='p' Text='abc'/>
+input | TextBox after TextBlock | <TextBlock Text='Name:'/><TextBox x:Name='p'/>
+input | TextBox after Label (no Target) | <Label Content='Name:'/><TextBox x:Name='p'/>
+input | TextBox + Label Target (before) | <Label Content='_Name:' Target='{Binding ElementName=p}'/><TextBox x:Name='p'/>
+input | TextBox + Label Target (after) | <TextBox x:Name='p'/><Label Content='_Name:' Target='{Binding ElementName=p}'/>
+input | TextBox + Label Target x:Reference | <TextBox x:Name='p'/><Label Content='_Name:' Target='{x:Reference p}'/>
+input | TextBox + Label Target, Label content is panel | <Label Target='{Binding ElementName=p}'><StackPanel><TextBlock Text='Name:'/></StackPanel></Label><TextBox x:Name='p'/>
+input | TextBox + Label Target, Label content TextBlock | <Label Target='{Binding ElementName=p}'><TextBlock Text='Name:'/></Label><TextBox x:Name='p'/>
+input | TextBox + Label Target, Label named | <Label AutomationProperties.Name='Named' Target='{Binding ElementName=p}'><StackPanel/></Label><TextBox x:Name='p'/>
+input | TextBox + Label Target, own Name too | <Label Content='Label' Target='{Binding ElementName=p}'/><TextBox x:Name='p' AutomationProperties.Name='Own'/>
+input | TextBox + Label Target Collapsed | <Label Content='Label' Visibility='Collapsed' Target='{Binding ElementName=p}'/><TextBox x:Name='p'/>
+input | TextBox LabeledBy TextBlock | <TextBlock x:Name='lab' Text='Name:'/><TextBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=lab}'/>
+input | TextBox LabeledBy Collapsed TextBlock | <TextBlock x:Name='lab' Text='Name:' Visibility='Collapsed'/><TextBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=lab}'/>
+input | TextBox LabeledBy Label | <Label x:Name='lab' Content='_Name:'/><TextBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=lab}'/>
+input | TextBox LabeledBy StackPanel | <StackPanel x:Name='lab'><TextBlock Text='Name:'/></StackPanel><TextBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=lab}'/>
+input | TextBox ToolTip | <TextBox x:Name='p' ToolTip='Name'/>
+input | TextBox Tag | <TextBox x:Name='p' Tag='Name'/>
+input | TextBox template watermark | <TextBox x:Name='p'><TextBox.Template><ControlTemplate TargetType='TextBox'><Grid><TextBlock Text='Search'/><ScrollViewer x:Name='PART_ContentHost'/></Grid></ControlTemplate></TextBox.Template></TextBox>
+input | TextBox in GroupBox | <GroupBox Header='Name'><TextBox x:Name='p'/></GroupBox>
+input | TextBox read-only | <TextBox x:Name='p' IsReadOnly='True' Text='abc'/>
+input | PasswordBox bare | <PasswordBox x:Name='p'/>
+input | PasswordBox + Label Target | <Label Content='Pass' Target='{Binding ElementName=p}'/><PasswordBox x:Name='p'/>
+input | RichTextBox bare | <RichTextBox x:Name='p'/>
+input | ComboBox bare | <ComboBox x:Name='p'/>
+input | ComboBox selected item | <ComboBox x:Name='p' SelectedIndex='0'><ComboBoxItem Content='One'/></ComboBox>
+input | ComboBox editable Text | <ComboBox x:Name='p' IsEditable='True' Text='abc'/>
+input | ComboBox editable + Name | <ComboBox x:Name='p' IsEditable='True' AutomationProperties.Name='Font'/>
+input | ComboBox + Label Target | <Label Content='Font' Target='{Binding ElementName=p}'/><ComboBox x:Name='p'/>
+input | Slider bare | <Slider x:Name='p'/>
+input | Slider + Label Target | <Label Content='Zoom' Target='{Binding ElementName=p}'/><Slider x:Name='p'/>
+input | DatePicker bare | <DatePicker x:Name='p'/>
+input | DatePicker + Name | <DatePicker x:Name='p' AutomationProperties.Name='Due'/>
+input | DatePicker + Label Target | <Label Content='Due' Target='{Binding ElementName=p}'/><DatePicker x:Name='p'/>
+input | Calendar bare | <Calendar x:Name='p'/>
+input | ListBox bare | <ListBox x:Name='p'/>
+input | ListView bare | <ListView x:Name='p'/>
+input | TreeView bare | <TreeView x:Name='p'/>
+input | DataGrid bare | <DataGrid x:Name='p'/>
+input | ProgressBar bare | <ProgressBar x:Name='p' Height='10'/>
+image | Image bare (with Source) | <Image x:Name='p' Width='10' Height='10'><Image.Source><DrawingImage/></Image.Source></Image>
+image | Image no Source | <Image x:Name='p' Width='10' Height='10'/>
+image | Image + Name | <Image x:Name='p' AutomationProperties.Name='Logo' Width='10' Height='10'/>
+image | Path bare | <Path x:Name='p' Data='M0,0 L10,10 L0,10 Z' Fill='Black'/>
+nonctl | Border + MouseBinding | <Border x:Name='p' Width='50' Height='20' Background='Red'><Border.InputBindings><MouseBinding Gesture='LeftClick' Command='ApplicationCommands.Copy'/></Border.InputBindings></Border>
+nonctl | Border Focusable | <Border x:Name='p' Focusable='True' Width='50' Height='20' Background='Red'/>
+nonctl | Border Focusable + Name | <Border x:Name='p' Focusable='True' AutomationProperties.Name='Open' Width='50' Height='20' Background='Red'/>
+nonctl | TextBlock | <TextBlock x:Name='p' Text='Open'/>
+nonctl | TextBlock Focusable | <TextBlock x:Name='p' Focusable='True' Text='Open'/>
+nonctl | Image Focusable + Name | <Image x:Name='p' Focusable='True' AutomationProperties.Name='Open' Width='10' Height='10'/>
+nonctl | ContentControl | <ContentControl x:Name='p' Content='Open'/>
+nonctl | UserControl | <UserControl x:Name='p'><TextBlock Text='Open'/></UserControl>
+nonctl | Label | <Label x:Name='p' Content='Open'/>

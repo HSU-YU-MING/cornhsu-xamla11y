@@ -1,0 +1,249 @@
+# XamlA11y：WPF 介面的靜態無障礙稽核（專案規畫書）
+
+2026-11-19 擬，**2026-11-24 動手，M0～M5 做完（還沒發佈）**。實測推翻的假設與各階段結果寫在最後的「實作結果」；
+本文照原樣留著，跟「實作結果」衝突時以後者為準。名字：`Cornhsu.XamlA11y`，指令 `xamla11y`（2026-11-19 定；a11y 是 accessibility 的通用縮寫，一看就知道、也搜尋得到）。
+
+一句話：**不開 App，就找出鍵盤按不到、螢幕閱讀器念不出來的地方**，跟三件套一樣在 CI 擋。
+
+三件套各管一件事，這支補上第四件：
+
+| 工具 | 問的問題 |
+|---|---|
+| XamlContrast | 看不看得清楚（顏色對比） |
+| XamlKeys | 找不找得到（資源鍵） |
+| XamlFit | 裝不裝得下（文字寬度） |
+| **XamlA11y** | **按不按得到、念不念得出來**（鍵盤與螢幕閱讀器） |
+
+---
+
+## 1. 為什麼要做
+
+- **現有的工具不是要跑 App、就是不照 WPF 的規則判。**
+  - 微軟的 Accessibility Insights for Windows 與 Visual Studio 2022 內建的 Accessibility Checker 都用 Axe-Windows 引擎，
+    **要把 App 跑起來**才掃得到：前者要人操作，後者要在偵錯時從 Live Visual Tree 按掃描。
+  - ⚠ **有一個靜態的：`Bennewitz.Ninja.XamlQuality`**（MIT，2026-11 還在更新，NuGet 約 5,400 次下載、GitHub 0 星）。
+    它是放進**測試專案**裡呼叫的規則函式庫，主要寫給 Avalonia（規則裡有 `ControlTheme`、`IsVisible`），也讀 WPF 與 MAUI 的 XAML。
+    跟這支重疊的規則：`BNXQ1002`「每個互動控制項都要明寫 AutomationProperties.Name」、`BNXQ1001`（Expander）、
+    `BNXQ1005`（鍵盤綁定要在焦點到得了的地方）、`BNXQ1004`（控制項要放得進固定的 Grid 格子）、`BNXQ1011`（輸入框要有 tooltip）。
+  - **這支跟它不一樣的地方：**
+    1. **照 WPF 實際怎麼取名稱判**，不是「一律要明寫」：有文字的 Button 本來就有名稱，`BNXQ1002` 那種寫法在 WPF 專案會對每顆有字的按鈕開火 —— 永遠開火的閘門。
+    2. **每條規則都拿真的 UIA 樹與 Axe-Windows 對照過**（第 6 節）。
+    3. **獨立的 CLI 與 GitHub Action**，有退出碼、SARIF、PR 留言、baseline，不用另外開測試專案。
+    4. 鍵盤按不到（R4）、焦點看不見（R3）、點擊範圍（R6，用 XamlFit 的版面引擎）它沒有。
+  - 動手前要把它的規則文件（GitHub `JanusMael/Bennewitz.Ninja.Inspections` 的 `docs/xamlquality.md`）整份讀過，
+    能借鏡的判斷（例如它記錄「這條規則檢查了幾個元素」、`Skipped` 的寫法）照抄概念、不抄程式碼。
+- **問題的量很大。** 第 4 節的粗略調查：ScreenToGif、Playnite、QuillNest 各有約 30～47 個「只有圖示的按鈕」沒寫無障礙名稱，
+  五個專案的輸入框**沒有一個**寫了名稱或標籤連結。
+- **跟三件套能互相沿用。** 點擊範圍夠不夠大可以用 XamlFit 的版面引擎；樣式、範本、佈景的解析三支都有。
+- **歐盟無障礙法（EAA）2025-06 起生效**，桌面 App 越來越常被要求拿出證據。⚠ 這只是動機，工具**不宣稱**任何法規合規，
+  報告也不寫「符合 EAA」。
+
+---
+
+## 2. 憲法（沿用三件套）
+
+1. **靜態分析 + 全量掃描 + CI 退出碼。**
+2. **「工具沒看到」與「看到了沒問題」分得開。** 名稱來自綁定、範本、程式碼時說「不知道」，不准當成「有名稱」或「沒名稱」。
+   最嚴重的失敗不是漏報，是**掃完說沒問題、上線後盲人用不了**。
+3. **每條規則都要拿真的 WPF 對照過**，而且樣本要包含非作者的專案。這支的真值是 **UI Automation 樹**（見第 6 節）。
+4. **永遠開火的閘門會被關掉。** 預設只擋確定的問題；有爭議的（例如裝飾用的圖片要不要名稱）預設 warn 或 info。
+
+---
+
+## 3. 規則清單（第一版）
+
+每條寫：抓什麼、WPF 實際怎麼做、對應 WCAG 哪一條、預設嚴重度、什麼情況說「不知道」。
+「WPF 實際怎麼做」標 ⚠ 的是**還沒在真的 WPF 裡驗證**，M1 第一件事就是驗它。
+
+### R1 互動元件沒有無障礙名稱 —— WCAG 4.1.2（名稱、角色、值）、1.1.1（非文字內容）
+
+- **抓什麼：** Button、ToggleButton、RepeatButton、MenuItem、Hyperlink 之類，內容只有圖示（Image、Path、Viewbox、圖示字型的字），
+  而且沒有 `AutomationProperties.Name`／`LabeledBy`。
+- **WPF 怎麼取名稱：** 照 WPF 原始碼的 `FrameworkElementAutomationPeer.GetNameCore`：先看 `AutomationProperties.Name`，
+  再看 `LabeledBy` 指到的元素，最後用元素自己的純文字（ContentControl 的字串內容）。
+  **ToolTip 只給「說明文字」（HelpText），不是名稱。** 所以「只寫了 ToolTip 的圖示按鈕」螢幕閱讀器念出來仍然只有「按鈕」。
+  QuillNest 有 12 個是這種寫法 —— 這條要寫進報告的說明裡，不然使用者會以為寫了 ToolTip 就夠。
+- **嚴重度：** fail。
+- **不知道：** 內容來自綁定、ContentTemplate、DataTemplate；按鈕被專案或佈景換了範本而範本裡有文字；名稱用 `{Binding}` 或資源（名稱**有**設，只是讀不到值 → 算有名稱，但資源鍵要給 XamlKeys 的規則檢查得到）。
+- ⚠ 要驗證：圖示字型（Segoe MDL2 Assets 的 `&#xE74D;`）當內容時，UIA 的名稱是不是那個私用區字元（念出來是亂碼，等於沒有名稱）。
+
+### R2 輸入框沒有名稱 —— WCAG 4.1.2、1.3.1（資訊與關係）、3.3.2（標籤或說明）
+
+- **抓什麼：** TextBox、PasswordBox、ComboBox（可編輯）沒有 `AutomationProperties.Name`／`LabeledBy`。
+- **WPF 怎麼做：** TextBox 的 Text 是 UIA 的「值」，不是名稱；旁邊放一個 TextBlock 寫「姓名：」螢幕閱讀器**不會**把它當名稱。
+- ⚠ 要驗證：`<Label Target="{Binding ElementName=box}">` 會不會讓 TextBox 拿到名稱（如果會，這是最常見的正確寫法，規則要認得）；
+  浮水印（MahApps、MaterialDesign 的 Hint）會不會變成名稱。
+- **嚴重度：** fail。但調查顯示幾乎每個專案都「全部沒寫」，第一次跑會一次冒出幾十筆 —— **README 要教先 `--write-baseline`**，
+  閘門才不會一上來就永遠紅。
+
+### R3 鍵盤焦點看不見 —— WCAG 2.4.7（焦點可見）
+
+- **抓什麼：** 可以拿到焦點的控制項（或它的樣式）設了 `FocusVisualStyle="{x:Null}"`，而範本裡**沒有**用 `IsKeyboardFocused`／`IsFocused`
+  觸發器畫出別的焦點樣子。
+- **嚴重度：** fail。
+- **不知道：** 範本讀不到；觸發器改的是讀不出來的屬性。
+- 調查：ScreenToGif 41 處、Playnite 21 處 —— 很多是刻意關掉預設的虛線框、自己在範本裡畫，所以「範本裡有沒有補」一定要看，否則全是誤報。
+
+### R4 滑鼠按得到、鍵盤按不到 —— WCAG 2.1.1（鍵盤）
+
+- **抓什麼：** Border、Grid、Image、TextBlock 這類**不是控制項**的元素掛了 `MouseLeftButtonDown`／`MouseUp`（或 `InputBindings` 的 `MouseBinding`），
+  而且同一個元素沒有 `Focusable="True"` 加鍵盤處理（`KeyDown`／`KeyBinding`）。
+- **嚴重度：** fail。
+- **不知道：** 事件是在 code-behind 用程式碼掛的（工具看不到 —— 報告要說「只看 XAML 裡寫的事件」）；有 `KeyDown` 但看不出處理了哪個鍵。
+- 調查：ScreenToGif 10 處、QuillNest 6 處、Kindling 2 處。
+
+### R5 互動元件被移出 Tab 順序 —— WCAG 2.1.1、2.4.3（焦點順序）
+
+- **抓什麼：** Button、CheckBox、TextBox… 設了 `IsTabStop="False"` 或 `Focusable="False"`，而它又是看得見、能用的。
+- **嚴重度：** warn。很多是刻意的（工具列按鈕有快速鍵、或同一件事有別的入口），工具判斷不了「有沒有別的入口」。
+- 調查：ScreenToGif 19、Playnite 15、QuillNest 6。
+
+### R6 點擊範圍太小 —— WCAG 2.5.8（目標大小，最小值，AA）
+
+- **抓什麼：** 互動元件的寬或高小於 24 DIP。WCAG 的例外（間距足夠、同功能有別的大按鈕、行內連結、必要的）要照規則處理：
+  第一版只做「沒有例外可能」的情形，間距例外要知道鄰居的位置，先說「不知道」。
+- **怎麼量：** 寬度用 XamlFit 的版面引擎；**高度 XamlFit 沒有**。第一版只用明寫的 `Width`／`Height`／`MinWidth`／`MinHeight`
+  加上控制項預設的最小尺寸（要在真的 WPF 裡量，跟 XamlFit 的 chrome 表一樣），算不出來就「不知道」。高度引擎是 M4 的事。
+- **嚴重度：** warn（AA 等級，而且例外多）。
+- 調查：明寫 Width／Height 小於 24 的，ScreenToGif 4、Kindling 3、QuillNest 2、Playnite 1。
+
+### 考慮過、第一版不做
+
+- **圖片沒有替代文字（1.1.1）：** WPF 的 Image 在 UIA 的 control view 裡嗎、裝飾用的圖該怎麼標，要先驗證；而且「裝飾還是資訊」工具判斷不了。M1 驗證之後再決定要不要做成 info。
+- **文字放大（1.4.4）：** WPF 不吃 Windows 的「放大文字」設定，這是平台限制，不是專案的錯。
+- **快速鍵衝突、AccessKey 重複：** 有用，但跟無障礙標準的對應比較弱，先放後面。
+- **讀取順序（1.3.2）：** 視覺順序跟樹的順序不一致要靠版面，靜態做不準。
+
+---
+
+## 4. M0 粗略調查（2026-11-19）
+
+只用正規表示式掃 XAML 文字，**不解析樣式、範本、佈景** —— 數字是量級，不是 finding。
+
+| 專案 | XAML 檔 | 按鈕 | 圖示按鈕 | 其中有名稱 | 只有 ToolTip | FocusVisualStyle=null | 非控制項掛滑鼠事件 | IsTabStop／Focusable=False | 明寫 <24 | 輸入框 | 其中有名稱 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| ScreenToGif | 121 | 49 | 29 | 0 | 0 | 41 | 10 | 19 | 4 | 5 | 0 |
+| Playnite | 275 | 318 | 30 | 1 | 0 | 21 | 0 | 15 | 1 | 98 | 0 |
+| QuillNest | 32 | 330 | 47 | 0 | 12 | 3 | 6 | 6 | 2 | 48 | 0 |
+| Cornea | 5 | 17 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 12 | 0 |
+| Kindling | 16 | 86 | 3 | 0 | 1 | 0 | 2 | 1 | 3 | 8 | 0 |
+
+注意：
+- ScreenToGif 的按鈕大多是它自己的 `ExtendedButton`（第三方控制項），這張表沒算進去 —— 真正的量更大，也正是第 7 節要處理的。
+- 「輸入框有名稱 0」不代表全部是問題：如果 `Label Target` 會給名稱（第 3 節 R2 待驗證），一部分會消掉。
+- M0 的正式版要用三件套的解析器重做（樣式、範本、佈景都解），並且**記下每條規則的候選裡有幾成是「不知道」** —— 跟 XamlFit 的 M0 一樣，先知道天花板。
+
+腳本：同一個資料夾的 `M0粗略調查.js`（拋棄式；`node M0粗略調查.js <專案資料夾…>`）。
+
+---
+
+## 5. 沿用哪些零件
+
+| 零件 | 從哪裡來 | 用在 |
+|---|---|---|
+| XAML 掃描、檔案排除、方言判斷（WPF／WinUI／Avalonia） | XamlFit `XamlScanner` | 全部 |
+| 樣式解析（明寫、隱含、BasedOn、作用域、佈景） | XamlFit `StyleIndex`、`ThemeProfiles` | R1、R3、R5（屬性可能寫在樣式裡） |
+| 範本讀取與「範本換掉了就不知道」 | XamlFit `TemplateOf`、`TemplateChrome` | R1（範本裡有沒有文字）、R3（觸發器） |
+| 寬度引擎、控制項內距表 | XamlFit `WidthResolver`、`ChromeTable` | R6 |
+| 資源鍵解析 | XamlKeys | R1、R2（名稱來自資源時查得到值） |
+| 報告：JSON、SARIF、Markdown、baseline、PR 留言、Action 的形狀 | 三件套 | 全部 |
+| 真的 WPF 對照的做法 | XamlFit `LayoutOracle`、`CorpusRender` | 第 6 節 |
+
+**怎麼共用是待決定的事（第 9 節）：** 三件套目前沒有共用函式庫，各自一份。最省事的是從 XamlFit 複製需要的部分（`CLAUDE.md` 說 prototype 不能複製，但 `src/` 的核心可以），
+長期要不要抽一個 `Cornhsu.Xaml.Core` 共用，等第四支做出來再看。
+
+---
+
+## 6. 怎麼驗證：UIA Oracle
+
+跟 XamlFit 的 LayoutOracle 同一個做法：**同一段 XAML，交給真的 WPF 視窗與工具，逐案比對。** 差別是真值不是寬度，是 UI Automation 樹。
+
+- **名稱（R1、R2）：** 視窗打開後用 `AutomationElement` 走樹，讀每個元素的 `Name`、`HelpText`、`ControlType`、`IsKeyboardFocusable`、`IsOffscreen`。
+  工具說「沒有名稱」的元素，UIA 的 `Name` 一定要是空的；工具說「有名稱」的，UIA 一定要有。
+- **鍵盤（R4、R5）：** 從第一個元素開始一直送 Tab（`MoveFocus(TraversalRequest)`），記下停過哪些元素 —— 工具說「鍵盤到不了」的，Tab 一輪都不會停在它身上。
+- **焦點看得見（R3）：** 用鍵盤把焦點移過去，比對移過去前後的畫面（跟 XamlFit 量標題列一樣用 PrintWindow 前後比對）—— 完全沒變就是看不見。
+- **大小（R6）：** `BoundingRectangle` 的寬高。
+- **第二個真值：Axe-Windows。** 它是 Accessibility Insights 與 Visual Studio 檢查器的引擎，有 NuGet 函式庫可以直接在視窗上跑。
+  Oracle 每一案也跑一次 Axe-Windows：**它報了、工具沒報**的就是漏報候選；**工具報了、它沒報**的要人看（Axe 有些規則比 WCAG 寬鬆）。
+- **真實專案：** CorpusRender 的做法（把公開專案的視窗連同字典載進真的 WPF）延伸成「載進來、跑 UIA 與 Axe-Windows」，
+  跟工具的判斷逐筆比 —— 樣本至少包含 ScreenToGif、Playnite 與作者的三個 App。
+
+驗收標準（照 XamlFit）：**0 個「工具說沒問題、UIA 說有問題」。** 偏保守（工具說不知道）可以，說錯不行。
+
+---
+
+## 7. 「不知道」怎麼處理
+
+照三件套：不知道的位置照樣列出來，說清楚卡在哪裡，並且有地方讓使用者**宣告**。
+
+- **第三方控制項**（`ExtendedButton`、`ui:Button`）：預設不知道它的名稱怎麼來、範本有沒有焦點樣子。
+  設定檔 `treatAs`（XamlFit 已經有這個機制）讓使用者說「`n:ExtendedButton` 照 Button 算」。
+- **佈景**（MahApps、MaterialDesign…）：它們有沒有補焦點樣子、按鈕最小多大，要像 XamlFit 的 ThemeChrome 那樣在真的視窗裡量。
+- **程式碼裡做的事**（code-behind 設名稱、掛事件）：靜態看不到。報告結尾要明講「只看 XAML」，並提供 `xamla11y-ignore: 理由` 註解（理由必填，跟 XamlFit 一樣）。
+- **閘門：** 可解析率（量到的 ÷（量到的 + 卡住的））照三件套，預設 60%。
+
+---
+
+## 8. 介面（照三件套的形狀）
+
+- CLI：`xamla11y audit <root>`，`--json`、`--sarif`、`--md`、`--baseline`、`--write-baseline`、`--fail-on fail|warn`、`--min-coverage`。
+- 退出碼：0 通過、1 有 fail、2 用法錯誤、3 結果不可信（可解析率太低、掃不到檔案）。
+- GitHub Action：跟三件套同一個形狀（先驗再裝、`--tool-path` 裝進專用資料夾、`::stop-commands::`、行內註記、PR 留言、SARIF、最後才擋），
+  CI 在 Linux 與 Windows 上真的跑。之後合併的 Action 也把它納進去。
+- 0.x 期間 README 教使用者釘確切版本；1.0 才凍結。
+
+---
+
+## 9. 待決定（要你決定的）
+
+1. ~~**名字。**~~ ✅ 2026-11-19 定為 `Cornhsu.XamlA11y`（候選還有 `XamlReach`、`XamlAccess`；NuGet 上三個都沒人用）。
+2. **程式碼怎麼共用。** 從 XamlFit 複製核心，或先抽共用函式庫。建議先複製：抽函式庫會牽動三支已經發版的工具。
+3. **第一版做哪幾條。** 建議 R1、R2、R4 先做（最常見、最確定、最容易拿 UIA 驗證），R3、R5 第二輪，R6 等高度引擎。
+4. **要不要等使用者回饋。** 三件套文件原本寫「等有使用者回饋再做」。這份規劃書可以先放著，等 ZeroCel 或其他使用者提到再開工。
+
+---
+
+## 10. 里程碑
+
+| 階段 | 做什麼 | 完成的樣子 |
+|---|---|---|
+| M0 | 用三件套的解析器正式重做第 4 節的調查 | 每條規則的候選數、其中幾成是「不知道」 |
+| M1 | UIA Oracle：第 3 節所有 ⚠ 先驗證（ToolTip、Label Target、圖示字型、浮水印、Image） | 每條規則的「WPF 實際怎麼做」都有實測依據 |
+| M2 | R1、R2、R4 + JSON／SARIF／Markdown／baseline | Oracle 0 錯；作者三個 App 與兩個公開專案跑過 |
+| M3 | R3、R5、佈景量測、`treatAs` | 同上，加 MahApps、MaterialDesign |
+| M4 | 高度引擎、R6 | 跟真的 WPF 的 BoundingRectangle 比 |
+| M5 | GitHub Action、README、0.1.0 上 NuGet | 跟三件套同一套發版流程 |
+
+---
+
+## 實作結果（2026-11-24）
+
+待決定的四件事照本文的建議走：複製不抽函式庫、R1／R2／R4 先、R3／R5 次之、R6 最後、不等使用者回饋（使用者要求直接做）。
+
+**M1 推翻的假設**（`docs/M1-UIA實測.md`，.NET Framework 4.8 與 .NET 8～11 都一樣）：
+
+| 本文 | 實測 |
+|---|---|
+| R2：`Label Target` 可能給名稱，規則要認得 | 不給。只有 `LabeledBy` 與 `Name` |
+| R1：範本裡有文字 → 不知道 | 範本文字從不成為名稱，判得出來 |
+| R1：只有圖示的按鈕 | 範圍更大：字放在面板、Border、AccessText 裡也沒有名稱（新的一種 `text-not-in-name`） |
+| 浮水印會不會變名稱 | 看佈景：MaterialDesign 5.3 的 Hint 會，MahApps、HandyControl、WPF-UI 不會 |
+| R2 只判可編輯的 ComboBox | 不可編輯的一樣沒有名稱、Axe 也報 → 一起判；另加 RichTextBox、Slider、DatePicker |
+| R4：加 Focusable + 鍵盤處理就好 | Border 加了 Focusable 還是**不在 UIA 樹上** → 建議改成換 Button |
+| 第三方控制項要宣告 treatAs | 專案自己的 C#（`class ExtendedButton : Button`）可以自動跟：ScreenToGif 的可解析率 36% → 99%，不用設定 |
+| R6 要等高度引擎 | 不需要：沒設大小的是平台預設，2.5.8 有例外。只判明寫的大小，而且同一排緊鄰、算得出間距才報 |
+
+**驗收**（0 個「工具說沒問題、UIA 說有問題」）：手寫 235 案、窮舉 8,218 案、19 個真實專案的 2,172 個形狀、五個佈景、Tab 27 案、焦點 98 案、大小 17 案，**0 錯**。
+Oracle 之後另請獨立審查，又找到 20 組實跑重現的問題（多數是假通過），全部修掉並各有回歸測試（`tests/XamlA11y.Tests/ReviewTests.cs`）。
+正式的 M0 表與可解析率在 README。
+
+**還沒做**：發佈（GitHub repo、Trusted Publishing 政策、推 tag）、合併的 GitHub Action。
+
+## 參考
+
+- Microsoft Learn：[WPF: Setting the accessible name on an edit field](https://learn.microsoft.com/en-us/accessibility-tools-docs/items/wpf/edit_name)、
+  [control automationproperties](https://learn.microsoft.com/en-us/accessibility-tools-docs/items/wpf/control_automationproperties)
+- WPF 原始碼：[FrameworkElementAutomationPeer.cs](https://source.dot.net/PresentationFramework/System/Windows/Automation/Peers/FrameworkElementAutomationPeer.cs.html)（名稱的取法；ToolTip 在 `GetHelpTextCore`）
+- [Developing accessible apps with Visual Studio](https://devblogs.microsoft.com/visualstudio/developing-accessible-apps-with-visual-studio/)（VS 2022 17.5 的 Accessibility Checker，Axe-Windows 引擎，要在偵錯時跑）
+- [FastPass in Accessibility Insights for Windows](https://accessibilityinsights.io/docs/windows/getstarted/fastpass/)
+- [Accessibility testing（Windows apps）](https://learn.microsoft.com/en-us/windows/uwp/accessibility/accessibility-testing)
