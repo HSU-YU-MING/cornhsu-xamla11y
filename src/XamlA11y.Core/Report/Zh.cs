@@ -11,11 +11,16 @@ public static partial class Zh
     public const string ScopeText =
         "靜態檢查：讀 XAML，什麼都沒有執行；程式碼只看型別與屬性的宣告、每個 XAML 自己的 code-behind（有沒有設名稱、內容、鍵盤處理器）。沒有問題不等於符合 WCAG 或任何法規。";
 
+    /// <summary>訊息最長 600 字、原因 200 字；比這個長的不是規則寫的，一段一段剝會是平方。</summary>
+    private const int Longest = 2000;
+
     /// <summary>一筆 finding 的訊息。</summary>
     public static string Message(string m) => TryMessage(m, out var zh) ? zh : m;
 
     public static bool TryMessage(string m, out string zh)
     {
+        zh = m;
+        if (m.Length > Longest) return false;
         foreach (var (regex, make) in Messages)
             if (regex.Match(m) is { Success: true } match)
             {
@@ -32,6 +37,8 @@ public static partial class Zh
 
     public static bool TryReason(string r, out string zh)
     {
+        zh = r;
+        if (r.Length > Longest) return false;
         if (Plain.TryGetValue(r, out var plain)) { zh = plain; return true; }
         // 接在後面的補充一段一段翻：「…; its name becomes the type name」「…; its ToolTip is the help text, not the name」
         foreach (var (regex, tail) in Tails)

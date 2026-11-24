@@ -207,4 +207,38 @@ public sealed class HtmlReportTests
         Assert.Equal("T", ReportInfo.For(f.At(folder), " T ").Name);
         Assert.Equal(expected, ReportInfo.For(f.At(folder), " ").Name);
     }
+
+    /// <summary>連結一律不跟：.git、HEAD、refs、refs 的上一層、packed-refs、commondir、gitdir 指到的路上。</summary>
+    [Theory]
+    [InlineData(".git")]
+    [InlineData(".git/HEAD")]
+    [InlineData(".git/refs/heads/main")]
+    [InlineData(".git/refs/heads")]
+    [InlineData(".git/refs")]
+    public void Links_in_the_git_folder_are_not_followed(string link)
+    {
+        using var f = new Folder().Add("real/HEAD", "ref: refs/heads/main").Add("real/refs/heads/main", "0123456789abcdef").Add("repo/x.txt", "");
+        // 其他的照放，只有這一段換成連結
+        foreach (var (from, to) in (ReadOnlySpan<(string, string)>)[("real/HEAD", "repo/.git/HEAD"), ("real/refs/heads/main", "repo/.git/refs/heads/main")])
+            if (to != "repo/" + link && !to.StartsWith("repo/" + link + "/", StringComparison.Ordinal)) f.Add(to, File.ReadAllText(f.At(from)));
+        var target = f.At("real" + link[".git".Length..]);
+        var at = f.At("repo/" + link);
+        Directory.CreateDirectory(Path.GetDirectoryName(at)!);
+        try
+        {
+            if (Directory.Exists(target)) Directory.CreateSymbolicLink(at, target); else File.CreateSymbolicLink(at, target);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return; }      // Windows 沒開開發人員模式不能建連結；Linux 的 CI 會跑
+        Assert.Null(ReportInfo.For(f.At("repo"), null).Commit);
+    }
+
+    [Fact]
+    public void A_gitdir_behind_a_link_is_not_followed()
+    {
+        using var f = new Folder().Add("real/git/HEAD", "0123456789abcdef").Add("repo/.git", "gitdir: ../way/git").Add("plain/.git", "gitdir: ../real/git");
+        Assert.Equal("0123456", ReportInfo.For(f.At("plain"), null).Commit);
+        try { Directory.CreateSymbolicLink(f.At("way"), f.At("real")); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return; }
+        Assert.Null(ReportInfo.For(f.At("repo"), null).Commit);
+    }
 }

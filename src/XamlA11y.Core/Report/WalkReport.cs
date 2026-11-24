@@ -28,6 +28,7 @@ public static class WalkReport
         }
         if (walk.Trap is { } trap && walk.After > 0)
             o.WriteLine(lang.T($"  Tab stays inside <{Text.Safe(trap.Name.LocalName)}> (line {Context.LineOf(trap)}): {walk.After} stop(s) after it need Ctrl+Tab, the arrow keys or the mouse", $"  Tab 進了 <{Text.Safe(trap.Name.LocalName)}>（第 {Context.LineOf(trap)} 行）就在裡面繞：後面 {walk.After} 站要用 Ctrl+Tab、方向鍵或滑鼠"));
+        if (walk.Cut) o.WriteLine(lang.T("  !! too large: stopped here, the rest was not walked", "  !! 太大：走到這裡為止，後面沒走"));
         if (walk.InPopups > 0) o.WriteLine(lang.T($"  not listed: {walk.InPopups} in popups (only there while one is open)", $"  沒列：{walk.InPopups} 個在 Popup 裡（打開才有）"));
         if (walk.LeftOut > 0) o.WriteLine(lang.T($"  not listed: {walk.LeftOut} hidden or disabled, and nothing in the project opens them", $"  沒列：{walk.LeftOut} 個藏起來或停用的，專案裡沒有東西會打開"));
         o.WriteLine(lang.T(

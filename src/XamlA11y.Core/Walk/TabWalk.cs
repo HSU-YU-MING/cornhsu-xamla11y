@@ -23,7 +23,8 @@ public sealed record WalkStop(XElement Element, string File, int Line, string Co
 /// <param name="After">它後面還有幾站。</param>
 /// <param name="LeftOut">一開始藏起來或停用、沒有東西會打開的。</param>
 /// <param name="InPopups">在 Popup、右鍵選單裡的：打開才有，另外走。</param>
-public sealed record WalkResult(IReadOnlyList<WalkStop> Stops, XElement? Trap, int After, int LeftOut, int InPopups);
+/// <param name="Cut">太大，沒走完。</param>
+public sealed record WalkResult(IReadOnlyList<WalkStop> Stops, XElement? Trap, int After, int LeftOut, int InPopups, bool Cut);
 
 /// <summary>
 /// 一個 XAML 檔按 Tab 會依序停在哪裡。照 WPF 的規則（實測 prototype/UiaOracle/facts/walk.txt，逐案比順序）：
@@ -73,9 +74,12 @@ public sealed class TabWalk
     private static readonly HashSet<string> Unmeasured = new(StringComparer.Ordinal)
         { "WebBrowser", "WindowsFormsHost", "ElementHost", "FlowDocumentReader", "FlowDocumentPageViewer", "DocumentViewer" };
 
-    /// <summary>超過這麼多站就停：互相包含的控制項，一個放好幾份，會變成次方。</summary>
-    private const int Most = 5000;
+    /// <summary>超過這麼多站、走過這麼多元素就停：一層包兩個下一層，三十層就是十億，一站都沒有也跑不完。</summary>
+    private const int MostStops = 5000;
+    private const int MostVisits = 200_000;
     private int _count;
+    private int _visits;
+    private bool Full => _count >= MostStops || _visits >= MostVisits;
     private readonly HashSet<string> _inside = new(StringComparer.Ordinal);
 
     private readonly Project _project;
@@ -92,7 +96,7 @@ public sealed class TabWalk
         walk.Children(doc.Root, group, null, 0);
         var stops = new List<WalkStop>();
         walk.Flatten(group, stops, out var after);
-        return new WalkResult(stops, walk._trap, after, walk._leftOut, walk._popups);
+        return new WalkResult(stops, walk._trap, after, walk._leftOut, walk._popups, walk.Full);
     }
 
     // ───────────────────────── 分組與順序 ─────────────────────────
@@ -164,8 +168,10 @@ public sealed class TabWalk
     private void Visit(XElement e, Group group, string? maybe, int depth)
     {
         var local = e.Name.LocalName;
+        if (Full) return;
+        _visits++;
         if (local is "Popup" or "ContextMenu") _popups += Count(e);
-        if (depth > 400 || _count >= Most || local is "Popup" or "ContextMenu" or "ToolTip" || Markup.IsWpf(e) && local is "ResourceDictionary" or "Style" or "DataTemplate" or "ControlTemplate" or "Storyboard") return;
+        if (depth > 400 || local is "Popup" or "ContextMenu" or "ToolTip" || Markup.IsWpf(e) && local is "ResourceDictionary" or "Style" or "DataTemplate" or "ControlTemplate" or "Storyboard") return;
 
         // 看不看得到、能不能用
         var styles = _project.Styles;
@@ -267,7 +273,7 @@ public sealed class TabWalk
     /// <summary>走進專案自己的控制項。包到自己的（遞迴的範本）不再進去，站數也有上限：一個檔案 40 個自己，跑不完。</summary>
     private void Inside(XamlDoc doc, Group group, string? maybe, int depth)
     {
-        if (_count >= Most || !_inside.Add(doc.File)) return;
+        if (Full || !_inside.Add(doc.File)) return;
         Children(doc.Root, group, maybe, depth + 10);
         _inside.Remove(doc.File);
     }

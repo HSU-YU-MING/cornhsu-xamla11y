@@ -98,9 +98,25 @@ public sealed class WalkTests
             .Add("One.xaml", $"<UserControl {Kit.Ns} x:Class=\"App.One\"><StackPanel>{string.Concat(Enumerable.Repeat("<Button/>", 100))}</StackPanel></UserControl>")
             .Add("Big.xaml", Kit.Window(string.Concat(Enumerable.Repeat("<local:Two/>", 100))));
         var clock = System.Diagnostics.Stopwatch.StartNew();
-        Assert.Contains("1 Tab stop(s)", f.Run("walk", f.At("Main.xaml")).Out, StringComparison.Ordinal);
-        Assert.Equal(0, f.Run("walk", f.At("Big.xaml")).Exit);
+        var loop = f.Run("walk", f.At("Main.xaml")).Out;
+        Assert.Contains("1 Tab stop(s)", loop, StringComparison.Ordinal);
+        Assert.DoesNotContain("too large", loop, StringComparison.Ordinal);
+        Assert.Contains("too large", f.Run("walk", f.At("Big.xaml")).Out, StringComparison.Ordinal);
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(20), clock.Elapsed.ToString());
+    }
+
+    /// <summary>一站都沒有，但一層包兩個下一層：四十層是一兆個元素。</summary>
+    [Fact]
+    public void Doubling_without_stops_ends()
+    {
+        using var f = new Folder().Add("Main.xaml", Kit.Window("<local:L0/>"));
+        for (var i = 0; i < 40; i++) f.Add($"L{i}.xaml", $"<UserControl {Kit.Ns} x:Class=\"App.L{i}\"><StackPanel>{(i < 39 ? $"<local:L{i + 1}/><local:L{i + 1}/>" : "<Border/>")}</StackPanel></UserControl>");
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var r = f.Run("walk", f.At("Main.xaml"));
+        Assert.Equal(0, r.Exit);
+        Assert.Contains("!! too large: stopped here", r.Out, StringComparison.Ordinal);
+        Assert.Contains("!! 太大", f.Run("walk", f.At("Main.xaml"), "--lang", "zh-Hant").Out, StringComparison.Ordinal);
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(30), clock.Elapsed.ToString());
     }
 
     /// <summary>整個視窗的根設 Cycle：後面沒有站，不用說。</summary>

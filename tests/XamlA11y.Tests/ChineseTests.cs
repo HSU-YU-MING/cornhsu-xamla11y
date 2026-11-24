@@ -117,7 +117,11 @@ public sealed class ChineseTests
         Assert.Equal("<Button> has no accessible name: something new", Lang.ZhHant.Message("<Button> has no accessible name: something new"));
         var evil = "<Button> has no accessible name: " + string.Concat(Enumerable.Repeat("; its ToolTip is the help text, not the name", 2000));
         var clock = System.Diagnostics.Stopwatch.StartNew();
-        Lang.ZhHant.Message(evil);
+        Assert.Equal(evil, Lang.ZhHant.Message(evil));
+        Assert.Equal(evil, Lang.ZhHant.Reason(evil));
+        // 規則寫得出來的最長的那種，也要快
+        var longest = "<Button> has no accessible name: " + string.Concat(Enumerable.Repeat("; its ToolTip is the help text, not the name", 13));
+        for (var i = 0; i < 20; i++) Lang.ZhHant.Message(longest);
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(10), clock.Elapsed.ToString());
     }
 
