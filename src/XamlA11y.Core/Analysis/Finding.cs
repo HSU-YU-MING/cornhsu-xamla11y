@@ -5,7 +5,7 @@ namespace XamlA11y.Core.Analysis;
 public enum Severity { Off, Info, Warn, Fail }
 
 /// <summary>一條規則的說明（SARIF、--help、文件都從這裡來）。</summary>
-/// <param name="Rule">規劃書的規則編號（R1…R6）：報告依它分組算可解析率。</param>
+/// <param name="Rule">規劃書的規則編號（R1…R7）：報告依它分組算可解析率。</param>
 public sealed record Kind(string Slug, string Rule, Severity Default, string Wcag, string Title, string Help);
 
 public static class Kinds
@@ -46,10 +46,14 @@ public static class Kinds
         "Click target is smaller than 24 by 24",
         "The target's size is set to less than 24 DIP and it is too close to its neighbour for the spacing exception of WCAG 2.5.8.");
 
-    public static readonly IReadOnlyList<Kind> All =
-        [MissingName, TextNotName, MeaninglessName, SymbolName, InputNoName, FocusNotVisible, MouseOnly, NotInTabOrder, SmallTarget];
+    public static readonly Kind ListNoName = new("list-no-name", "R7", Severity.Warn, "4.1.2, 1.3.1",
+        "List, grid or tree has no accessible name",
+        "A screen reader announces this as just \"list\", \"data grid\" or \"tree\" when focus enters it, so two of them in one window sound the same. Set AutomationProperties.LabeledBy to the heading above it, or AutomationProperties.Name. A GroupBox around it and a <Label Target=…> do not name it.");
 
-    public static readonly IReadOnlyList<string> Rules = ["R1", "R2", "R3", "R4", "R5", "R6"];
+    public static readonly IReadOnlyList<Kind> All =
+        [MissingName, TextNotName, MeaninglessName, SymbolName, InputNoName, FocusNotVisible, MouseOnly, NotInTabOrder, SmallTarget, ListNoName];
+
+    public static readonly IReadOnlyList<string> Rules = ["R1", "R2", "R3", "R4", "R5", "R6", "R7"];
 
     public static string RuleTitle(string rule) => rule switch
     {
@@ -59,6 +63,7 @@ public static class Kinds
         "R4" => "mouse-only elements",
         "R5" => "tab order",
         "R6" => "target size",
+        "R7" => "names of lists",
         _ => rule,
     };
 
@@ -134,7 +139,7 @@ public sealed class AuditResult
 
     /// <summary>
     /// 可解析率：判得出來的 ÷（判得出來的 + 卡住的）。「靜態不可能知道」的不在分母。
-    /// 只看預設會擋的四條（R1～R4）：R5、R6 幾乎不會卡住，算進來會把名稱整批看不到的專案墊高過關。
+    /// 只看預設會擋的四條（R1～R4）：R5～R7 預設不擋，也幾乎不會卡住，算進來會把名稱整批看不到的專案墊高過關。
     /// </summary>
     public double Resolution
     {

@@ -90,7 +90,8 @@ internal static class FocusRule
         bool Applied(StyleRecord r, bool hasDerived) => r.Key is null || usedKeys.ContainsKey(r.Key) || !hasDerived;
         var derived = all.Where(d => d != s && chains[d].Any(c => c.Styles.Contains(s) && c.Setter("FocusVisualStyle") == setter)).ToList();
         var leaves = new List<StyleRecord>();
-        if (Applied(s, derived.Count > 0)) leaves.Add(s);
+        // 有任何樣式以它為底（就算那個樣式把焦點框加回來了）而沒有人直接用它：只是基底，不單獨判
+        if (Applied(s, all.Any(d => d != s && chains[d].Any(c => c.Styles.Contains(s))))) leaves.Add(s);
         leaves.AddRange(derived.Where(d => Applied(d, all.Any(x => x != d && chains[x].Any(c => c.Styles.Contains(d))))));
 
         string? unknown = null, skipped = null;

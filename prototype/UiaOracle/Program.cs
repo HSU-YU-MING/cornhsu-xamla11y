@@ -15,7 +15,7 @@ internal static class Program
         {
             switch (mode)
             {
-                case "names": Probe.RunNames(args.Contains("--axe")); break;
+                case "names": Probe.RunNames(args.Contains("--axe"), args.Skip(1).FirstOrDefault(a => a.EndsWith(".txt", StringComparison.Ordinal)) ?? "names.txt"); break;
                 case "templates": Parts.RunTemplates(); break;
                 case "themes": Parts.RunThemes(); break;
                 case "tabs": Probe.RunTabs(); break;

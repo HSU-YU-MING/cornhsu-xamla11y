@@ -7,7 +7,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 First version.
 
-- `xamla11y audit <root>`: nine kinds of finding in six rules — names of controls and inputs (WCAG 4.1.2,
+- `xamla11y audit <root>`: ten kinds of finding in seven rules — names of controls, inputs and lists (WCAG 4.1.2,
   1.1.1, 1.3.1, 3.3.2), visible focus (2.4.7), mouse-only elements (2.1.1), tab order (2.4.3), target size (2.5.8).
 - Names follow what WPF does, measured with a UI Automation client on .NET Framework 4.8 and .NET 8–11 and
   checked against Axe-Windows: `Label.Target` gives no name, a ToolTip gives no name, text inside a panel

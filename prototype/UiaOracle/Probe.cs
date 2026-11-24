@@ -26,9 +26,9 @@ internal static class Probe
         return list;
     }
 
-    public static void RunNames(bool axe)
+    public static void RunNames(bool axe, string file = "names.txt")
     {
-        foreach (var group in Load("names.txt").GroupBy(n => n.Group))
+        foreach (var group in Load(file).GroupBy(n => n.Group))
         {
             Console.WriteLine($"\n== {group.Key}");
             foreach (var c in group)

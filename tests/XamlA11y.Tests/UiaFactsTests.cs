@@ -43,7 +43,7 @@ public class UiaFactsTests
     {
         var f = Case("names", title);
         var result = Auditor.Run(Project.FromText(f.GetProperty("xaml").GetString()!));
-        foreach (var j in result.Judgements.Where(j => j.Rule is "R1" or "R2"))
+        foreach (var j in result.Judgements.Where(j => j.Rule is "R1" or "R2" or "R7"))
         {
             if (Markup.NameOf(j.Element) is not { } id || !f.GetProperty("uia").TryGetProperty(id, out var node)) continue;
             if (j.Verdict is Verdict.Blocked or Verdict.NotJudged) continue;
@@ -51,6 +51,7 @@ public class UiaFactsTests
             var ok = j.Kind?.Slug switch
             {
                 null or "symbol-name" => Meaningful(name),
+                "list-no-name" => !Meaningful(name),
                 "meaningless-name" => !Meaningful(name) || j.Reason!.Contains("font", StringComparison.Ordinal),
                 _ => string.IsNullOrWhiteSpace(name),
             };
@@ -64,7 +65,7 @@ public class UiaFactsTests
     {
         int judged = 0, unknown = 0;
         foreach (var f in Group("names"))
-            foreach (var j in Auditor.Run(Project.FromText(f.GetProperty("xaml").GetString()!)).Judgements.Where(j => j.Rule is "R1" or "R2"))
+            foreach (var j in Auditor.Run(Project.FromText(f.GetProperty("xaml").GetString()!)).Judgements.Where(j => j.Rule is "R1" or "R2" or "R7"))
                 if (Markup.NameOf(j.Element) is { } id && f.GetProperty("uia").TryGetProperty(id, out _))
                 {
                     if (j.Verdict is Verdict.Blocked or Verdict.NotJudged) unknown++; else judged++;

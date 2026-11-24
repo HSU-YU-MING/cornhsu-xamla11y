@@ -59,6 +59,11 @@
             <Button Content="Down" Width="18" Height="18"/>
         </StackPanel>
 
+        <!-- list-no-name (warn): the GroupBox header is not its name -->
+        <GroupBox Header="Files">
+            <ListBox x:Name="FileList" Height="60"/>
+        </GroupBox>
+
         <!-- fine -->
         <Button Content="Flat" Style="{StaticResource FlatButton}"/>
         <TextBlock x:Name="MailLabel" Text="Mail"/>

@@ -8,13 +8,13 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
 1. **靜態分析 + 全量掃描 + CI 退出碼。**（三件套同一條）
 2. **「工具沒看到」與「看到了沒問題」分得開。** 讀不出來 = `Blocked`（進可解析率分母）；靜態不可能知道 = `NotJudged`（不進分母、但要數）。
 3. **每條規則都拿真的 WPF 對照過。** 加規則、改規則之前先在 `prototype/UiaOracle/facts/` 加案例。
-4. **永遠開火的閘門會被關掉。** 預設只擋確定的；R5、R6 是 warn，符號名稱是 info。
+4. **永遠開火的閘門會被關掉。** 預設只擋確定的；R5、R6、R7 是 warn，符號名稱是 info。
 
 ## 改規則的流程
 
 1. 在 `prototype/UiaOracle/facts/*.txt` 加案例（一行一案，引號寫單引號）。
 2. `dotnet build prototype/UiaOracle -c Release`，跑 `uiaoracle check`（約 4 分鐘，會在螢幕左上角開小視窗、搶焦點）。**任何一個 WRONG 都不能放過。**
-3. `uiaoracle check-corpus <專案資料夾…>`：真實專案的形狀。`uiaoracle check-windows <專案資料夾…>`：整個檔案連樣式、資源載進真的 WPF（視窗在螢幕外，不搶焦點；50 個專案約 40 分鐘）。
+3. `uiaoracle check-corpus <專案資料夾…>`：真實專案的形狀。`uiaoracle check-windows <專案資料夾…>`：整個檔案連樣式、資源載進真的 WPF（視窗在螢幕外，不搶焦點；49 個專案約 40 分鐘，開四個平行約 15 分鐘）。
    別人的 XAML 一律過 `SafeMarkup`（白名單）才交給 XamlReader；改它之後跑 `uiaoracle check-hostile`。
 4. `uiaoracle record tests/XamlA11y.Tests/uia-facts.json`：把 WPF 的答案錄給跨平台的測試。**只錄真值，不錄工具的答案。**
 5. `scripts/corpus-fetch.sh` 抓語料（`docs/corpus.tsv`，commit 釘死），`scripts/corpus-run.sh <輸出資料夾>` 前後各一次，`node scripts/corpus-diff.mjs 前 後` 逐類抽樣看原始碼，`node scripts/readme-corpus.mjs <輸出> --update` 重貼 README 的表。Oracle 抓規則想錯，語料抓規則想漏 —— 兩個都要。
@@ -70,14 +70,15 @@ WPF 的事實在 `docs/M1-UIA實測.md`。這份只記**踩過的坑與不要「
 | 35 | 樣式觸發器的 Content 壓過本地內容 | 本地值才是贏的 | panuon 語料 |
 | 36 | Run 一起判 | 每個 Run 有自己的字型、可以是綁定、文字可以來自它的樣式 | 第二輪審查、check-windows（NuGet Package Explorer） |
 | 37 | 「Content = x」就是類別設自己的內容 | 物件初始設定式 `new ToolTip { Content = x, }` 也長這樣；看等號後面先遇到 `;` 還是 `,`／`}` | Playnite |
-| 38 | 測試全綠 ≠ 有人守 | 變異測試 120 處只抓到 60。多數是清單少一項：`PinnedTests` 一項一個案例 | 變異測試 |
+| 38 | 測試全綠 ≠ 有人守 | 變異測試第一次 120 處只抓到 60；補 `Pinned*Tests` 之後全新抽樣 150 處抓到 118（剩下多是迴圈上限、防呆這種改了也一樣的）。多數是清單少一項：一項一個案例。`scripts/mutate.mjs` | 變異測試 |
+| 42 | 沒人直接用的基底樣式 | 衍生樣式把焦點框加回來了，基底還是被單獨判、報 fail。只要有樣式以它為底、沒有元素直接用它，就不單獨判 | 補測試時發現 |
 | 39 | 深度有上限、沒記住答案 | 同名類別互相當基底，142 KB 的 .cs 跑不完。`DerivedFrom` 有記憶 | 第二輪審查 |
 | 40 | LINQ to XML 的 `PreviousNode` 是從頭數 | 三萬個兄弟元素 39 秒。用 `Markup.Previous` | 第二輪審查 |
 | 41 | XamlReader 會建立 XAML 指名的任何型別 | Oracle 讀的是別人的 XAML。`SafeMarkup` 是白名單、不看清理做了什麼，自己從頭檢查 | 自動安全審查 |
 
 ## 沒做的、知道的
 
-- `ListBox`、`DataGrid`、`TreeView`、`Calendar`、`ProgressBar` 沒有名稱：Axe 會報，這支不判（第一版範圍；會讓第一次跑的清單再長一倍）。2026-11-24 實跑 QuillNest：Axe 在真的畫面上報的按鈕、輸入框名稱全部對得上，多出來的就是清單與「兄弟同名」兩類。
+- `ItemsControl`、`Menu`、`ToolBar`、`ProgressBar`、`Calendar` 沒有名稱：Axe 會報，這支不判（`ItemsControl` 多半只是排版）。清單、表格、樹是 R7，警告、不進可解析率（49 個公開專案與 3 個 App 共 697 筆）。2026-11-24 實跑 QuillNest：Axe 在真的畫面上報的按鈕、輸入框名稱全部對得上，多出來的就是清單（後來做成 R7）與「兄弟同名」兩類。Kindling、Cornea 同一天用複製品（資料夾改指暫存區）也對過，一樣一個不漏。
 - 高度引擎：R6 只用明寫的大小與固定的 Grid 格子。沒設大小的是平台預設，WCAG 2.5.8 有例外，所以不需要算預設高度。
 - PresentationFramework.Fluent（.NET 9+ 的 ThemeMode）量過了（`focus-themes`），但沒有套件版本可比對，所以當沒量過。
 - `.vb` 的類別繼承不跟（code-behind 的 `.vb` 有讀）。

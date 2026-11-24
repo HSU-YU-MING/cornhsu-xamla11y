@@ -29,6 +29,7 @@ body:
         - mouse-only
         - not-in-tab-order
         - small-target
+        - list-no-name
         - "exit 3 / blocked — it should have been able to read this"
         - Something else
     validations:

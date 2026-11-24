@@ -88,6 +88,12 @@
 - 沒有 AutomationPeer 的自訂控制項（MahApps／HandyControl／MaterialDesign 的 NumericUpDown、HandyControl 的 PasswordBox）設了名稱也沒有用：
   UIA 樹上只有裡面那個沒名稱的 TextBox。
 
+## 5c. 清單、表格、樹（facts/lists.txt，R7）
+
+- ListBox、ListView、TreeView、DataGrid 沒設名稱：UIA 的 Name 是空的，Axe-Windows 報 NameNotNull。外面的 GroupBox、`Label.Target`、ToolTip 都不算。
+- Axe **也報**：ItemsControl（有項目時）、Menu、ToolBar、ProgressBar、Calendar。**不報**：TabControl、StatusBar、GroupBox、ScrollBar。
+- 鍵盤到不了的（`Focusable="False"`、停用）Axe 不報 → 這支降成 info。
+
 ## 6. .NET Framework 4.8
 
 同一份案例，Windows PowerShell 5.1（就是 .NET Framework 4.8）跑 `net48.ps1`。

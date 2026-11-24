@@ -97,7 +97,7 @@ public class RuleTests
 
     [Theory]
     [InlineData("<ComboBox AutomationProperties.Name=\"n\"><ComboBox.Template><ControlTemplate TargetType=\"ComboBox\"><ToggleButton/></ControlTemplate></ComboBox.Template></ComboBox>")]
-    [InlineData("<TreeView><TreeViewItem Header=\"h\"><TreeViewItem.Template><ControlTemplate TargetType=\"TreeViewItem\"><ToggleButton Focusable=\"False\"/></ControlTemplate></TreeViewItem.Template></TreeViewItem></TreeView>")]
+    [InlineData("<TreeView AutomationProperties.Name=\"n\"><TreeViewItem Header=\"h\"><TreeViewItem.Template><ControlTemplate TargetType=\"TreeViewItem\"><ToggleButton Focusable=\"False\"/></ControlTemplate></TreeViewItem.Template></TreeViewItem></TreeView>")]
     [InlineData("<TabControl><TabItem Visibility=\"Collapsed\"/></TabControl>")]
     public void Template_parts_and_collapsed_tabs_are_not_judged(string xaml) => Assert.Empty(Kit.Kinds(xaml));
 
