@@ -16,7 +16,7 @@ CODE=$?
 node -e '
 const r = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
 const want = { "missing-name": 1, "text-not-in-name": 1, "meaningless-name": 1, "symbol-name": 1, "input-no-name": 1,
-               "focus-not-visible": 1, "mouse-only": 1, "not-in-tab-order": 1, "small-target": 2 };
+               "focus-not-visible": 1, "mouse-only": 1, "not-in-tab-order": 1, "small-target": 2, "list-no-name": 1 };
 let bad = 0;
 const check = (name, got, expected) => {
   if (got === expected) console.log("ok: " + name + " = " + got);

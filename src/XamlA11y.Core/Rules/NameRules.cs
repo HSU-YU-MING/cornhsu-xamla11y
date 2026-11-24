@@ -4,7 +4,7 @@ using XamlA11y.Core.Xaml;
 
 namespace XamlA11y.Core.Rules;
 
-/// <summary>R1（互動元件的名稱）與 R2（輸入框的名稱）。</summary>
+/// <summary>R1（互動元件的名稱）、R2（輸入框的名稱）與 R7（清單、表格、樹的名稱，警告）。</summary>
 internal static class NameRules
 {
     /// <summary>這些控制項範本裡的零件不在 UIA 樹上、或 Axe-Windows 不報（實測，docs/M1-UIA實測.md 第 3 節）。</summary>
@@ -23,15 +23,17 @@ internal static class NameRules
             {
                 if (Wpf.Interactive.Contains(behaves)) ctx.Blocked("R1", e, "a class that sets its own accessible name in code", local);
                 else if (Wpf.Inputs.Contains(behaves)) ctx.Blocked("R2", e, "a class that sets its own accessible name in code", local);
+                else if (Wpf.Lists.Contains(behaves)) ctx.Blocked("R7", e, "a class that sets its own accessible name in code", local);
                 return;
             }
             // 不認得的控制項：名字看起來是互動元件才算候選（其他的連是不是控制項都不知道）
             if (LooksInteractive(local)) ctx.Blocked("R1", e, "a control this tool does not know (declare it in treatAs)", local);
             else if (LooksInput(local)) ctx.Blocked("R2", e, "a control this tool does not know (declare it in treatAs)", local);
+            else if (LooksList(local)) ctx.Blocked("R7", e, "a control this tool does not know (declare it in treatAs)", local);
             return;
         }
 
-        var rule = Wpf.Interactive.Contains(control) ? "R1" : Wpf.Inputs.Contains(control) ? "R2" : null;
+        var rule = Wpf.Interactive.Contains(control) ? "R1" : Wpf.Inputs.Contains(control) ? "R2" : Wpf.Lists.Contains(control) ? "R7" : null;
         if (rule is null)
         {
             // WPF 命名空間裡沒量過的控制項（RibbonButton、RibbonTextBox…）：不知道，不是沒事
@@ -59,7 +61,7 @@ internal static class NameRules
                 ctx.NotJudged(rule, e, "a template part that cannot take focus");
                 return;
             }
-            if (rule == "R2" && Markup.NameOf(e) is { } part && part.StartsWith("PART_", StringComparison.Ordinal))
+            if (rule is "R2" or "R7" && Markup.NameOf(e) is { } part && part.StartsWith("PART_", StringComparison.Ordinal))
             {
                 ctx.NotJudged(rule, e, "a template part that its control names in code");
                 return;
@@ -96,6 +98,14 @@ internal static class NameRules
 
         // 鍵盤到不了的（Focusable=False、明寫停用）：Axe-Windows 不報，螢幕閱讀器還是碰得到 → 降一級
         Severity? lowered = ctx.IsFalse(e, "Focusable") || string.Equals((string?)e.Attribute("IsEnabled"), "False", StringComparison.OrdinalIgnoreCase) ? Severity.Warn : null;
+
+        if (rule == "R7")
+        {
+            ctx.Report(Kinds.ListNoName, e, name.Kind == NameKind.Meaningless
+                ? $"<{local}> has an unreadable accessible name: {name.Why}"
+                : $"<{local}> has no accessible name{HintFor(ctx, e)}", lowered: lowered is null ? null : Severity.Info);
+            return;
+        }
 
         if (rule == "R2" && name.Kind != NameKind.Meaningless)
         {
@@ -149,6 +159,10 @@ internal static class NameRules
                 return $"; <Label Target> at line {Context.LineOf(found)} does not give it one (use AutomationProperties.LabeledBy)";
         }
 
+        // <GroupBox Header="Files"><ListBox/></GroupBox>：看起來有標題，UIA 的名稱還是空的（實測）
+        if (e.Ancestors().FirstOrDefault(a => !Markup.IsPropertyElement(a)) is { Name.LocalName: "GroupBox" } group && (string?)group.Attribute("Header") is { } header && !string.IsNullOrWhiteSpace(header) && !Markup.IsMarkup(header))
+            return $"; the GroupBox header \"{Context.Show(header.Trim())}\" around it does not give it one";
+
         if (ctx.Project.Styles.Resolve(e, "ToolTip").IsSet) return "; its ToolTip is the help text, not the name";
 
         for (var node = Markup.Previous(e); node is not null; node = Markup.Previous(node))
@@ -161,7 +175,7 @@ internal static class NameRules
                 "Label" => (string?)n.Attribute("Content") ?? n.Value,
                 _ => null,
             };
-            return string.IsNullOrWhiteSpace(text) ? "" : $"; the {n.Name.LocalName} \"{Context.Show(text.Trim())}\" before it could label it (AutomationProperties.LabeledBy)";
+            return string.IsNullOrWhiteSpace(text) ? "" : $"; the {n.Name.LocalName} {(Markup.IsMarkup(text) ? "" : $"\"{Context.Show(text.Trim())}\" ")}before it could label it (AutomationProperties.LabeledBy)";
         }
         return "";
     }
@@ -170,6 +184,10 @@ internal static class NameRules
         local.EndsWith("Button", StringComparison.Ordinal) || local.EndsWith("CheckBox", StringComparison.Ordinal)
         || local.EndsWith("ToggleSwitch", StringComparison.Ordinal) || local.EndsWith("MenuItem", StringComparison.Ordinal) || local.EndsWith("TabItem", StringComparison.Ordinal)
         || local.EndsWith("Expander", StringComparison.Ordinal) || local.EndsWith("Hyperlink", StringComparison.Ordinal);
+
+    internal static bool LooksList(string local) =>
+        local.EndsWith("ListBox", StringComparison.Ordinal) || local.EndsWith("ListView", StringComparison.Ordinal)
+        || local.EndsWith("TreeView", StringComparison.Ordinal) || local.EndsWith("DataGrid", StringComparison.Ordinal);
 
     internal static bool LooksInput(string local) =>
         local.EndsWith("TextBox", StringComparison.Ordinal) || local.EndsWith("PasswordBox", StringComparison.Ordinal) || local.EndsWith("ComboBox", StringComparison.Ordinal)

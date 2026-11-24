@@ -21,17 +21,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.9.0
+      - uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.9.1
         if: ${{ !cancelled() }}
-        with: { root: src, version: 1.9.0 }
+        with: { root: src, version: 1.9.1 }
 
-      - uses: HSU-YU-MING/cornhsu-xamlkeys@v0.4.0
+      - uses: HSU-YU-MING/cornhsu-xamlkeys@v0.4.1
         if: ${{ !cancelled() }}
-        with: { root: src, version: 0.4.0 }
+        with: { root: src, version: 0.4.1 }
 
-      - uses: HSU-YU-MING/cornhsu-xamlfit@v0.13.0
+      - uses: HSU-YU-MING/cornhsu-xamlfit@v0.13.1
         if: ${{ !cancelled() }}
-        with: { root: src, version: 0.13.0, resx: src/Resources }
+        with: { root: src, version: 0.13.1, resx: src/Resources }
 
       - uses: HSU-YU-MING/cornhsu-xamla11y@v0.1.0
         if: ${{ !cancelled() }}

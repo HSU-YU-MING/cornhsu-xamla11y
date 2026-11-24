@@ -451,7 +451,8 @@ public sealed partial class NameResolver(Project project)
     {
         foreach (var d in root.DescendantsAndSelf())
         {
-            if (Markup.IsPropertyElement(d) || d.Ancestors().TakeWhile(a => a != root).Any(a => a.Name.LocalName.EndsWith(".ToolTip", StringComparison.Ordinal) || a.Name.LocalName.EndsWith(".Resources", StringComparison.Ordinal)))
+            // 資源裡的元素：root 自己就在 .Resources 底下，只看 root 以內
+            if (Markup.IsPropertyElement(d) || d.AncestorsAndSelf().TakeWhile(a => a != root).Any(a => a.Name.LocalName.EndsWith(".ToolTip", StringComparison.Ordinal) || a.Name.LocalName.EndsWith(".Resources", StringComparison.Ordinal)))
                 continue;
             var c = project.ControlOf(d);
             if (c is "TextBlock" or "AccessText" or "Label")

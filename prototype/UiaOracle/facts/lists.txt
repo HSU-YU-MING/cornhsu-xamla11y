@@ -1,0 +1,37 @@
+# 清單、表格、樹：沒名稱時 UIA 給什麼、Axe-Windows 報不報（R7）
+list | ListBox empty | <ListBox x:Name='p'/>
+list | ListBox items | <ListBox x:Name='p'><ListBoxItem Content='a'/></ListBox>
+list | ListBox Name | <ListBox x:Name='p' AutomationProperties.Name='Files'/>
+list | ListBox LabeledBy | <TextBlock x:Name='l' Text='Files'/><ListBox x:Name='p' AutomationProperties.LabeledBy='{Binding ElementName=l}'/>
+list | ListBox Label Target | <Label Content='Files' Target='{Binding ElementName=p}'/><ListBox x:Name='p'/>
+list | ListBox ToolTip | <ListBox x:Name='p' ToolTip='Files'/>
+list | ListBox style Name | <ListBox x:Name='p'/> | <Style TargetType='ListBox'><Setter Property='AutomationProperties.Name' Value='Files'/></Style>
+list | ListBox in GroupBox | <GroupBox Header='Files'><ListBox x:Name='p'/></GroupBox>
+list | ListBox HelpText | <ListBox x:Name='p' AutomationProperties.HelpText='Files'/>
+list | ListBox not focusable | <ListBox x:Name='p' Focusable='False'/>
+list | ListBox disabled | <ListBox x:Name='p' IsEnabled='False'/>
+list | ListBox whitespace | <ListBox x:Name='p' AutomationProperties.Name=' '/>
+list | ListView | <ListView x:Name='p'><ListViewItem Content='a'/></ListView>
+list | ListView GridView | <ListView x:Name='p'><ListView.View><GridView><GridViewColumn Header='H'/></GridView></ListView.View><ListViewItem Content='a'/></ListView>
+list | ListView named | <ListView x:Name='p' AutomationProperties.Name='Files'/>
+list | TreeView | <TreeView x:Name='p'><TreeViewItem Header='a'/></TreeView>
+list | TreeView named | <TreeView x:Name='p' AutomationProperties.Name='Files'/>
+list | DataGrid | <DataGrid x:Name='p' AutoGenerateColumns='False'><DataGrid.Columns><DataGridTextColumn Header='H'/></DataGrid.Columns></DataGrid>
+list | DataGrid named | <DataGrid x:Name='p' AutomationProperties.Name='Files'/>
+list | TabControl | <TabControl x:Name='p'><TabItem Header='a'/></TabControl>
+list | TabControl named | <TabControl x:Name='p' AutomationProperties.Name='Files'><TabItem Header='a'/></TabControl>
+list | ItemsControl | <ItemsControl x:Name='p'><TextBlock Text='a'/></ItemsControl>
+list | ItemsControl empty | <ItemsControl x:Name='p'/>
+list | Menu | <Menu x:Name='p'><MenuItem Header='a'/></Menu>
+list | ToolBar | <ToolBar x:Name='p'><Button Content='a'/></ToolBar>
+list | StatusBar | <StatusBar x:Name='p'><TextBlock Text='a'/></StatusBar>
+list | ProgressBar | <ProgressBar x:Name='p' Value='5' Height='10'/>
+list | ProgressBar named | <ProgressBar x:Name='p' AutomationProperties.Name='Loading'/>
+list | ProgressBar indeterminate | <ProgressBar x:Name='p' IsIndeterminate='True' Height='10'/>
+list | Calendar | <Calendar x:Name='p'/>
+list | Calendar named | <Calendar x:Name='p' AutomationProperties.Name='Day'/>
+list | ScrollViewer | <ScrollViewer x:Name='p' Height='40'><TextBlock Text='a'/></ScrollViewer>
+list | GroupBox no header | <GroupBox x:Name='p'><Button Content='a'/></GroupBox>
+list | GroupBox header | <GroupBox x:Name='p' Header='Files'><Button Content='a'/></GroupBox>
+list | Image | <Image x:Name='p' Width='10' Height='10'/>
+list | ScrollBar | <ScrollBar x:Name='p' Orientation='Horizontal'/>

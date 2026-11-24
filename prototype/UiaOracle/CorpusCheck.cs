@@ -29,7 +29,7 @@ internal static class CorpusCheck
             var project = Project.Load(root, []);
             var audit = Auditor.Run(project);
             var batch = new List<(string Where, XElement Element)>();
-            foreach (var j in audit.Judgements.Where(j => j.Rule is "R1" or "R2" && j.Verdict is Verdict.Pass or Verdict.Finding))
+            foreach (var j in audit.Judgements.Where(j => j.Rule is "R1" or "R2" or "R7" && j.Verdict is Verdict.Pass or Verdict.Finding))
             {
                 if (Extract(j.Element) is not { } e) { skipped++; continue; }
                 if (!seen.Add(e.ToString(SaveOptions.DisableFormatting))) continue;
@@ -76,7 +76,7 @@ internal static class CorpusCheck
         var result = Auditor.Run(Project.FromText(xaml));
         using var shown = Host.Show(window, 420, 300);
         var tree = Host.Tree(shown.Handle).Where(n => n.Id.Length > 0).GroupBy(n => n.Id).ToDictionary(g => g.Key, g => g.First());
-        foreach (var j in result.Judgements.Where(j => j.Rule is "R1" or "R2"))
+        foreach (var j in result.Judgements.Where(j => j.Rule is "R1" or "R2" or "R7"))
         {
             if (XamlMarkup.NameOf(j.Element) is not { } id || !id.StartsWith('p') || !int.TryParse(id[1..], out var i)) continue;
             if (j.Verdict is Verdict.Blocked or Verdict.NotJudged) { unknown++; continue; }
@@ -113,6 +113,8 @@ internal static class CorpusCheck
     private static XElement? Extract(XElement e)
     {
         if (e.Name.Namespace != Wpf || e.Name.LocalName == "ComboBoxItem") return null;
+        // 清單、表格、樹：名稱跟裡面的東西無關，只留自己（欄位定義多半要專案的型別）
+        if (e.Name.LocalName is "ListBox" or "ListView" or "TreeView" or "DataGrid") return Clean(new XElement(e.Name, e.Attributes().Where(a => !a.IsNamespaceDeclaration)), e.Name.LocalName);
         var copy = Clean(e, e.Name.LocalName);
         return copy;
     }

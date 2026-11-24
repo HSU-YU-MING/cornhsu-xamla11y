@@ -79,11 +79,12 @@ internal static class Check
     {
         null or "symbol-name" => Meaningful(node.Name),
         "missing-name" or "text-not-in-name" or "input-no-name" => string.IsNullOrWhiteSpace(node.Name),
+        "list-no-name" => !Meaningful(node.Name),
         "meaningless-name" => !Meaningful(node.Name) || j.Reason?.Contains("font", StringComparison.Ordinal) == true,
         _ => true,
     };
 
-    private static IEnumerable<Judgement> NameJudgements(AuditResult r) => r.Judgements.Where(j => j.Rule is "R1" or "R2");
+    private static IEnumerable<Judgement> NameJudgements(AuditResult r) => r.Judgements.Where(j => j.Rule is "R1" or "R2" or "R7");
 
     public static int Run()
     {
@@ -101,7 +102,7 @@ internal static class Check
 
     /// <summary>名稱的案例檔；指令列可以只跑一份（check-names round3-names.txt）。</summary>
     internal static bool Show;
-    internal static string[] NameFiles = ["names.txt", "templates.txt", "more-names.txt", "round3-names.txt"];
+    internal static string[] NameFiles = ["names.txt", "templates.txt", "more-names.txt", "round3-names.txt", "lists.txt"];
 
     public static int Facts()
     {

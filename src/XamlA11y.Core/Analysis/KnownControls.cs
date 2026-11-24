@@ -110,6 +110,9 @@ public static class Wpf
     public static readonly HashSet<string> Inputs = new(StringComparer.Ordinal)
     { "TextBox", "PasswordBox", "RichTextBox", "ComboBox", "Slider", "DatePicker" };
 
+    /// <summary>R7 判定的清單、表格、樹（Axe-Windows 也報；TabControl、StatusBar 它不報，ItemsControl 多半只是排版）。</summary>
+    public static readonly HashSet<string> Lists = new(StringComparer.Ordinal) { "ListBox", "ListView", "TreeView", "DataGrid" };
+
     public static readonly HashSet<string> Buttons = new(StringComparer.Ordinal)
     { "Button", "ToggleButton", "RepeatButton", "CheckBox", "RadioButton" };
 

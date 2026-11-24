@@ -151,7 +151,7 @@ public class CliTests
         Assert.Equal(1, root.GetProperty("schemaVersion").GetInt32());
         Assert.Equal(1, root.GetProperty("exitCode").GetInt32());
         Assert.Equal(1, root.GetProperty("summary").GetProperty("counts").GetProperty("missing-name").GetInt32());
-        Assert.Equal(6, root.GetProperty("summary").GetProperty("rules").GetArrayLength());
+        Assert.Equal(7, root.GetProperty("summary").GetProperty("rules").GetArrayLength());
         var f = root.GetProperty("findings")[0];
         Assert.Equal("Main.xaml:1", f.GetProperty("site").GetString());
         Assert.Equal("4.1.2, 1.1.1", f.GetProperty("wcag").GetString());

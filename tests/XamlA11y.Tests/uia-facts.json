@@ -3777,6 +3777,438 @@
           "control": true
         }
       }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListBox empty",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListBox x:Name=\u0022p\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListBox items",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListBox x:Name=\u0022p\u0022\u003E\u003CListBoxItem Content=\u0022a\u0022/\u003E\u003C/ListBox\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListBox Name",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListBox x:Name=\u0022p\u0022 AutomationProperties.Name=\u0022Files\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "Files",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListBox LabeledBy",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CTextBlock x:Name=\u0022l\u0022 Text=\u0022Files\u0022/\u003E\u003CListBox x:Name=\u0022p\u0022 AutomationProperties.LabeledBy=\u0022{Binding ElementName=l}\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "Files",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListBox Label Target",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CLabel Content=\u0022Files\u0022 Target=\u0022{Binding ElementName=p}\u0022/\u003E\u003CListBox x:Name=\u0022p\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListBox ToolTip",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListBox x:Name=\u0022p\u0022 ToolTip=\u0022Files\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListBox style Name",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003CStyle TargetType=\u0022ListBox\u0022\u003E\u003CSetter Property=\u0022AutomationProperties.Name\u0022 Value=\u0022Files\u0022/\u003E\u003C/Style\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListBox x:Name=\u0022p\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "Files",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListBox in GroupBox",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CGroupBox Header=\u0022Files\u0022\u003E\u003CListBox x:Name=\u0022p\u0022/\u003E\u003C/GroupBox\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListBox HelpText",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListBox x:Name=\u0022p\u0022 AutomationProperties.HelpText=\u0022Files\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListBox not focusable",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListBox x:Name=\u0022p\u0022 Focusable=\u0022False\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListBox disabled",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListBox x:Name=\u0022p\u0022 IsEnabled=\u0022False\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListBox whitespace",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListBox x:Name=\u0022p\u0022 AutomationProperties.Name=\u0022 \u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": " ",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListView",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListView x:Name=\u0022p\u0022\u003E\u003CListViewItem Content=\u0022a\u0022/\u003E\u003C/ListView\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListView GridView",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListView x:Name=\u0022p\u0022\u003E\u003CListView.View\u003E\u003CGridView\u003E\u003CGridViewColumn Header=\u0022H\u0022/\u003E\u003C/GridView\u003E\u003C/ListView.View\u003E\u003CListViewItem Content=\u0022a\u0022/\u003E\u003C/ListView\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "DataGrid",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ListView named",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CListView x:Name=\u0022p\u0022 AutomationProperties.Name=\u0022Files\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "Files",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "TreeView",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CTreeView x:Name=\u0022p\u0022\u003E\u003CTreeViewItem Header=\u0022a\u0022/\u003E\u003C/TreeView\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "Tree",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "TreeView named",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CTreeView x:Name=\u0022p\u0022 AutomationProperties.Name=\u0022Files\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "Files",
+          "type": "Tree",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "DataGrid",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CDataGrid x:Name=\u0022p\u0022 AutoGenerateColumns=\u0022False\u0022\u003E\u003CDataGrid.Columns\u003E\u003CDataGridTextColumn Header=\u0022H\u0022/\u003E\u003C/DataGrid.Columns\u003E\u003C/DataGrid\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "DataGrid",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "DataGrid named",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CDataGrid x:Name=\u0022p\u0022 AutomationProperties.Name=\u0022Files\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "Files",
+          "type": "DataGrid",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "TabControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CTabControl x:Name=\u0022p\u0022\u003E\u003CTabItem Header=\u0022a\u0022/\u003E\u003C/TabControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "Tab",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "TabControl named",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CTabControl x:Name=\u0022p\u0022 AutomationProperties.Name=\u0022Files\u0022\u003E\u003CTabItem Header=\u0022a\u0022/\u003E\u003C/TabControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "Files",
+          "type": "Tab",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ItemsControl",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl x:Name=\u0022p\u0022\u003E\u003CTextBlock Text=\u0022a\u0022/\u003E\u003C/ItemsControl\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ItemsControl empty",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CItemsControl x:Name=\u0022p\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "List",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "Menu",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CMenu x:Name=\u0022p\u0022\u003E\u003CMenuItem Header=\u0022a\u0022/\u003E\u003C/Menu\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "Menu",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ToolBar",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CToolBar x:Name=\u0022p\u0022\u003E\u003CButton Content=\u0022a\u0022/\u003E\u003C/ToolBar\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "ToolBar",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "StatusBar",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CStatusBar x:Name=\u0022p\u0022\u003E\u003CTextBlock Text=\u0022a\u0022/\u003E\u003C/StatusBar\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "StatusBar",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ProgressBar",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CProgressBar x:Name=\u0022p\u0022 Value=\u00225\u0022 Height=\u002210\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "ProgressBar",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ProgressBar named",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CProgressBar x:Name=\u0022p\u0022 AutomationProperties.Name=\u0022Loading\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "Loading",
+          "type": "ProgressBar",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ProgressBar indeterminate",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CProgressBar x:Name=\u0022p\u0022 IsIndeterminate=\u0022True\u0022 Height=\u002210\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "ProgressBar",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "Calendar",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CCalendar x:Name=\u0022p\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "Calendar",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "Calendar named",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CCalendar x:Name=\u0022p\u0022 AutomationProperties.Name=\u0022Day\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "Day",
+          "type": "Calendar",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ScrollViewer",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CScrollViewer x:Name=\u0022p\u0022 Height=\u002240\u0022\u003E\u003CTextBlock Text=\u0022a\u0022/\u003E\u003C/ScrollViewer\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "a",
+          "type": "Pane",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "GroupBox no header",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CGroupBox x:Name=\u0022p\u0022\u003E\u003CButton Content=\u0022a\u0022/\u003E\u003C/GroupBox\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "Group",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "GroupBox header",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CGroupBox x:Name=\u0022p\u0022 Header=\u0022Files\u0022\u003E\u003CButton Content=\u0022a\u0022/\u003E\u003C/GroupBox\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "Files",
+          "type": "Group",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "Image",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CImage x:Name=\u0022p\u0022 Width=\u002210\u0022 Height=\u002210\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "Image",
+          "control": true
+        }
+      }
+    },
+    {
+      "file": "lists.txt",
+      "title": "ScrollBar",
+      "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CScrollBar x:Name=\u0022p\u0022 Orientation=\u0022Horizontal\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
+      "uia": {
+        "p": {
+          "name": "",
+          "type": "ScrollBar",
+          "control": true
+        }
+      }
     }
   ],
   "focus": [
@@ -4495,7 +4927,10 @@
     {
       "title": "Slider IsTabStop=False",
       "xaml": "\u003CWindow xmlns=\u0022http://schemas.microsoft.com/winfx/2006/xaml/presentation\u0022 xmlns:x=\u0022http://schemas.microsoft.com/winfx/2006/xaml\u0022 xmlns:sys=\u0022clr-namespace:System;assembly=System.Runtime\u0022 xmlns:mah=\u0022http://metro.mahapps.com/winfx/xaml/controls\u0022 xmlns:materialDesign=\u0022http://materialdesigninxaml.net/winfx/xaml/themes\u0022 xmlns:hc=\u0022https://handyorg.github.io/handycontrol\u0022 xmlns:ui=\u0022http://schemas.lepo.co/wpfui/2022/xaml\u0022  Title=\u0022UiaOracle\u0022\u003E\u003CWindow.Resources\u003E\u003CResourceDictionary\u003E\u003C/ResourceDictionary\u003E\u003C/Window.Resources\u003E\u003CStackPanel x:Name=\u0022host\u0022\u003E\u003CButton x:Name=\u0022a\u0022/\u003E\u003CSlider x:Name=\u0022p\u0022 IsTabStop=\u0022False\u0022/\u003E\u003CButton x:Name=\u0022z\u0022/\u003E\u003C/StackPanel\u003E\u003C/Window\u003E",
-      "stops": []
+      "stops": [
+        "a",
+        "z"
+      ]
     },
     {
       "title": "CheckBox Focusable=False",
