@@ -13,7 +13,7 @@ actions on it and checks that each one ran, failed on its own problem and left i
 and posts one PR comment instead of four:
 
 ```yaml
-      - uses: HSU-YU-MING/cornhsu-xaml-audit@v0.1.0
+      - uses: HSU-YU-MING/cornhsu-xaml-audit@v0.1.1
         with: { root: src, a11y-baseline: a11y-baseline.json }
 ```
 
@@ -33,9 +33,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.11.0
+      - uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.11.1
         if: ${{ !cancelled() }}
-        with: { root: src, version: 1.11.0 }
+        with: { root: src, version: 1.11.1 }
 
       - uses: HSU-YU-MING/cornhsu-xamlkeys@v0.4.1
         if: ${{ !cancelled() }}

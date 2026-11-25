@@ -148,8 +148,8 @@ jobs:
           echo "version=$v" >> "$GITHUB_OUTPUT"
       - id: contrast
         continue-on-error: true
-        uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.11.0
-        with: { root: samples/suite, version: 1.11.0 }
+        uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.11.1
+        with: { root: samples/suite, version: 1.11.1 }
       - id: keys
         continue-on-error: true
         uses: HSU-YU-MING/cornhsu-xamlkeys@v0.4.1
