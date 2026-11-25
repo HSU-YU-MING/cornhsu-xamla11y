@@ -3,6 +3,10 @@
 All notable changes to this project are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+- The package page and SARIF link to https://cornhsu.com/xaml-audit/xamla11y.
+
 ## [0.1.0] - 2026-11-25
 
 First version.

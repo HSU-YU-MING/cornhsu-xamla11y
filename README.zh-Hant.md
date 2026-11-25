@@ -195,7 +195,7 @@ steps:
 | **XamlA11y** | 按不按得到、念不念得出來 |
 
 退出碼、Action 輸入都一樣；報告檔、artifact、PR 留言、SARIF 工具名各自分開，四支可以放在同一個 job：
-[docs/four-tools.md](docs/four-tools.md)。`AutomationProperties.Name` 背後的資源鍵不存在是 XamlKeys 的事，這支把它當成有名稱。
+[docs/four-tools.md](docs/four-tools.md)；一段設定全部接上用 [cornhsu-xaml-audit](https://github.com/HSU-YU-MING/cornhsu-xaml-audit)。`AutomationProperties.Name` 背後的資源鍵不存在是 XamlKeys 的事，這支把它當成有名稱。
 
 ## 授權
 

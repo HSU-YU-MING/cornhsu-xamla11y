@@ -242,7 +242,8 @@ place, the JSON, Markdown and HTML reports are uploaded as an artifact, and the 
 | **XamlA11y** | can you reach it, and can it be read out? |
 
 Same exit codes, same action inputs, separate report files, artifacts, PR comments and SARIF tools, so the
-four can run in one job: [docs/four-tools.md](https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/four-tools.md). A missing `{StaticResource}` behind an
+four can run in one job: [docs/four-tools.md](https://github.com/HSU-YU-MING/cornhsu-xamla11y/blob/main/docs/four-tools.md), or in
+one step: [cornhsu-xaml-audit](https://github.com/HSU-YU-MING/cornhsu-xaml-audit). A missing `{StaticResource}` behind an
 `AutomationProperties.Name` is XamlKeys' finding; XamlA11y treats the name as present.
 
 ## Compared with

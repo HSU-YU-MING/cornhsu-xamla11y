@@ -12,7 +12,7 @@
     <Company>Cornhsu</Company>
     <Copyright>Copyright © 許彧銘</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/HSU-YU-MING/cornhsu-xamla11y</PackageProjectUrl>
+    <PackageProjectUrl>https://cornhsu.com/xaml-audit/xamla11y</PackageProjectUrl>
     <RepositoryUrl>https://github.com/HSU-YU-MING/cornhsu-xamla11y</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
