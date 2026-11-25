@@ -21,9 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.9.1
+      - uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.10.0
         if: ${{ !cancelled() }}
-        with: { root: src, version: 1.9.1 }
+        with: { root: src, version: 1.10.0 }
 
       - uses: HSU-YU-MING/cornhsu-xamlkeys@v0.4.1
         if: ${{ !cancelled() }}
