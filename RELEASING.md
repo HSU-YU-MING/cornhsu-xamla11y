@@ -16,7 +16,6 @@
 - [ ] 動過 console 輸出：`bash scripts/verify-readme-sample.sh --update`
 - [ ] 動過規則：`uiaoracle check`、`check-corpus` 都 0 WRONG（Windows 本機；CI 跑不了），`record` 重錄，`docs/verification.md` 與 `驗證.md` 的表更新
 - [ ] 佈景套件升版：重跑 `uiaoracle themes`、`focus-themes`，改 `data/known-controls.json` 的版本與 `THIRD-PARTY-NOTICES.md`
-- [ ] `docs/four-tools.md` 與 `ci.yml` 的 `four-tools` job：`bash scripts/bump-tool.sh XamlA11y <這一版>`；三件套有新版也用它（改一半 `FourToolsTests` 會擋，不是最新版不會擋）
 
 ## 發版步驟
 
@@ -46,4 +45,4 @@ dotnet tool install --tool-path ./artifacts/tool --add-source ./artifacts Cornhs
 
 ## 發完之後
 
-作品集網站（`portfolio-release-update`）；`cornhsu-xaml-audit` 的 `action.yml` 與兩份 README 換新版；GitHub Release 由 `release.yml` 從 CHANGELOG 建；`D:\擴充功能\nuget\Xaml三件套-下一步.md` 與 `nuget-packages` skill 的版本表。
+作品集網站（`portfolio-release-update`）；四合一換新版（`XamlAudit` 的 `bash scripts/bump.sh XamlA11y <這一版>`；四件套的版本只寫在那裡）；GitHub Release 由 `release.yml` 從 CHANGELOG 建；`D:\擴充功能\nuget\Xaml三件套-下一步.md` 與 `nuget-packages` skill 的版本表。

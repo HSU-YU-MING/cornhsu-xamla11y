@@ -17,7 +17,6 @@
 | Tab 走訪 | `src/XamlA11y.Core/Walk/TabWalk.cs`，真值在 `facts/walk.txt` |
 | 能不能信（exit 3） | `Report/Trust.cs` |
 | 第三方控制項與佈景 | `data/known-controls.json` |
-| 四件套的版本 | `scripts/bump-tool.sh`（four-tools.md 與 ci.yml 一起改；`FourToolsTests` 守著兩邊一樣） |
 | 測試 | `tests/XamlA11y.Tests/`，一個主題一個檔；共用的在 `Kit.cs` |
 | 跟真的 WPF、NVDA 比 | `prototype/UiaOracle/` |
 

@@ -4,54 +4,11 @@ Four tools, four questions: can you **see** it, can it be **found**, does it **f
 They share exit codes (0 pass, 1 findings, 2 usage, 3 not trustworthy), the shape of the GitHub Action and
 the idea of a coverage gate. They do not share files, so they can run in one job.
 
-`samples/suite` has one problem for each; the `four-tools` job in `.github/workflows/ci.yml` runs all four
-actions on it and checks that each one ran, failed on its own problem and left its own report.
+[cornhsu-xaml-audit](https://github.com/HSU-YU-MING/cornhsu-xaml-audit) runs all four in one step, at versions pinned in it, and
+posts one PR comment. Its README has the workflow to copy; its CI runs the four of them on every change.
 
-## All four in one step
-
-[cornhsu-xaml-audit](https://github.com/HSU-YU-MING/cornhsu-xaml-audit) runs the four actions below, at versions pinned in it,
-and posts one PR comment instead of four:
-
-```yaml
-      - uses: HSU-YU-MING/cornhsu-xaml-audit@v0.1.1
-        with: { root: src, a11y-baseline: a11y-baseline.json }
-```
-
-Call them one by one, as below, when you want other versions or only some of them with their own settings.
-
-## One job
-
-```yaml
-permissions:
-  contents: read
-  pull-requests: write      # one comment per tool
-  security-events: write    # only for sarif: true
-
-jobs:
-  xaml:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.11.1
-        if: ${{ !cancelled() }}
-        with: { root: src, version: 1.11.1 }
-
-      - uses: HSU-YU-MING/cornhsu-xamlkeys@v0.4.1
-        if: ${{ !cancelled() }}
-        with: { root: src, version: 0.4.1 }
-
-      - uses: HSU-YU-MING/cornhsu-xamlfit@v0.13.1
-        if: ${{ !cancelled() }}
-        with: { root: src, version: 0.13.1, resx: src/Resources }
-
-      - uses: HSU-YU-MING/cornhsu-xamla11y@v0.1.0
-        if: ${{ !cancelled() }}
-        with: { root: src, version: 0.1.0, baseline: a11y-baseline.json }
-```
-
-`if: ${{ !cancelled() }}` lets the later tools run when an earlier one failed, so one push shows all four
-results. The job is still red when any of them is.
+With other versions, or only some of them: call each tool's own action (its README has the snippet). They can stand in one job. Put
+`if: ${{ !cancelled() }}` on each, so one push shows all the results.
 
 | | report files | artifact and PR comment | SARIF tool |
 |---|---|---|---|
