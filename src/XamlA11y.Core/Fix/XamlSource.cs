@@ -112,7 +112,7 @@ public sealed partial class XamlSource
                 i = at = close + 1;
                 continue;
             }
-            if (!char.IsWhiteSpace(c) && char.IsWhiteSpace(Text[i - 1]) && c != '=' && PreviousVisible(i) != '=')
+            if (!char.IsWhiteSpace(c) && char.IsWhiteSpace(Text[i - 1]) && c != '=')
             {
                 if (firstAttribute < 0) firstAttribute = i;
                 lastAttribute = i;
@@ -126,13 +126,6 @@ public sealed partial class XamlSource
         if (indent.Trim().Length > 0) indent = Text[line..(line + Text[line..].TakeWhile(x => x is ' ' or '\t').Count())];
         var newLine = Text[line - 1] == '\n' && line >= 2 && Text[line - 2] == '\r' ? "\r\n" : Text[line - 1].ToString();
         return (at, newLine, indent);
-    }
-
-    private char PreviousVisible(int i)
-    {
-        for (i--; i >= 0; i--)
-            if (!char.IsWhiteSpace(Text[i])) return Text[i];
-        return '\0';
     }
 
     private int LineStart(int i)

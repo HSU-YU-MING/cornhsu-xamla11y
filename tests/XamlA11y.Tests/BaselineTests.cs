@@ -9,6 +9,7 @@ public sealed class BaselineTests
     [Theory]
     [InlineData("{\"keyVersion\":1,\"known\":null}")]
     [InlineData("{\"keyVersion\":1,\"known\":[null]}")]
+    [InlineData("{\"keyVersion\":1,\"known\":[\"a|b|c|d\",null]}")]
     [InlineData("{\"keyVersion\":-5,\"known\":[]}")]
     [InlineData("{\"Known\":[]}")]
     public void A_malformed_baseline_exits_2(string json)
@@ -228,6 +229,7 @@ public sealed class BaselineTests
         var b = new Baseline { Known = ["missing-name|a\\|b\\\\c.xaml|Button|x", "input-no-name~|d.xaml|TextBox|y"] };
         var seen = new List<(string, string, string)>();
         b.Prune([], DateOnly.MinValue, (kind, file, element) => { seen.Add((kind, file, element)); return false; });
-        Assert.Equal([("missing-name", "a|b\\c.xaml", "Button"), ("input-no-name", "d.xaml", "TextBox")], seen);
+        new Baseline { Known = ["odd"] }.Prune([], DateOnly.MinValue, (kind, file, element) => { seen.Add((kind, file, element)); return false; });
+        Assert.Equal([("missing-name", "a|b\\c.xaml", "Button"), ("input-no-name", "d.xaml", "TextBox"), ("odd", "", "")], seen);
     }
 }

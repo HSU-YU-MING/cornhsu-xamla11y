@@ -1,6 +1,8 @@
 // 真的 NVDA 走過 uiaoracle 的 nvda-window，記下每一案念了什麼。
 //
-//   node prototype/UiaOracle/nvda.mjs <guidepup 的資料夾> <uiaoracle.exe> [輸出.json] [語言，如 en、zh_TW]
+//   node prototype/UiaOracle/nvda.mjs <guidepup 的資料夾> <uiaoracle.exe> [輸出.json] [語言，如 en、zh_TW] [案例檔=nvda.txt]
+//
+// 案例檔 nvda-walk.txt 是走訪：一案好幾站，記每一站是哪個元素、念了什麼，走到同一站第二次就換下一案。
 //
 // guidepup 的資料夾：裝過 @guidepup/guidepup 的 node_modules（先 npx @guidepup/setup install nvda）。
 // ⚠ 會出聲、會搶焦點；要互動桌面，不進 CI。按鍵是真的送到前景視窗：視窗一失去前景就停手，不繼續按。
@@ -9,7 +11,8 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { spawn, execFileSync } from 'node:child_process';
 
-const [modules, exe, out = 'nvda-facts.json', lang] = process.argv.slice(2);
+const [modules, exe, out = 'nvda-facts.json', lang, facts = 'nvda.txt'] = process.argv.slice(2);
+const walk = facts === 'nvda-walk.txt';
 // NVDA 的 --lang 只管這一次，不改設定；guidepup 沒有這個參數，替它啟動的 nvda.exe 加上去
 const cp = createRequire(import.meta.url)('node:child_process');
 const spawned = cp.spawn;
@@ -20,7 +23,7 @@ const running = name => execFileSync('tasklist', ['/FI', `IMAGENAME eq ${name}`,
 if (running('nvda.exe')) { console.error('NVDA is already running; close it first'); process.exit(2); }
 const settingsWereOpen = running('SystemSettings.exe');
 
-const host = spawn(exe, ['nvda-window', 'nvda.txt'], { stdio: ['pipe', 'pipe', 'inherit'] });
+const host = spawn(exe, ['nvda-window', facts], { stdio: ['pipe', 'pipe', 'inherit'] });
 const cases = [];
 let active = false, focus = null, ready = false, lost = 0;
 let buffer = '';
@@ -30,12 +33,12 @@ host.stdout.on('data', d => {
   const lines = buffer.split(/\r?\n/);
   buffer = lines.pop();
   for (const l of lines) {
-    const [kind, a, b, c, d] = l.split('\t');
-    if (kind === 'case') cases.push({ title: b, tool: c, xaml: d });
+    const [kind, a, b, c, d, r] = l.split('\t');
+    if (kind === 'case') cases.push({ title: b, tool: c, xaml: d, resources: r });
     else if (kind === 'ready') ready = true;
     else if (kind === 'active') active = true;
     else if (kind === 'lost') { active = false; lost++; }
-    else if (kind === 'focus') focus = { at: a, type: b };
+    else if (kind === 'focus') focus = { at: a, type: b, name: c };
   }
 });
 const stop = async (code, why) => {
@@ -60,7 +63,7 @@ if (!active) await stop(3, 'the window did not get the foreground (click it and 
 
 const heard = new Map();
 await nvda.clearSpokenPhraseLog();
-for (let i = 0; i < cases.length * 3; i++) {
+for (let i = 0; i < cases.length * (walk ? 12 : 3); i++) {
   if (!active) await stop(4, `the window lost the foreground after ${heard.size} case(s); stopped pressing keys`);
   const before = (await nvda.spokenPhraseLog()).length;
   // capture: true 才會等全部念完；預設只拿第一句，清單項目的名字在第二句
@@ -70,14 +73,16 @@ for (let i = 0; i < cases.length * 3; i++) {
   if (focus?.at === 'end') break;
   if (focus && focus.at !== '-1') {
     const list = heard.get(focus.at) ?? [];
-    list.push({ type: focus.type, said });
+    const again = list.some(h => h.name === focus.name);
+    list.push({ type: focus.type, name: focus.name, said });
     heard.set(focus.at, list);
     // ToolBar、DataGrid 的 Tab 會在裡面繞圈：跳到下一案
-    if (list.length >= 3 && Number(focus.at) + 1 >= cases.length) break;
-    if (list.length >= 3) { host.stdin.write(`goto ${Number(focus.at) + 1}` + String.fromCharCode(10)); await sleep(1500); await nvda.clearSpokenPhraseLog(); }
+    const done = walk ? again || list.length >= 20 : list.length >= 3;
+    if (done && Number(focus.at) + 1 >= cases.length) break;
+    if (done) { host.stdin.write(`goto ${Number(focus.at) + 1}` + String.fromCharCode(10)); await sleep(1500); await nvda.clearSpokenPhraseLog(); }
   }
 }
 const result = cases.map((c, i) => ({ ...c, heard: heard.get(String(i)) ?? [] }));
 fs.writeFileSync(out, JSON.stringify({ nvda: String(await nvda.version), language: lang ?? 'system', cases: result }, null, 1) + '\n');
-for (const r of result) console.log(`${r.title.padEnd(34)} ${r.tool.padEnd(18)} ${r.heard.map(h => `${h.type}: ${h.said}`).join('  ||  ') || '(no tab stop)'}`);
+for (const r of result) console.log(`${r.title.padEnd(34)} ${r.tool.padEnd(18)} ${r.heard.map(h => `${walk ? h.name : h.type}: ${h.said}`).join('  ||  ') || '(no tab stop)'}`);
 await stop(0);

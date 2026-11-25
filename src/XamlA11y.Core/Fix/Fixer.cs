@@ -127,7 +127,7 @@ public static partial class Fixer
             if (Sets(e, NameProperty) || Sets(e, LabeledBy)) return null;
             if (kind == Kinds.TextNotName) return Shown(e);
             // 圖示字型的字元、× 這種符號：ToolTip 寫了它做什麼的就用它（頁籤、清單項目的是型別名，一樣）
-            if (kind == Kinds.MeaninglessName || kind == Kinds.SymbolName) return FromToolTip(e);
+            if (kind == Kinds.MeaninglessName || kind == Kinds.SymbolName) return FromLabel(e) ?? FromToolTip(e);
             if (kind != Kinds.MissingName && kind != Kinds.InputNoName && kind != Kinds.ListNoName && kind != Kinds.WidgetNoName) return null;
             return FromLabel(e) ?? FromToolTip(e) ?? (guess ? FromTextBefore(e) : null);
         }

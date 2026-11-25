@@ -39,10 +39,9 @@ public static class WalkReport
     private static string Name(Context context, WalkStop s, Lang lang)
     {
         if (s.Kind == WalkKind.Unknown || context.Project.ControlOf(s.Element) is not { } control) return "";
-        // 清單、頁籤、選單的一站念的是項目；資料來的不知道
-        if (s.Control != control && s.Element.Name.LocalName != s.Control) return "";
+        if (IsWrapped(s, control)) return "";
         var name = context.Names.Resolve(s.Element, control);
-        var says = NameRules.SpokenAs(context, s.Element, control) is { } spoken ? Nvda.Reads(spoken, name, context.DescriptionOf(s.Element), lang) : null;
+        var says = Reads(context, s, control, name, lang);
         var text = name.Kind switch
         {
             NameKind.Named or NameKind.SymbolOnly => name.Text is { Length: > 0 } t ? $" \"{Context.Show(t)}\"" : lang.T(" (named by a resource)", "（名稱是資源）"),
@@ -53,4 +52,14 @@ public static class WalkReport
         };
         return Text.Safe(text) + (says is null ? "" : lang.T("  NVDA: ", "　NVDA：") + Text.Safe(says));
     }
+
+    /// <summary>走到這一站 NVDA 怎麼念；不確定的 null。</summary>
+    internal static string? Reads(Context context, WalkStop s, Lang lang) =>
+        s.Kind == WalkKind.Unknown || context.Project.ControlOf(s.Element) is not { } control || IsWrapped(s, control) ? null : Reads(context, s, control, context.Names.Resolve(s.Element, control), lang);
+
+    private static string? Reads(Context context, WalkStop s, string control, NameResult name, Lang lang) =>
+        NameRules.SpokenAs(context, s.Element, control) is { } spoken ? Nvda.Reads(spoken, name, context.DescriptionOf(s.Element), lang) : null;
+
+    /// <summary>清單、頁籤、選單的一站念的是 WPF 包的項目，不是裡面那個元素；資料來的不知道。</summary>
+    private static bool IsWrapped(WalkStop s, string control) => s.Control != control && s.Element.Name.LocalName != s.Control;
 }

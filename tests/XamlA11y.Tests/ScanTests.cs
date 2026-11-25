@@ -7,6 +7,16 @@ namespace XamlA11y.Tests;
 /// <summary>掃哪些檔案：資料夾、副檔名、連結、編碼、別的 XAML 方言、讀不懂的檔。</summary>
 public sealed class ScanTests
 {
+    /// <summary>剛好到門檻的算過。</summary>
+    [Theory]
+    [InlineData("50", 0)]
+    [InlineData("50.1", 3)]
+    public void Half_of_the_files_could_be_parsed(string min, int exit)
+    {
+        using var f = new Folder().Add("A.xaml", Kit.Window("<Button Content=\"x\"/>")).Add("B.xaml", "<Window");
+        Assert.Equal(exit, f.Run("audit", f.Root, "--min-coverage", min).Exit);
+    }
+
     [Fact]
     public void Design_time_attributes_do_not_exist_at_run_time()
     {

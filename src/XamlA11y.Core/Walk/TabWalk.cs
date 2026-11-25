@@ -124,12 +124,11 @@ public sealed class TabWalk
                 if (inner.Mode == "Once" && more.Count > 1) more = More(inner, more);
                 after += innerAfter;
             }
-            if (_trap is not null && e.Group?.Element != _trap && !Holds(e.Group)) { after += more.Count; continue; }
+            // 進了繞圈的那一組，後面的站都到不了（後面的組，裡面的站已經算過）
+            if (_trap is not null && e.Stop is not null) { after++; continue; }
             into.AddRange(more);
             if (e.Group is { Mode: "Cycle" or "Contained" } ring && more.Count > 0 && _trap is null) _trap = ring.Element;
         }
-
-        bool Holds(Group? g) => g is not null && _trap is not null && (g.Element == _trap || g.Entries.Any(x => Holds(x.Group)));
     }
 
     /// <summary>Once：一站。清單的項目裡面還有控制項的話，那個項目跟它裡面的。</summary>
@@ -350,7 +349,7 @@ public sealed class TabWalk
         if (inside) return (true, maybe);
         if (focusable.IsValue && Markup.IsMarkup(focusable.Value) || tabStop.IsValue && Markup.IsMarkup(tabStop.Value)) return (true, maybe ?? Bound);
         // 專案外的樣式：內建的控制項多半照樣停；本來就模稜兩可的（ContentControl、ItemsControl）說不準
-        if ((focusable.IsUnreadable || tabStop.IsUnreadable) && control is "ContentControl" or "Control" or "ItemsControl" or "HeaderedContentControl" && (focusable.IsUnreadable || tabStop.IsUnreadable)) return (true, maybe ?? Outside);
+        if ((focusable.IsUnreadable || tabStop.IsUnreadable) && control is ("ContentControl" or "Control" or "ItemsControl" or "HeaderedContentControl")) return (true, maybe ?? Outside);
         return (true, maybe);
     }
 
