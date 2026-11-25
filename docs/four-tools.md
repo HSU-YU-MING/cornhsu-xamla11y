@@ -7,6 +7,18 @@ the idea of a coverage gate. They do not share files, so they can run in one job
 `samples/suite` has one problem for each; the `four-tools` job in `.github/workflows/ci.yml` runs all four
 actions on it and checks that each one ran, failed on its own problem and left its own report.
 
+## All four in one step
+
+[cornhsu-xaml-audit](https://github.com/HSU-YU-MING/cornhsu-xaml-audit) runs the four actions below, at versions pinned in it,
+and posts one PR comment instead of four:
+
+```yaml
+      - uses: HSU-YU-MING/cornhsu-xaml-audit@v0.1.0
+        with: { root: src, a11y-baseline: a11y-baseline.json }
+```
+
+Call them one by one, as below, when you want other versions or only some of them with their own settings.
+
 ## One job
 
 ```yaml
@@ -21,9 +33,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.10.0
+      - uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.11.0
         if: ${{ !cancelled() }}
-        with: { root: src, version: 1.10.0 }
+        with: { root: src, version: 1.11.0 }
 
       - uses: HSU-YU-MING/cornhsu-xamlkeys@v0.4.1
         if: ${{ !cancelled() }}

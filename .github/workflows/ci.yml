@@ -31,6 +31,9 @@ jobs:
         run: bash scripts/verify-readme-sample.sh
       - name: README pins the released version
         run: bash scripts/verify-readme-facts.sh
+      # 發版才會用到的東西，平常就跑一次：CHANGELOG 最新那一版抽得出來
+      - name: Release notes of the latest version
+        run: bash scripts/release-notes.sh "$(sed -nE 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\] - [0-9].*/\1/p' CHANGELOG.md | head -n 1)"
 
   # 解析是純 XML，不依賴 WPF —— 這個 job 守住那句話在 Windows 上也成立（路徑分隔、大小寫、換行）。
   windows:
@@ -145,8 +148,8 @@ jobs:
           echo "version=$v" >> "$GITHUB_OUTPUT"
       - id: contrast
         continue-on-error: true
-        uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.10.0
-        with: { root: samples/suite, version: 1.10.0 }
+        uses: HSU-YU-MING/cornhsu-xamlcontrast@v1.11.0
+        with: { root: samples/suite, version: 1.11.0 }
       - id: keys
         continue-on-error: true
         uses: HSU-YU-MING/cornhsu-xamlkeys@v0.4.1
