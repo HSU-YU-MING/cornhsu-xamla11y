@@ -2,8 +2,6 @@
 
 Not promises; the order may change with feedback. A rule gets in when real projects show it matters.
 
-- **One combined GitHub Action** for XamlContrast, XamlKeys, XamlFit and XamlA11y. The inputs already match; see
-  [docs/four-tools.md](docs/four-tools.md).
 - **Duplicate access keys** in one window.
 - **Items whose type the XAML and the C# do not show** (`ICollectionView`, view models of another assembly, VB).
 - Commercial control libraries: Telerik returns the class name as HelpText by default, for one. Needs a licence to measure.
