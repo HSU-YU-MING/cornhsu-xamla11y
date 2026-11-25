@@ -161,7 +161,7 @@ permissions:
   # security-events: write # sarif: true 才要
 
 steps:
-  - uses: actions/checkout@v4
+  - uses: actions/checkout@v7
   - uses: HSU-YU-MING/cornhsu-xamla11y@v0.1.0
     with:
       root: src
